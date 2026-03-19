@@ -198,7 +198,7 @@
       </form>
     </div>
 
-    <div class="box">
+    <div class="box hidden" id="history-box">
       <h2>送信履歴</h2>
       <div id="history-list">
         <p>読み込み中...</p>
@@ -231,21 +231,38 @@
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       const noticeForm = document.getElementById("notice-form");
+      const historyBox = document.getElementById("history-box");
       const historyList = document.getElementById("history-list");
       const submitButton = noticeForm.querySelector('button[type="submit"]');
 
       let currentRole = "sub_admin";
+      let currentUserId = null;
 
-      async function loadRole() {
+      async function loadCurrentAdminRole() {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !userData?.user) {
+          alert("管理者情報の取得に失敗しました。");
+          window.location.href = "admin-login.html";
+          return false;
+        }
+
+        currentUserId = userData.user.id;
+
         const { data, error } = await supabase
           .from("accounts")
           .select("role")
-          .eq("display_name", savedAdminName)
+          .eq("user_id", currentUserId)
           .maybeSingle();
 
-        if (!error && data?.role) {
-          currentRole = data.role;
+        if (error || !data?.role) {
+          alert("権限情報の取得に失敗しました。");
+          window.location.href = "admin-login.html";
+          return false;
         }
+
+        currentRole = data.role;
+        return true;
       }
 
       function renderHistory(items) {
@@ -278,10 +295,8 @@
             parts.push("小説応援条件: " + item.target_novel_support_status);
           }
 
-          if (currentRole === "admin") {
-            parts.push("送信者: " + (item.sent_by_admin || ""));
-            parts.push("送信日時: " + (item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : ""));
-          }
+          parts.push("送信者: " + (item.sent_by_admin || ""));
+          parts.push("送信日時: " + (item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : ""));
 
           meta.textContent = parts.join("\n");
 
@@ -315,8 +330,13 @@
         renderHistory(data || []);
       }
 
-      await loadRole();
-      await loadHistory();
+      const roleLoaded = await loadCurrentAdminRole();
+      if (!roleLoaded) return;
+
+      if (currentRole === "admin") {
+        historyBox.classList.remove("hidden");
+        await loadHistory();
+      }
 
       noticeForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -380,7 +400,10 @@
 
           alert("送信しました。");
           noticeForm.reset();
-          await loadHistory();
+
+          if (currentRole === "admin") {
+            await loadHistory();
+          }
         } catch (err) {
           alert("予期しないエラーが発生しました。");
         } finally {

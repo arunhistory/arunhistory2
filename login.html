@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ログイン</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.5rem;
+      line-height: 1.4;
+    }
+
+    a {
+      color: #f2d9e8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #ffe7f3;
+      text-decoration: none;
+    }
+
+    .form-box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 24px;
+    }
+
+    .form-box p {
+      margin: 0 0 16px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.95);
+      color: #222;
+      font-family: inherit;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      background-color: #7a5c61;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #9a747b;
+    }
+
+    .sub-links {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .sub-links p {
+      margin: 8px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ログイン</h1>
+
+    <div class="form-box">
+      <form id="login-form">
+        <p>
+          <label for="email">メールアドレス</label>
+          <input type="email" id="email" name="email">
+        </p>
+
+        <p>
+          <label for="password">パスワード</label>
+          <input type="password" id="password" name="password">
+        </p>
+
+        <p id="secret-wrap" style="display: none;">
+          <label for="secret-word">&nbsp;</label>
+          <input type="text" id="secret-word" name="secret-word" autocomplete="off">
+        </p>
+
+        <p>
+          <button type="submit">ログイン</button>
+        </p>
+      </form>
+
+      <div class="sub-links">
+        <p>アカウントをお持ちでない方は <a id="signup-link" href="signup.html">新規登録はこちら</a></p>
+        <p><a id="back-link" href="index.html">前のページへ戻る</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect") || "index.html";
+
+      const backLink = document.getElementById("back-link");
+      const signupLink = document.getElementById("signup-link");
+      const form = document.getElementById("login-form");
+      const submitButton = form.querySelector('button[type="submit"]');
+      const title = document.querySelector("h1");
+      const secretWrap = document.getElementById("secret-wrap");
+      const secretWord = document.getElementById("secret-word");
+
+      backLink.href = redirect;
+      signupLink.href = "signup.html?redirect=" + encodeURIComponent(redirect);
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        alert("Supabase の読み込みに失敗しました。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        const { data: maintenanceSetting, error: maintenanceError } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+          window.location.href = "maintenance.html";
+          return;
+        }
+      }
+
+      let titleTapCount = 0;
+      let secretUnlocked = false;
+
+      title.addEventListener("click", () => {
+        titleTapCount += 1;
+        if (titleTapCount >= 20 && !secretUnlocked) {
+          secretUnlocked = true;
+          secretWrap.style.display = "block";
+        }
+      });
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const secret = secretWord ? secretWord.value.trim() : "";
+
+        if (email !== "" || password !== "") {
+          if (email === "" || password === "") {
+            alert("メールアドレスorパスワードが間違ってます");
+            return;
+          }
+
+          submitButton.disabled = true;
+          submitButton.textContent = "ログイン中...";
+
+          try {
+            const { error } = await supabase.auth.signInWithPassword({
+              email,
+              password
+            });
+
+            if (error) {
+              alert("メールアドレスorパスワードが間違ってます");
+              return;
+            }
+
+            const { data: userData, error: userError } = await supabase.auth.getUser();
+            if (userError || !userData?.user) {
+              alert("ログインしましたが、ユーザー情報の取得に失敗しました。");
+              return;
+            }
+
+            const user = userData.user;
+            const meta = user.user_metadata || {};
+
+            const { data: activeWithdraw } = await supabase
+              .from("withdraw_requests")
+              .select("id")
+              .eq("user_id", user.id)
+              .eq("status", "申請中")
+              .maybeSingle();
+
+            if (activeWithdraw) {
+              await supabase
+                .from("withdraw_requests")
+                .update({
+                  status: "取り消し",
+                  updated_at: new Date().toISOString()
+                })
+                .eq("id", activeWithdraw.id);
+            }
+
+            const { data: existingAccount, error: checkError } = await supabase
+              .from("accounts")
+              .select("id")
+              .eq("user_id", user.id)
+              .maybeSingle();
+
+            if (checkError) {
+              alert("ログインは成功しましたが、accounts確認に失敗しました: " + checkError.message);
+              return;
+            }
+
+            if (!existingAccount) {
+              const { error: insertError } = await supabase.from("accounts").insert([
+                {
+                  user_id: user.id,
+                  display_name: meta.username || "",
+                  email: user.email || "",
+                  birthdate: meta.birthdate || null,
+                  gender: meta.gender || null,
+                  country: meta.country || null,
+                  role: "user",
+                  status: "active",
+                  created_at: new Date().toISOString()
+                }
+              ]);
+
+              if (insertError) {
+                alert("ログインは成功しましたが、accounts保存に失敗しました: " + insertError.message);
+                return;
+              }
+            }
+
+            const { error: loginUpdateError } = await supabase
+              .from("accounts")
+              .update({
+                last_login_at: new Date().toISOString()
+              })
+              .eq("user_id", user.id);
+
+            if (loginUpdateError) {
+              alert("ログインは成功しましたが、最終ログイン日時の更新に失敗しました: " + loginUpdateError.message);
+              return;
+            }
+
+            alert("ログインしました");
+            window.location.href = redirect;
+          } catch (err) {
+            alert("予期しないエラーが発生しました。");
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = "ログイン";
+          }
+
+          return;
+        }
+
+        if (secret === "ここに合言葉") {
+          window.location.href = "admin-login.html";
+          return;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

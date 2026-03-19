@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>舞い降りる星</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    html {
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      min-height: 100%;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      color: #f5f5f5;
+      overflow-x: hidden;
+      min-height: 100vh;
+      position: relative;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 3rem;
+      line-height: 1.4;
+    }
+
+    p, li, a, h2 {
+      position: relative;
+      z-index: 1;
+    }
+
+    a {
+      color: #f2d9e8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #ffe7f3;
+      text-decoration: none;
+    }
+
+    .news-box {
+      max-height: 8em;
+      overflow-y: auto;
+      border: 1px solid rgba(255,255,255,0.35);
+      padding: 8px;
+      background: rgba(255,255,255,0.08);
+      backdrop-filter: blur(2px);
+    }
+
+    .news-box ul {
+      margin: 0;
+      padding-left: 1.5em;
+    }
+
+    .news-box li {
+      line-height: 1.6;
+    }
+
+    .main-link {
+      font-size: 2rem;
+      line-height: 1.5;
+    }
+
+    .main-link:hover {
+      color: #ffe7f3;
+    }
+
+    .secret-link {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .secret-link:hover {
+      color: inherit;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p style="text-align: left; margin-top: 0;">
+      <a id="user-link" href="login.html?redirect=index.html">ログイン</a>
+      <a id="mypage-link" href="#" style="display:none; margin-left: 12px;">マイページへ</a>
+      <a id="logout-link" href="#" style="display:none; margin-left: 12px;">ログアウト</a>
+    </p>
+
+    <h1>舞い降りる星</h1>
+
+    <p>
+      ここは、とある社畜が、やりたいことを諦めないために作った場所です。<br>
+      仕事や生活の中で削られる日があっても、それでも残したい物語があり、鳴らしたい音があります。<br>
+      簡単ではなくても、遠回りでも、自分の手で少しずつ形にしていきたい。<br>
+      <a class="secret-link" href="https://x.com/arun_history_?s=21&t=oe3JylyzOH2-p5yGov2e9g">この場所</a>には、そんな思いと一緒に、小説や音楽を置いていきます。
+    </p>
+
+    <div style="text-align: center;">
+      <h2>小説</h2>
+      <p><a class="main-link" href="novel.html">異物ノヴァ</a></p>
+
+      <h2>音楽</h2>
+      <p><a class="main-link" href="music.html">ぽわんと</a></p>
+    </div>
+
+    <h2>お知らせ</h2>
+    <div class="news-box">
+      <ul>
+        <li>2026/03/11 サイト開設しました</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const redirectPage = "index.html";
+      const userLink = document.getElementById("user-link");
+      const mypageLink = document.getElementById("mypage-link");
+      const logoutLink = document.getElementById("logout-link");
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        const { data: maintenanceSetting, error: maintenanceError } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+          window.location.href = "maintenance.html";
+          return;
+        }
+      }
+
+      if (sessionStorage.getItem("admin_logged_in") === "1") {
+        const adminName = sessionStorage.getItem("admin_username") || "管理者";
+
+        userLink.textContent = adminName + "さん";
+        userLink.href = "admin-home.html";
+
+        mypageLink.textContent = "管理ホームへ";
+        mypageLink.href = "admin-home.html";
+        mypageLink.style.display = "inline";
+
+        logoutLink.style.display = "inline";
+        logoutLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          sessionStorage.removeItem("admin_logged_in");
+          sessionStorage.removeItem("admin_username");
+          window.location.href = "index.html";
+        });
+
+        return;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+
+      if (!user) {
+        userLink.textContent = "ログイン";
+        userLink.href = "login.html?redirect=" + encodeURIComponent(redirectPage);
+        mypageLink.style.display = "none";
+        logoutLink.style.display = "none";
+        return;
+      }
+
+      const { data: account } = await supabase
+        .from("accounts")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const displayName =
+        account?.display_name ||
+        user.user_metadata?.username ||
+        "ユーザー";
+
+      const { data: unreadNotice } = await supabase
+        .from("operator_notices")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .limit(1)
+        .maybeSingle();
+
+      userLink.textContent = displayName + "さん";
+      userLink.href = "mypage.html?redirect=" + encodeURIComponent(redirectPage);
+
+      mypageLink.textContent = unreadNotice
+        ? "マイページへ［未読あり］"
+        : "マイページへ";
+      mypageLink.href = "mypage.html?redirect=" + encodeURIComponent(redirectPage);
+      mypageLink.style.display = "inline";
+
+      logoutLink.style.display = "inline";
+      logoutLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = "login.html?redirect=" + encodeURIComponent(redirectPage);
+      });
+    });
+  </script>
+</body>
+</html>

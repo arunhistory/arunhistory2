@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ぽわんと</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background-color: #f7f3ea;
+      color: #222;
+      margin: 0 auto;
+      max-width: 820px;
+      padding: 24px;
+      line-height: 1.9;
+      font-size: 17px;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    h1, h2 {
+      color: #111;
+      line-height: 1.6;
+      text-align: center;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    a {
+      color: #7a5c61;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #9a747b;
+      text-decoration: underline;
+    }
+
+    .news-box {
+      max-height: 8em;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 8px;
+      background-color: #fffaf2;
+    }
+
+    .news-box ul {
+      margin: 0;
+      padding-left: 1.5em;
+    }
+
+    .news-box li {
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+  <p style="text-align: left; margin-top: 0;">
+    <a id="user-link" href="login.html?redirect=music.html">ログイン</a>
+    <a id="mypage-link" href="#" style="display:none; margin-left: 12px;">マイページへ</a>
+    <a id="logout-link" href="#" style="display:none; margin-left: 12px;">ログアウト</a>
+  </p>
+
+  <h1 id="secretTitle" style="text-align: center;">ぽわんと</h1>
+
+  <p style="text-align: center;">
+    <img id="secretIcon" src="F207D738-657D-40B1-B333-62B6F9A9F517.jpeg" alt="ぽわんとのアイコン" width="220">
+  </p>
+
+  <p>
+    ぽわんとは、配信用・ゲーム用BGMを中心に音を気ままにつくっています。<br>
+    思いついた音や、好きだと思えた音を、自分のペースで少しずつ形にしています。もし気に入ったら、ご利用いただけたら嬉しいです。<br>
+    更新はまったりですが、Web管理・楽曲制作はすべて自分で行っています。
+  </p>
+
+  <p><a href="license.html">利用について</a></p>
+
+  <h2>楽曲一覧</h2>
+  <p><a href="musiclist.html">検索はこちらから</a></p>
+
+  <h2>利用について</h2>
+  <p><a href="musictou.html">音楽利用規約はこちら</a></p>
+
+  <h2>お知らせ</h2>
+  <div class="news-box">
+    <ul>
+      <li>2026/03/15 利用規約を改定</li>
+      <li>2026/03/14 First Breathを公開</li>
+      <li>2026/03/13 利用規約を制定</li>
+      <li>2026/03/11 音楽ページを公開</li>
+    </ul>
+  </div>
+
+  <p><a href="https://x.com/pwantobgm?s=21&t=oe3JylyzOH2-p5yGov2e9g">Xへ</a></p>
+  <p><a href="index.html">総合トップへ戻る</a></p>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const redirectPage = "music.html";
+      const userLink = document.getElementById("user-link");
+      const mypageLink = document.getElementById("mypage-link");
+      const logoutLink = document.getElementById("logout-link");
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        const { data: maintenanceSetting, error: maintenanceError } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+          window.location.href = "maintenance.html";
+          return;
+        }
+      }
+
+      if (sessionStorage.getItem("admin_logged_in") === "1") {
+        const adminName = sessionStorage.getItem("admin_username") || "管理者";
+
+        userLink.textContent = adminName + "さん";
+        userLink.href = "admin-home.html";
+
+        mypageLink.textContent = "管理ホームへ";
+        mypageLink.href = "admin-home.html";
+        mypageLink.style.display = "inline";
+
+        logoutLink.style.display = "inline";
+        logoutLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          sessionStorage.removeItem("admin_logged_in");
+          sessionStorage.removeItem("admin_username");
+          window.location.href = "index.html";
+        });
+
+        return;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+
+      if (!user) {
+        userLink.textContent = "ログイン";
+        userLink.href = "login.html?redirect=" + encodeURIComponent(redirectPage);
+        mypageLink.style.display = "none";
+        logoutLink.style.display = "none";
+        return;
+      }
+
+      const { data: account } = await supabase
+        .from("accounts")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const displayName =
+        account?.display_name ||
+        user.user_metadata?.username ||
+        "ユーザー";
+
+      const { data: unreadNotice } = await supabase
+        .from("operator_notices")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .limit(1)
+        .maybeSingle();
+
+      userLink.textContent = displayName + "さん";
+      userLink.href = "mypage.html?redirect=" + encodeURIComponent(redirectPage);
+
+      mypageLink.textContent = unreadNotice
+        ? "マイページへ［未読あり］"
+        : "マイページへ";
+      mypageLink.href = "mypage.html?redirect=" + encodeURIComponent(redirectPage);
+      mypageLink.style.display = "inline";
+
+      logoutLink.style.display = "inline";
+      logoutLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = "login.html?redirect=" + encodeURIComponent(redirectPage);
+      });
+    });
+  </script>
+</body>
+</html>

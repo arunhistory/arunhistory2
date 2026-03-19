@@ -138,6 +138,25 @@
       color: #444;
       font-size: 0.95rem;
     }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -208,6 +227,11 @@
         <a href="admin-home.html">戻る</a>
       </p>
     </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
   </div>
 
   <script>
@@ -217,9 +241,40 @@
         return;
       }
 
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+      const adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+
       const adminUserLink = document.getElementById("admin-user-link");
-      const savedAdminName = sessionStorage.getItem("admin_username") || "管理者";
-      adminUserLink.textContent = savedAdminName + "さん";
+      const noticeForm = document.getElementById("notice-form");
+      const historyBox = document.getElementById("history-box");
+      const historyList = document.getElementById("history-list");
+      const submitButton = noticeForm.querySelector('button[type="submit"]');
+      const debugBox = document.getElementById("debug-box");
+
+      adminUserLink.textContent = adminUsername + "さん";
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const canUseNoticeManagement =
+        adminRole === "admin" ||
+        (adminRole === "sub_admin" && adminPermissions.includes("notice_management"));
+
+      if (!canUseNoticeManagement) {
+        alert("この機能を使う権限がありません。");
+        window.location.href = "admin-home.html";
+        return;
+      }
 
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
         alert("Supabase の読み込みに失敗しました。");
@@ -230,28 +285,13 @@
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      const noticeForm = document.getElementById("notice-form");
-      const historyBox = document.getElementById("history-box");
-      const historyList = document.getElementById("history-list");
-      const submitButton = noticeForm.querySelector('button[type="submit"]');
-
-      let currentRole = "sub_admin";
-
-      async function loadCurrentAdminRole() {
-        const { data, error } = await supabase
-          .from("accounts")
-          .select("role")
-          .eq("display_name", savedAdminName)
-          .maybeSingle();
-
-        if (error || !data?.role) {
-          alert("管理者情報の取得に失敗しました。");
-          window.location.href = "admin-home.html";
-          return false;
-        }
-
-        currentRole = data.role;
-        return true;
+      function renderDebug(extra = "") {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
       }
 
       function renderHistory(items) {
@@ -274,7 +314,7 @@
           meta.className = "notice-meta";
 
           const parts = [];
-          parts.push("種別: " + (item.notice_type === "condition" ? "条件送信" : "個別送信"));
+          parts.push("種別: 条件送信");
 
           if (item.target_license_status) {
             parts.push("ライセンス条件: " + item.target_license_status);
@@ -313,18 +353,19 @@
 
         if (error) {
           historyList.innerHTML = "<p>読み込みに失敗しました。</p>";
+          renderDebug("履歴取得エラー: " + error.message);
           return;
         }
 
         renderHistory(data || []);
+        renderDebug("履歴件数: " + (data || []).length);
       }
 
-      const roleLoaded = await loadCurrentAdminRole();
-      if (!roleLoaded) return;
-
-      if (currentRole === "admin") {
+      if (adminRole === "admin") {
         historyBox.classList.remove("hidden");
         await loadHistory();
+      } else {
+        renderDebug("準管理者のため履歴は非表示です。");
       }
 
       noticeForm.addEventListener("submit", async (e) => {
@@ -336,6 +377,7 @@
         const noticeBody = document.getElementById("notice-body").value.trim();
 
         if (!noticeBody) {
+          alert("本文を入力してください。");
           return;
         }
 
@@ -359,11 +401,13 @@
 
           if (targetError) {
             alert("対象ユーザー取得に失敗しました: " + targetError.message);
+            renderDebug("対象ユーザー取得エラー: " + targetError.message);
             return;
           }
 
           if (!targetUsers || targetUsers.length === 0) {
             alert("条件に一致するユーザーがいません。");
+            renderDebug("条件一致ユーザー: 0件");
             return;
           }
 
@@ -373,7 +417,7 @@
             body: noticeBody,
             is_read: false,
             notice_type: "condition",
-            sent_by_admin: savedAdminName,
+            sent_by_admin: adminUsername,
             target_license_status: targetLicenseStatus || null,
             target_novel_support_status: targetNovelSupportStatus || null
           }));
@@ -384,17 +428,20 @@
 
           if (insertError) {
             alert("送信に失敗しました: " + insertError.message);
+            renderDebug("挿入エラー: " + insertError.message);
             return;
           }
 
           alert("送信しました。");
           noticeForm.reset();
+          renderDebug("送信成功: " + rows.length + "件");
 
-          if (currentRole === "admin") {
+          if (adminRole === "admin") {
             await loadHistory();
           }
         } catch (err) {
           alert("予期しないエラーが発生しました。");
+          renderDebug("予期しないエラー: " + String(err));
         } finally {
           submitButton.disabled = false;
           submitButton.textContent = "送信";

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>メンテナンス中</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-sizing: border-box;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 0;
+      font-size: 2.6rem;
+      line-height: 1.4;
+    }
+
+    p {
+      line-height: 1.9;
+      margin: 12px 0;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 32px 24px;
+    }
+
+    .secret-wrap {
+      display: none;
+      margin-top: 20px;
+    }
+
+    .secret-wrap input {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.95);
+      color: #222;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="box">
+      <h1 id="maintenance-title">メンテナンス中</h1>
+      <p>
+        現在、サイトはメンテナンス中です。<br>
+        ご不便をおかけしますが、しばらくお待ちください。
+      </p>
+
+      <div class="secret-wrap" id="secret-wrap">
+        <input type="text" id="secret-input" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const SECRET_WORD = "ここに合言葉";
+    const TAP_KEY = "maintenance_tap_unlocked";
+    const WORD_KEY = "maintenance_secret_word";
+
+    const title = document.getElementById("maintenance-title");
+    const secretWrap = document.getElementById("secret-wrap");
+    const secretInput = document.getElementById("secret-input");
+
+    let tapCount = 0;
+
+    title.addEventListener("click", () => {
+      tapCount += 1;
+
+      if (tapCount >= 20) {
+        localStorage.setItem(TAP_KEY, "1");
+      }
+    });
+
+    const unlocked = localStorage.getItem(TAP_KEY) === "1";
+    const savedWord = localStorage.getItem(WORD_KEY) || "";
+
+    if (unlocked) {
+      secretWrap.style.display = "block";
+      secretInput.value = savedWord;
+    }
+
+    secretInput.addEventListener("input", () => {
+      localStorage.setItem(WORD_KEY, secretInput.value);
+    });
+
+    if (unlocked && savedWord === SECRET_WORD) {
+      localStorage.removeItem(TAP_KEY);
+      localStorage.removeItem(WORD_KEY);
+      window.location.href = "admin-login.html";
+    }
+  </script>
+</body>
+</html>

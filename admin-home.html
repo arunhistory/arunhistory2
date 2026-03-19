@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>管理者メニュー</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -51,6 +50,25 @@
     .hidden {
       display: none;
     }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
   </style>
 </head>
 <body>
@@ -62,58 +80,120 @@
     <h1>管理者メニュー</h1>
 
     <div class="box">
-      <p><a href="index.html">総合トップへ行く</a></p>
-      <p><a href="https://supabase.com/dashboard">データベース側へ行く</a></p>
-      <p><a href="account-management.html">アカウント管理</a></p>
-      <p><a href="music-management.html">音楽管理</a></p>
-      <p><a href="novel-management.html">小説管理</a></p>
-      <p><a href="notice-management.html">お知らせ管理</a></p>
-      <p id="admin-management-wrap" class="hidden"><a href="admin-management.html">管理者の管理</a></p>
-      <p><a href="maintenance-control.html">メンテナンス管理</a></p>
-      <p><a href="#" id="admin-logout">ログアウト</a></p>
+      <p id="database-link-wrap" class="hidden">
+        <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer">データベース側へ行く</a>
+      </p>
+
+      <p id="account-management-wrap" class="hidden">
+        <a href="account-management.html">アカウント管理</a>
+      </p>
+
+      <p id="music-management-wrap" class="hidden">
+        <a href="music-management.html">音楽管理</a>
+      </p>
+
+      <p id="novel-management-wrap" class="hidden">
+        <a href="novel-management.html">小説管理</a>
+      </p>
+
+      <p id="notice-management-wrap" class="hidden">
+        <a href="notice-management.html">お知らせ管理</a>
+      </p>
+
+      <p id="admin-management-wrap" class="hidden">
+        <a href="admin-management.html">管理者の管理</a>
+      </p>
+
+      <p>
+        <a href="maintenance-control.html">メンテナンス管理</a>
+      </p>
+
+      <p>
+        <a href="index.html">総合トップへ行く</a>
+      </p>
+
+      <p>
+        <a href="#" id="admin-logout">ログアウト</a>
+      </p>
     </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", async () => {
+    document.addEventListener("DOMContentLoaded", () => {
       if (sessionStorage.getItem("admin_logged_in") !== "1") {
         window.location.href = "admin-login.html";
         return;
       }
 
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+      const adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+
       const adminUserLink = document.getElementById("admin-user-link");
-      const savedAdminName = sessionStorage.getItem("admin_username") || "管理者";
-      const adminManagementWrap = document.getElementById("admin-management-wrap");
+      const debugBox = document.getElementById("debug-box");
 
-      adminUserLink.textContent = savedAdminName + "さん";
+      adminUserLink.textContent = adminUsername + "さん";
 
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
+        window.location.href = "admin-login.html";
         return;
       }
 
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      function show(id) {
+        const el = document.getElementById(id);
+        if (el) el.classList.remove("hidden");
+      }
 
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-
-      if (!userError && userData?.user) {
-        const { data: account } = await supabase
-          .from("accounts")
-          .select("role")
-          .eq("user_id", userData.user.id)
-          .maybeSingle();
-
-        if (account?.role === "admin") {
-          adminManagementWrap.classList.remove("hidden");
+      if (adminRole === "admin") {
+        show("database-link-wrap");
+        show("account-management-wrap");
+        show("music-management-wrap");
+        show("novel-management-wrap");
+        show("notice-management-wrap");
+        show("admin-management-wrap");
+      } else if (adminRole === "sub_admin") {
+        if (adminPermissions.includes("database_management")) {
+          show("database-link-wrap");
+        }
+        if (adminPermissions.includes("account_management") || adminPermissions.includes("user_danger_control")) {
+          show("account-management-wrap");
+        }
+        if (adminPermissions.includes("music_management")) {
+          show("music-management-wrap");
+        }
+        if (adminPermissions.includes("novel_management")) {
+          show("novel-management-wrap");
+        }
+        if (adminPermissions.includes("notice_management")) {
+          show("notice-management-wrap");
         }
       }
+
+      debugBox.textContent =
+        "admin_username: " + adminUsername + "\n" +
+        "admin_role: " + adminRole + "\n" +
+        "admin_status: " + adminStatus + "\n" +
+        "admin_permissions: " + JSON.stringify(adminPermissions, null, 2);
 
       document.getElementById("admin-logout").addEventListener("click", function (e) {
         e.preventDefault();
         sessionStorage.removeItem("admin_logged_in");
         sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
         window.location.href = "index.html";
       });
     });

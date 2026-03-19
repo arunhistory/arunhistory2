@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>メンテナンス管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.5rem;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    a {
+      color: #111;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #111;
+      text-decoration: underline;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .box p {
+      margin: 12px 0;
+      line-height: 1.8;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      background-color: #4f8f5b;
+      color: #111;
+      font-size: 16px;
+      font-family: inherit;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #6aa676;
+    }
+
+    .status-text {
+      font-weight: bold;
+    }
+
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p style="text-align: left; margin-top: 0;">
+      <a id="admin-user-link" href="#">管理者さん</a>
+    </p>
+
+    <h1>メンテナンス管理</h1>
+
+    <p class="center-link">
+      <a href="admin-home.html">戻る</a>
+    </p>
+
+    <div class="box">
+      <p>現在の状態: <span id="maintenance-status" class="status-text">読み込み中...</span></p>
+
+      <button type="button" id="maintenance-on">メンテナンス開始</button>
+      <button type="button" id="maintenance-off">メンテナンス解除</button>
+
+      <p class="center-link">
+        <a href="admin-home.html">戻る</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const savedAdminName = sessionStorage.getItem("admin_username") || "管理者";
+      adminUserLink.textContent = savedAdminName + "さん";
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        alert("Supabase の読み込みに失敗しました。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const statusEl = document.getElementById("maintenance-status");
+      const onButton = document.getElementById("maintenance-on");
+      const offButton = document.getElementById("maintenance-off");
+
+      async function loadStatus() {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (error || !data) {
+          statusEl.textContent = "読み込み失敗";
+          return;
+        }
+
+        statusEl.textContent = data.setting_value === "on" ? "メンテナンス中" : "通常公開中";
+      }
+
+      onButton.addEventListener("click", async () => {
+        const { error } = await supabase
+          .from("site_settings")
+          .update({ setting_value: "on" })
+          .eq("setting_key", "maintenance_mode");
+
+        if (error) {
+          alert("更新に失敗しました: " + error.message);
+          return;
+        }
+
+        await loadStatus();
+      });
+
+      offButton.addEventListener("click", async () => {
+        const { error } = await supabase
+          .from("site_settings")
+          .update({ setting_value: "off" })
+          .eq("setting_key", "maintenance_mode");
+
+        if (error) {
+          alert("更新に失敗しました: " + error.message);
+          return;
+        }
+
+        await loadStatus();
+      });
+
+      await loadStatus();
+    });
+  </script>
+</body>
+</html>

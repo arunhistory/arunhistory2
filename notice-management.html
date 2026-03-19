@@ -236,28 +236,17 @@
       const submitButton = noticeForm.querySelector('button[type="submit"]');
 
       let currentRole = "sub_admin";
-      let currentUserId = null;
 
       async function loadCurrentAdminRole() {
-        const { data: userData, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !userData?.user) {
-          alert("管理者情報の取得に失敗しました。");
-          window.location.href = "admin-login.html";
-          return false;
-        }
-
-        currentUserId = userData.user.id;
-
         const { data, error } = await supabase
           .from("accounts")
           .select("role")
-          .eq("user_id", currentUserId)
+          .eq("display_name", savedAdminName)
           .maybeSingle();
 
         if (error || !data?.role) {
-          alert("権限情報の取得に失敗しました。");
-          window.location.href = "admin-login.html";
+          alert("管理者情報の取得に失敗しました。");
+          window.location.href = "admin-home.html";
           return false;
         }
 

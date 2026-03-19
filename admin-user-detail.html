@@ -1,0 +1,618 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>準管理者詳細</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1, h2, h3 {
+      text-align: center;
+      margin-top: 0;
+      color: #111;
+      line-height: 1.4;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+    }
+
+    a {
+      color: #111;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .label {
+      display: block;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .value {
+      padding: 10px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.2);
+      line-height: 1.8;
+      white-space: pre-wrap;
+    }
+
+    .permission-box {
+      margin: 16px 0;
+    }
+
+    .permission-box label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-weight: normal;
+      line-height: 1.8;
+      margin-bottom: 8px;
+    }
+
+    .permission-box input[type="checkbox"] {
+      width: auto;
+      min-width: auto;
+      max-width: none;
+      display: inline-block;
+      margin-top: 5px;
+      padding: 0;
+    }
+
+    .log-item {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-title {
+      font-weight: bold;
+      margin-bottom: 4px;
+    }
+
+    .log-date {
+      color: #333;
+      font-size: 0.95rem;
+      margin-bottom: 6px;
+    }
+
+    .log-detail {
+      white-space: pre-wrap;
+      line-height: 1.8;
+    }
+
+    button {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-family: inherit;
+      padding: 12px;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+
+    .normal-button {
+      background-color: #4f8f5b;
+      color: #111;
+    }
+
+    .normal-button:hover {
+      background-color: #6aa676;
+    }
+
+    .danger-text-button {
+      background: none;
+      border: none;
+      color: #b30000;
+      padding: 10px 0;
+      text-align: left;
+      font-weight: bold;
+    }
+
+    .danger-text-button:hover {
+      text-decoration: underline;
+      background: none;
+    }
+
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p style="text-align: left; margin-top: 0;">
+      <a id="admin-user-link" href="#">管理者さん</a>
+    </p>
+
+    <h1>準管理者詳細</h1>
+
+    <p class="center-link">
+      <a href="admin-management.html">戻る</a>
+    </p>
+
+    <div class="box">
+      <div class="field">
+        <span class="label">ユーザー名</span>
+        <div class="value" id="username-value">読み込み中...</div>
+      </div>
+
+      <div class="field">
+        <span class="label">状態</span>
+        <div class="value" id="status-value">読み込み中...</div>
+      </div>
+
+      <div class="field">
+        <span class="label">現在の権限</span>
+        <div class="value" id="permissions-value">読み込み中...</div>
+      </div>
+
+      <button type="button" class="normal-button" id="change-password-button">パスワード変更</button>
+    </div>
+
+    <div class="box">
+      <h2>権限付与・取り外し</h2>
+      <div class="permission-box" id="permission-editor">
+        <p>読み込み中...</p>
+      </div>
+      <button type="button" class="normal-button" id="save-permissions-button">権限を保存</button>
+    </div>
+
+    <div class="box">
+      <h2>直近20件の行動履歴</h2>
+      <div id="log-list">
+        <p>読み込み中...</p>
+      </div>
+      <button type="button" class="normal-button" id="show-all-logs-button">すべて表示</button>
+    </div>
+
+    <div class="box">
+      <h2>操作</h2>
+      <button type="button" class="danger-text-button" id="stop-button">停止</button>
+      <button type="button" class="danger-text-button" id="resume-button">利用再開</button>
+      <button type="button" class="danger-text-button" id="delete-button">削除</button>
+    </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+      const adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+      const params = new URLSearchParams(window.location.search);
+      const targetId = params.get("id");
+
+      adminUserLink.textContent = adminUsername + "さん";
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        sessionStorage.clear();
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      if (adminRole !== "admin") {
+        alert("このページは管理者のみ利用できます。");
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      if (!targetId) {
+        alert("対象IDがありません。");
+        window.location.href = "admin-management.html";
+        return;
+      }
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        alert("Supabase の読み込みに失敗しました。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const permissionLabels = {
+        account_management: "アカウント管理",
+        user_danger_control: "ユーザー削除・停止",
+        notice_management: "お知らせ管理",
+        music_management: "音楽管理",
+        novel_management: "小説管理",
+        database_management: "データベース管理"
+      };
+
+      let currentSubAdmin = null;
+
+      function renderDebug(extra = "") {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "target_id: " + targetId + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
+      }
+
+      function statusLabel(value) {
+        if (value === "active") return "有効";
+        if (value === "stopped") return "停止";
+        return value || "";
+      }
+
+      function permissionText(values) {
+        if (!values || values.length === 0) return "なし";
+        return values.map((value) => permissionLabels[value] || value).join(" / ");
+      }
+
+      function renderPermissionEditor(values) {
+        const wrap = document.getElementById("permission-editor");
+        wrap.innerHTML = "";
+
+        Object.keys(permissionLabels).forEach((key) => {
+          const label = document.createElement("label");
+          const input = document.createElement("input");
+          input.type = "checkbox";
+          input.value = key;
+          input.checked = (values || []).includes(key);
+
+          label.appendChild(input);
+          label.append(" " + permissionLabels[key]);
+          wrap.appendChild(label);
+        });
+      }
+
+      function getSelectedPermissions() {
+        return Array.from(
+          document.querySelectorAll("#permission-editor input[type='checkbox']:checked")
+        ).map((input) => input.value);
+      }
+
+      function renderLogs(logs) {
+        const logList = document.getElementById("log-list");
+        logList.innerHTML = "";
+
+        if (!logs || logs.length === 0) {
+          logList.innerHTML = "<p>行動履歴はありません。</p>";
+          return;
+        }
+
+        logs.forEach((log) => {
+          const item = document.createElement("div");
+          item.className = "log-item";
+
+          const title = document.createElement("div");
+          title.className = "log-title";
+          title.textContent = log.action_label || "操作";
+
+          const date = document.createElement("div");
+          date.className = "log-date";
+          date.textContent = log.created_at
+            ? new Date(log.created_at).toLocaleString("ja-JP")
+            : "";
+
+          const detail = document.createElement("div");
+          detail.className = "log-detail";
+          detail.textContent = log.action_detail || "";
+
+          item.appendChild(title);
+          item.appendChild(date);
+          item.appendChild(detail);
+          logList.appendChild(item);
+        });
+      }
+
+      async function loadSubAdmin() {
+        const { data, error } = await supabase
+          .from("admin_accounts")
+          .select("id, username, role, status, permissions, created_at")
+          .eq("id", targetId)
+          .maybeSingle();
+
+        if (error || !data || data.role !== "sub_admin") {
+          alert("対象の準管理者が見つかりません。");
+          window.location.href = "admin-management.html";
+          return false;
+        }
+
+        currentSubAdmin = data;
+
+        document.getElementById("username-value").textContent = data.username || "";
+        document.getElementById("status-value").textContent = statusLabel(data.status);
+        document.getElementById("permissions-value").textContent = permissionText(data.permissions);
+        renderPermissionEditor(data.permissions || []);
+
+        document.getElementById("stop-button").style.display = data.status === "active" ? "block" : "none";
+        document.getElementById("resume-button").style.display = data.status === "stopped" ? "block" : "none";
+
+        return true;
+      }
+
+      async function loadLogs(limitValue = 20) {
+        const { data, error } = await supabase
+          .from("admin_action_logs")
+          .select("id, action_type, action_label, action_detail, created_at")
+          .eq("admin_account_id", targetId)
+          .order("created_at", { ascending: false })
+          .limit(limitValue);
+
+        if (error) {
+          document.getElementById("log-list").innerHTML = "<p>履歴の取得に失敗しました。</p>";
+          renderDebug("履歴取得エラー: " + error.message);
+          return;
+        }
+
+        renderLogs(data || []);
+        renderDebug("履歴件数: " + (data || []).length);
+      }
+
+      async function writeAdminActionLog(actionType, actionLabel, actionDetail) {
+        const { data: me } = await supabase
+          .from("admin_accounts")
+          .select("id, username, role")
+          .eq("username", adminUsername)
+          .maybeSingle();
+
+        if (!me) return;
+
+        await supabase.from("admin_action_logs").insert([
+          {
+            admin_account_id: me.id,
+            admin_username: me.username,
+            admin_role: me.role,
+            target_type: "sub_admin",
+            target_id: String(targetId),
+            action_type: actionType,
+            action_label: actionLabel,
+            action_detail: actionDetail
+          }
+        ]);
+      }
+
+      const ok = await loadSubAdmin();
+      if (!ok) return;
+      await loadLogs(20);
+
+      document.getElementById("change-password-button").addEventListener("click", async () => {
+        const newPassword = window.prompt("新しいパスワードを入力してください");
+        if (newPassword === null) return;
+        if (!newPassword) return;
+
+        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            subadmin_id: currentSubAdmin.id,
+            password: newPassword
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.ok) {
+          alert(result?.error || "パスワード変更に失敗しました。");
+          renderDebug("パスワード変更エラー: " + (result?.error || response.status));
+          return;
+        }
+
+        await writeAdminActionLog(
+          "sub_admin_password_update",
+          "準管理者パスワード変更",
+          "対象ユーザー名: " + currentSubAdmin.username
+        );
+
+        alert("パスワードを変更しました。");
+        await loadLogs(20);
+      });
+
+      document.getElementById("save-permissions-button").addEventListener("click", async () => {
+        const nextPermissions = getSelectedPermissions();
+
+        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            subadmin_id: currentSubAdmin.id,
+            permissions: nextPermissions
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.ok) {
+          alert(result?.error || "権限変更に失敗しました。");
+          renderDebug("権限変更エラー: " + (result?.error || response.status));
+          return;
+        }
+
+        await writeAdminActionLog(
+          "sub_admin_permissions_update",
+          "準管理者権限変更",
+          "対象ユーザー名: " + currentSubAdmin.username + "\n変更後権限: " + permissionText(nextPermissions)
+        );
+
+        alert("権限を更新しました。");
+        await loadSubAdmin();
+        await loadLogs(20);
+      });
+
+      document.getElementById("show-all-logs-button").addEventListener("click", async () => {
+        await loadLogs(500);
+      });
+
+      document.getElementById("stop-button").addEventListener("click", async () => {
+        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            subadmin_id: currentSubAdmin.id,
+            status: "stopped"
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.ok) {
+          alert(result?.error || "停止に失敗しました。");
+          renderDebug("停止エラー: " + (result?.error || response.status));
+          return;
+        }
+
+        await writeAdminActionLog(
+          "sub_admin_stop",
+          "準管理者停止",
+          "対象ユーザー名: " + currentSubAdmin.username
+        );
+
+        alert("停止しました。");
+        await loadSubAdmin();
+        await loadLogs(20);
+      });
+
+      document.getElementById("resume-button").addEventListener("click", async () => {
+        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            subadmin_id: currentSubAdmin.id,
+            status: "active"
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.ok) {
+          alert(result?.error || "利用再開に失敗しました。");
+          renderDebug("利用再開エラー: " + (result?.error || response.status));
+          return;
+        }
+
+        await writeAdminActionLog(
+          "sub_admin_resume",
+          "準管理者利用再開",
+          "対象ユーザー名: " + currentSubAdmin.username
+        );
+
+        alert("利用再開しました。");
+        await loadSubAdmin();
+        await loadLogs(20);
+      });
+
+      document.getElementById("delete-button").addEventListener("click", async () => {
+        const okDelete = window.confirm("この準管理者を削除しますか？");
+        if (!okDelete) return;
+
+        const targetName = currentSubAdmin.username;
+
+        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            subadmin_id: currentSubAdmin.id
+          })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result?.ok) {
+          alert(result?.error || "削除に失敗しました。");
+          renderDebug("削除エラー: " + (result?.error || response.status));
+          return;
+        }
+
+        await writeAdminActionLog(
+          "sub_admin_delete",
+          "準管理者削除",
+          "対象ユーザー名: " + targetName
+        );
+
+        alert("削除しました。");
+        window.location.href = "admin-management.html";
+      });
+    });
+  </script>
+</body>
+</html>

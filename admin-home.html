@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>管理者メニュー</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -46,6 +47,10 @@
     .box p {
       margin: 12px 0;
     }
+
+    .hidden {
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -63,26 +68,54 @@
       <p><a href="music-management.html">音楽管理</a></p>
       <p><a href="novel-management.html">小説管理</a></p>
       <p><a href="notice-management.html">お知らせ管理</a></p>
-      <p><a href="admin-management.html">管理者の管理</a></p>
+      <p id="admin-management-wrap" class="hidden"><a href="admin-management.html">管理者の管理</a></p>
       <p><a href="maintenance-control.html">メンテナンス管理</a></p>
       <p><a href="#" id="admin-logout">ログアウト</a></p>
     </div>
   </div>
 
   <script>
-    if (sessionStorage.getItem("admin_logged_in") !== "1") {
-      window.location.href = "admin-login.html";
-    }
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
 
-    const adminUserLink = document.getElementById("admin-user-link");
-    const savedAdminName = sessionStorage.getItem("admin_username") || "管理者";
-    adminUserLink.textContent = savedAdminName + "さん";
+      const adminUserLink = document.getElementById("admin-user-link");
+      const savedAdminName = sessionStorage.getItem("admin_username") || "管理者";
+      const adminManagementWrap = document.getElementById("admin-management-wrap");
 
-    document.getElementById("admin-logout").addEventListener("click", function (e) {
-      e.preventDefault();
-      sessionStorage.removeItem("admin_logged_in");
-      sessionStorage.removeItem("admin_username");
-      window.location.href = "index.html";
+      adminUserLink.textContent = savedAdminName + "さん";
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        alert("Supabase の読み込みに失敗しました。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+
+      if (!userError && userData?.user) {
+        const { data: account } = await supabase
+          .from("accounts")
+          .select("role")
+          .eq("user_id", userData.user.id)
+          .maybeSingle();
+
+        if (account?.role === "admin") {
+          adminManagementWrap.classList.remove("hidden");
+        }
+      }
+
+      document.getElementById("admin-logout").addEventListener("click", function (e) {
+        e.preventDefault();
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        window.location.href = "index.html";
+      });
     });
   </script>
 </body>

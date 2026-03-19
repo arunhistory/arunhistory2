@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>アカウント情報</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.5rem;
+      line-height: 1.4;
+    }
+
+    a {
+      color: #f2d9e8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #ffe7f3;
+      text-decoration: none;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 24px;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    .label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    .value {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.85);
+      color: #222;
+      font-family: inherit;
+      line-height: 1.6;
+    }
+
+    .box p {
+      margin: 12px 0;
+      line-height: 1.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p id="username-line" style="text-align: left; margin-top: 0;">ユーザーさん</p>
+
+    <h1>アカウント情報</h1>
+
+    <div class="box">
+      <div class="field">
+        <span class="label">メールアドレス</span>
+        <div class="value" id="email-value">読み込み中...</div>
+      </div>
+
+      <div class="field">
+        <span class="label">パスワード</span>
+        <div class="value">＊＊＊</div>
+      </div>
+
+      <div class="field">
+        <span class="label">ユーザー名</span>
+        <div class="value" id="display-name-value">読み込み中...</div>
+      </div>
+
+      <div class="field">
+        <span class="label">生年月日</span>
+        <div class="value" id="birthdate-value">読み込み中...</div>
+      </div>
+
+      <div class="field">
+        <span class="label">性別</span>
+        <div class="value" id="gender-value">読み込み中...</div>
+      </div>
+
+      <div class="field">
+        <span class="label">国</span>
+        <div class="value" id="country-value">読み込み中...</div>
+      </div>
+
+      <p><a href="account-edit.html">アカウント情報変更</a></p>
+      <p><a href="mypage.html">マイページへ戻る</a></p>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const usernameLine = document.getElementById("username-line");
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        alert("Supabase の読み込みに失敗しました。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        const { data: maintenanceSetting, error: maintenanceError } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+          window.location.href = "maintenance.html";
+          return;
+        }
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+
+      if (!user) {
+        window.location.href = "login.html?redirect=account-info.html";
+        return;
+      }
+
+      const { data: account, error } = await supabase
+        .from("accounts")
+        .select("email, display_name, birthdate, gender, country")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (error) {
+        alert("アカウント情報の取得に失敗しました。");
+        return;
+      }
+
+      const displayName =
+        account?.display_name ||
+        user.user_metadata?.username ||
+        "ユーザー";
+
+      usernameLine.textContent = displayName + "さん";
+
+      document.getElementById("email-value").textContent =
+        account?.email || user.email || "";
+
+      document.getElementById("display-name-value").textContent =
+        displayName || "";
+
+      document.getElementById("birthdate-value").textContent =
+        account?.birthdate || "";
+
+      document.getElementById("gender-value").textContent =
+        account?.gender || "";
+
+      document.getElementById("country-value").textContent =
+        account?.country || "";
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>異物ノヴァ</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      background-color: #0b0d14;
+      color: #e8ecf7;
+      margin: 0;
+      padding: 24px;
+      line-height: 1.8;
+      font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", "Meiryo", sans-serif;
+      position: relative;
+    }
+
+    h1, h2 {
+      color: #f4f6fb;
+      font-family: "Yu Mincho", "Hiragino Mincho ProN", "MS PMincho", serif;
+    }
+
+    a {
+      color: #b8a7ff;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #d4cbff;
+      text-decoration: none;
+    }
+
+    .notice-box {
+      border-left: 4px solid #b84a4a;
+      border-top: 1px solid #5a2a2a;
+      border-right: 1px solid #5a2a2a;
+      border-bottom: 1px solid #5a2a2a;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+      background-color: #181018;
+      color: #f3e9e9;
+      box-shadow: 0 0 0 1px rgba(184, 74, 74, 0.15);
+    }
+
+    .notice-box p {
+      margin: 0;
+    }
+
+    .notice-box p + p {
+      margin-top: 8px;
+    }
+
+    .news-box {
+      max-height: 8em;
+      overflow-y: auto;
+      padding: 10px 12px;
+      background-color: #0f1320;
+      border: 1px solid #232a3d;
+      color: #cfd6e6;
+    }
+
+    .news-box ul {
+      margin: 0;
+      padding-left: 1.2em;
+    }
+
+    .news-box li {
+      line-height: 1.6;
+    }
+
+    .news-box::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .news-box::-webkit-scrollbar-thumb {
+      background-color: #2d3550;
+    }
+
+    .news-box::-webkit-scrollbar-track {
+      background-color: #111625;
+    }
+  </style>
+</head>
+<body>
+  <p style="text-align: left; margin-top: 0;">
+    <a id="user-link" href="login.html?redirect=novel.html">ログイン</a>
+    <a id="mypage-link" href="#" style="display:none; margin-left: 12px;">マイページへ</a>
+    <a id="logout-link" href="#" style="display:none; margin-left: 12px;">ログアウト</a>
+  </p>
+
+  <h1>異物ノヴァ</h1>
+
+  <p>
+    異物ノヴァは、自分の中に残り続けた感情や景色を、物語として形にしていくための名前です。<br>
+    明るいものも、苦しいものも、静かなものも、その時に書きたいと思えたものを大事にしながら残していきます。<br>
+    作品ごとに空気は変わっても、そこにある感覚だけは嘘なく置いていきたいと思っています。<br>
+    ここでは、そうして生まれた小説をまとめていきます。
+  </p>
+
+  <div class="notice-box">
+    <p>※注意</p>
+    <p>
+      この作品はAIを利用して制作しています。<br>
+      AI利用作品が苦手な方、不快に感じる可能性のある方は閲覧をお控えください。
+    </p>
+  </div>
+
+  <h2>作品一覧</h2>
+  <p>
+    <a href="blawhi.html">
+      社畜の俺が転生した異世界ファンタジーはやはりブラックだったのでぶっ壊してホワイトにしてみた
+    </a>
+  </p>
+
+  <h2>創作支援</h2>
+  <p><a href="support.html">異物ノヴァ創作支援室</a></p>
+
+  <h2>最新情報</h2>
+  <p>更新通知や最新情報は、こちらから受け取れます。</p>
+  <p>
+    <a href="https://lin.ee/w0G4HeM">
+      <img src="https://scdn.line-apps.com/n/line_add_friends/btn/ja.png" alt="友だち追加" height="36" border="0">
+    </a>
+  </p>
+
+  <h2>お知らせ</h2>
+  <div class="news-box">
+    <ul>
+      <li>2026/03/13 第18話まではリンクのみです</li>
+      <li>2026/03/13 第3話を公開準備中</li>
+      <li>2026/03/13 第2話を公開</li>
+      <li>2026/03/13 第1話を公開</li>
+      <li>2026/03/11 サイトを開設</li>
+    </ul>
+  </div>
+
+  <p><a href="https://x.com/ibutu_nova?s=21&t=oe3JylyzOH2-p5yGov2e9g">Xへ</a></p>
+  <p><a href="index.html">総合トップへ戻る</a></p>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const redirectPage = "novel.html";
+      const userLink = document.getElementById("user-link");
+      const mypageLink = document.getElementById("mypage-link");
+      const logoutLink = document.getElementById("logout-link");
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        const { data: maintenanceSetting, error: maintenanceError } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+          window.location.href = "maintenance.html";
+          return;
+        }
+      }
+
+      if (sessionStorage.getItem("admin_logged_in") === "1") {
+        const adminName = sessionStorage.getItem("admin_username") || "管理者";
+
+        userLink.textContent = adminName + "さん";
+        userLink.href = "admin-home.html";
+
+        mypageLink.textContent = "管理ホームへ";
+        mypageLink.href = "admin-home.html";
+        mypageLink.style.display = "inline";
+
+        logoutLink.style.display = "inline";
+        logoutLink.addEventListener("click", (e) => {
+          e.preventDefault();
+          sessionStorage.removeItem("admin_logged_in");
+          sessionStorage.removeItem("admin_username");
+          window.location.href = "index.html";
+        });
+
+        return;
+      }
+
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+
+      if (!user) {
+        userLink.textContent = "ログイン";
+        userLink.href = "login.html?redirect=" + encodeURIComponent(redirectPage);
+        mypageLink.style.display = "none";
+        logoutLink.style.display = "none";
+        return;
+      }
+
+      const { data: account } = await supabase
+        .from("accounts")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const displayName =
+        account?.display_name ||
+        user.user_metadata?.username ||
+        "ユーザー";
+
+      const { data: unreadNotice } = await supabase
+        .from("operator_notices")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("is_read", false)
+        .limit(1)
+        .maybeSingle();
+
+      userLink.textContent = displayName + "さん";
+      userLink.href = "mypage.html?redirect=" + encodeURIComponent(redirectPage);
+
+      mypageLink.textContent = unreadNotice
+        ? "マイページへ［未読あり］"
+        : "マイページへ";
+      mypageLink.href = "mypage.html?redirect=" + encodeURIComponent(redirectPage);
+      mypageLink.style.display = "inline";
+
+      logoutLink.style.display = "inline";
+      logoutLink.addEventListener("click", async (e) => {
+        e.preventDefault();
+        await supabase.auth.signOut();
+        window.location.href = "login.html?redirect=" + encodeURIComponent(redirectPage);
+      });
+    });
+  </script>
+</body>
+</html>

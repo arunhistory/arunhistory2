@@ -201,7 +201,7 @@
 
           const result = await response.json();
 
-          if (!response.ok || !result?.ok) {
+          if (!response.ok || !result || !result.ok) {
             alert(result?.error || "ユーザー名またはパスワードが違います。");
             return;
           }
@@ -213,8 +213,9 @@
           sessionStorage.setItem("admin_permissions", JSON.stringify(result.admin.permissions || []));
 
           window.location.href = "admin-home.html";
-        } catch (_err) {
+        } catch (error) {
           alert("ログインに失敗しました。");
+          console.error(error);
         } finally {
           adminLoginButton.disabled = false;
           adminLoginButton.textContent = "ログイン";

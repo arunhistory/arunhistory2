@@ -20,7 +20,7 @@
       margin: 0 auto;
     }
 
-    h1, h2, h3 {
+    h1, h2 {
       text-align: center;
       margin-top: 0;
       color: #111;
@@ -255,7 +255,11 @@
 
       if (adminStatus !== "active") {
         alert("この管理者アカウントは停止中です。");
-        sessionStorage.clear();
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
         window.location.href = "admin-login.html";
         return;
       }
@@ -280,6 +284,9 @@
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const updateEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin-v2";
+      const deleteEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin";
 
       const permissionLabels = {
         account_management: "アカウント管理",
@@ -400,7 +407,8 @@
         const { data, error } = await supabase
           .from("admin_action_logs")
           .select("id, action_type, action_label, action_detail, created_at")
-          .eq("admin_account_id", targetId)
+          .eq("target_type", "sub_admin")
+          .eq("target_id", String(targetId))
           .order("created_at", { ascending: false })
           .limit(limitValue);
 
@@ -437,6 +445,20 @@
         ]);
       }
 
+      async function callUpdateSubadmin(payload) {
+        const response = await fetch(updateEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        return { response, result };
+      }
+
       const ok = await loadSubAdmin();
       if (!ok) return;
       await loadLogs(20);
@@ -446,20 +468,12 @@
         if (newPassword === null) return;
         if (!newPassword) return;
 
-        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey
-          },
-          body: JSON.stringify({
-            admin_username: adminUsername,
-            subadmin_id: currentSubAdmin.id,
-            password: newPassword
-          })
+        const { response, result } = await callUpdateSubadmin({
+          admin_username: adminUsername,
+          subadmin_id: currentSubAdmin.id,
+          password: newPassword
         });
 
-        const result = await response.json();
         if (!response.ok || !result?.ok) {
           alert(result?.error || "パスワード変更に失敗しました。");
           renderDebug("パスワード変更エラー: " + (result?.error || response.status));
@@ -479,20 +493,12 @@
       document.getElementById("save-permissions-button").addEventListener("click", async () => {
         const nextPermissions = getSelectedPermissions();
 
-        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey
-          },
-          body: JSON.stringify({
-            admin_username: adminUsername,
-            subadmin_id: currentSubAdmin.id,
-            permissions: nextPermissions
-          })
+        const { response, result } = await callUpdateSubadmin({
+          admin_username: adminUsername,
+          subadmin_id: currentSubAdmin.id,
+          permissions: nextPermissions
         });
 
-        const result = await response.json();
         if (!response.ok || !result?.ok) {
           alert(result?.error || "権限変更に失敗しました。");
           renderDebug("権限変更エラー: " + (result?.error || response.status));
@@ -515,20 +521,12 @@
       });
 
       document.getElementById("stop-button").addEventListener("click", async () => {
-        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey
-          },
-          body: JSON.stringify({
-            admin_username: adminUsername,
-            subadmin_id: currentSubAdmin.id,
-            status: "stopped"
-          })
+        const { response, result } = await callUpdateSubadmin({
+          admin_username: adminUsername,
+          subadmin_id: currentSubAdmin.id,
+          status: "stopped"
         });
 
-        const result = await response.json();
         if (!response.ok || !result?.ok) {
           alert(result?.error || "停止に失敗しました。");
           renderDebug("停止エラー: " + (result?.error || response.status));
@@ -547,20 +545,12 @@
       });
 
       document.getElementById("resume-button").addEventListener("click", async () => {
-        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey
-          },
-          body: JSON.stringify({
-            admin_username: adminUsername,
-            subadmin_id: currentSubAdmin.id,
-            status: "active"
-          })
+        const { response, result } = await callUpdateSubadmin({
+          admin_username: adminUsername,
+          subadmin_id: currentSubAdmin.id,
+          status: "active"
         });
 
-        const result = await response.json();
         if (!response.ok || !result?.ok) {
           alert(result?.error || "利用再開に失敗しました。");
           renderDebug("利用再開エラー: " + (result?.error || response.status));
@@ -584,7 +574,7 @@
 
         const targetName = currentSubAdmin.username;
 
-        const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin", {
+        const response = await fetch(deleteEndpoint, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

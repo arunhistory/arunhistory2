@@ -14,59 +14,42 @@
       min-height: 100vh;
       font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
     }
-
     .container {
       max-width: 900px;
       margin: 0 auto;
     }
-
     h1, h2, h3 {
       text-align: center;
       margin-top: 0;
       color: #111;
       line-height: 1.4;
     }
-
-    h1 {
-      font-size: 2.5rem;
-    }
-
+    h1 { font-size: 2.5rem; }
     h3 {
       font-size: 1.3rem;
       margin-bottom: 12px;
     }
-
     a {
       color: #111;
       text-decoration: none;
     }
-
     a:hover {
       color: #111;
       text-decoration: underline;
     }
-
     .box {
       background: rgba(255,255,255,0.75);
       border: 1px solid rgba(0,0,0,0.15);
       padding: 24px;
       margin-bottom: 20px;
     }
-
-    .box p {
-      margin: 12px 0;
-      line-height: 1.8;
-    }
-
     label {
       display: block;
       margin-bottom: 6px;
       font-weight: bold;
       color: #111;
     }
-
-    input,
-    button {
+    input, button {
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -74,7 +57,6 @@
       font-size: 16px;
       font-family: inherit;
     }
-
     input {
       display: block;
       padding: 10px;
@@ -82,7 +64,6 @@
       background: #fff;
       color: #111;
     }
-
     button {
       padding: 12px;
       border: none;
@@ -92,15 +73,12 @@
       font-weight: bold;
       margin-top: 10px;
     }
-
     button:hover {
       background-color: #6aa676;
     }
-
     .permission-box {
       margin: 16px 0;
     }
-
     .permission-box label {
       display: flex;
       align-items: flex-start;
@@ -109,7 +87,6 @@
       line-height: 1.8;
       margin-bottom: 8px;
     }
-
     .permission-box input[type="checkbox"] {
       width: auto;
       min-width: auto;
@@ -118,55 +95,45 @@
       margin-top: 5px;
       padding: 0;
     }
-
     .subadmin-item {
       padding: 14px 0;
       border-bottom: 1px solid rgba(0,0,0,0.12);
     }
-
     .subadmin-item:last-child {
       border-bottom: none;
     }
-
     .subadmin-link {
       display: block;
       text-decoration: none;
       color: #111;
     }
-
     .subadmin-link:hover {
       text-decoration: underline;
     }
-
     .subadmin-name {
       font-weight: bold;
       margin-bottom: 6px;
       font-size: 1.1rem;
     }
-
     .subadmin-meta {
       color: #222;
       white-space: pre-wrap;
       line-height: 1.8;
     }
-
     .center-link {
       text-align: center;
       margin-top: 16px;
     }
-
     details {
       margin-top: 20px;
       background: rgba(255,255,255,0.65);
       border: 1px solid rgba(0,0,0,0.12);
       padding: 12px;
     }
-
     summary {
       cursor: pointer;
       font-weight: bold;
     }
-
     pre {
       white-space: pre-wrap;
       word-break: break-word;
@@ -177,7 +144,7 @@
 </head>
 <body>
   <div class="container">
-    <p style="text-align: left; margin-top: 0;">
+    <p style="text-align:left; margin-top:0;">
       <a id="admin-user-link" href="#">管理者さん</a>
     </p>
 
@@ -203,16 +170,16 @@
 
         <h3>権限付与</h3>
         <div class="permission-box" id="create-permissions">
-          <label><input type="checkbox" name="permissions" value="account_management">アカウント管理</label>
-          <label><input type="checkbox" name="permissions" value="user_danger_control">ユーザー削除・停止</label>
-          <label><input type="checkbox" name="permissions" value="notice_management">お知らせ管理</label>
-          <label><input type="checkbox" name="permissions" value="music_management">音楽管理</label>
-          <label><input type="checkbox" name="permissions" value="novel_management">小説管理</label>
-          <label><input type="checkbox" name="permissions" value="database_management">データベース管理</label>
+          <label><input type="checkbox" value="account_management">アカウント管理</label>
+          <label><input type="checkbox" value="user_danger_control">ユーザー削除・停止</label>
+          <label><input type="checkbox" value="notice_management">お知らせ管理</label>
+          <label><input type="checkbox" value="music_management">音楽管理</label>
+          <label><input type="checkbox" value="novel_management">小説管理</label>
+          <label><input type="checkbox" value="database_management">データベース管理</label>
         </div>
 
         <p>
-          <button type="submit">追加</button>
+          <button type="submit" id="create-button">追加</button>
         </p>
       </form>
     </div>
@@ -236,23 +203,16 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      if (sessionStorage.getItem("admin_logged_in") !== "1") {
-        window.location.href = "admin-login.html";
-        return;
-      }
-
-      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminLoggedIn = sessionStorage.getItem("admin_logged_in");
+      const adminUsername = sessionStorage.getItem("admin_username") || "";
       const adminRole = sessionStorage.getItem("admin_role") || "";
       const adminStatus = sessionStorage.getItem("admin_status") || "";
       const adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
 
-      const adminUserLink = document.getElementById("admin-user-link");
-      const subadminForm = document.getElementById("subadmin-form");
-      const subadminList = document.getElementById("subadmin-list");
-      const submitButton = subadminForm.querySelector('button[type="submit"]');
-      const debugBox = document.getElementById("debug-box");
-
-      adminUserLink.textContent = adminUsername + "さん";
+      if (adminLoggedIn !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
 
       if (adminStatus !== "active") {
         alert("この管理者アカウントは停止中です。");
@@ -270,6 +230,14 @@
         window.location.href = "admin-home.html";
         return;
       }
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+      const subadminForm = document.getElementById("subadmin-form");
+      const createButton = document.getElementById("create-button");
+      const subadminList = document.getElementById("subadmin-list");
+
+      adminUserLink.textContent = adminUsername + "さん";
 
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
         alert("Supabase の読み込みに失敗しました。");
@@ -308,11 +276,38 @@
 
       function permissionText(values) {
         if (!values || values.length === 0) return "なし";
-        return values.map((value) => permissionLabels[value] || value).join(" / ");
+        return values.map(v => permissionLabels[v] || v).join(" / ");
       }
 
-      function checkedPermissionsFromContainer(container) {
-        return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
+      function getCheckedPermissions() {
+        return Array.from(
+          document.querySelectorAll("#create-permissions input[type='checkbox']:checked")
+        ).map((input) => input.value);
+      }
+
+      async function writeAdminActionLog(targetId, targetUsername, permissions) {
+        const { data: me } = await supabase
+          .from("admin_accounts")
+          .select("id, username, role")
+          .eq("username", adminUsername)
+          .maybeSingle();
+
+        if (!me) return;
+
+        await supabase.from("admin_action_logs").insert([
+          {
+            admin_account_id: me.id,
+            admin_username: me.username,
+            admin_role: me.role,
+            target_type: "sub_admin",
+            target_id: String(targetId),
+            action_type: "sub_admin_create",
+            action_label: "準管理者追加",
+            action_detail:
+              "対象ユーザー名: " + targetUsername + "\n" +
+              "付与権限: " + permissionText(permissions)
+          }
+        ]);
       }
 
       async function loadSubadmins() {
@@ -330,19 +325,15 @@
           return;
         }
 
-        renderSubadmins(data || []);
-        renderDebug("準管理者件数: " + (data || []).length);
-      }
-
-      function renderSubadmins(items) {
         subadminList.innerHTML = "";
 
-        if (!items || items.length === 0) {
+        if (!data || data.length === 0) {
           subadminList.innerHTML = "<p>準管理者はいません。</p>";
+          renderDebug("準管理者件数: 0");
           return;
         }
 
-        items.forEach((item) => {
+        data.forEach((item) => {
           const row = document.createElement("div");
           row.className = "subadmin-item";
 
@@ -365,6 +356,8 @@
           row.appendChild(link);
           subadminList.appendChild(row);
         });
+
+        renderDebug("準管理者件数: " + data.length);
       }
 
       await loadSubadmins();
@@ -374,15 +367,15 @@
 
         const username = document.getElementById("subadmin-name").value.trim();
         const password = document.getElementById("subadmin-password").value;
-        const permissions = checkedPermissionsFromContainer(document.getElementById("create-permissions"));
+        const permissions = getCheckedPermissions();
 
         if (!username || !password) {
           alert("ユーザー名とパスワードを入力してください。");
           return;
         }
 
-        submitButton.disabled = true;
-        submitButton.textContent = "追加中...";
+        createButton.disabled = true;
+        createButton.textContent = "追加中...";
 
         try {
           const response = await fetch(createEndpoint, {
@@ -393,52 +386,47 @@
             },
             body: JSON.stringify({
               admin_username: adminUsername,
-              username,
-              password,
-              permissions
+              username: username,
+              password: password,
+              permissions: permissions
             })
           });
 
-          const result = await response.json();
+          const rawText = await response.text();
+          let result = null;
 
-          if (!response.ok || !result?.ok) {
-            alert(result?.error || "追加に失敗しました。");
-            renderDebug("追加エラー: " + (result?.error || response.status));
+          try {
+            result = JSON.parse(rawText);
+          } catch (_) {
+            renderDebug("追加レスポンス解析失敗\nstatus=" + response.status + "\n\n" + rawText);
+            alert("追加に失敗しました。");
             return;
           }
 
-          const { data: me } = await supabase
-            .from("admin_accounts")
-            .select("id, username, role")
-            .eq("username", adminUsername)
-            .maybeSingle();
-
-          if (me) {
-            await supabase.from("admin_action_logs").insert([
-              {
-                admin_account_id: me.id,
-                admin_username: me.username,
-                admin_role: me.role,
-                target_type: "sub_admin",
-                target_id: String(result.sub_admin.id),
-                action_type: "sub_admin_create",
-                action_label: "準管理者追加",
-                action_detail:
-                  "対象ユーザー名: " + result.sub_admin.username + "\n" +
-                  "付与権限: " + permissionText(result.sub_admin.permissions || [])
-              }
-            ]);
+          if (!response.ok || !result || !result.ok) {
+            renderDebug(
+              "追加エラー\nstatus=" + response.status + "\n\n" +
+              JSON.stringify(result, null, 2)
+            );
+            alert(result?.error || "追加に失敗しました。");
+            return;
           }
+
+          await writeAdminActionLog(
+            result.sub_admin.id,
+            result.sub_admin.username,
+            result.sub_admin.permissions || permissions
+          );
 
           alert("準管理者を追加しました。");
           subadminForm.reset();
           await loadSubadmins();
         } catch (err) {
-          alert("予期しないエラーが発生しました。");
           renderDebug("予期しないエラー: " + String(err));
+          alert("追加に失敗しました。");
         } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = "追加";
+          createButton.disabled = false;
+          createButton.textContent = "追加";
         }
       });
     });

@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>管理者ログイン</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.5rem;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    a {
+      color: #111;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #111;
+      text-decoration: underline;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+    }
+
+    .box p {
+      margin: 12px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    input,
+    button {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    input {
+      display: block;
+      padding: 10px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: #fff;
+      color: #111;
+    }
+
+    button {
+      padding: 12px;
+      border: none;
+      background-color: #4f8f5b;
+      color: #111;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #6aa676;
+    }
+
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>管理者ログイン</h1>
+
+    <div class="box">
+      <form id="admin-login-form">
+        <p>
+          <label for="admin-id">ユーザー名</label>
+          <input type="text" id="admin-id" name="admin-id" required>
+        </p>
+
+        <p>
+          <label for="admin-password">パスワード</label>
+          <input type="password" id="admin-password" name="admin-password" required>
+        </p>
+
+        <p>
+          <button type="submit">ログイン</button>
+        </p>
+      </form>
+
+      <p class="center-link">
+        <a href="maintenance.html">戻る</a>
+      </p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("admin-login-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const adminId = document.getElementById("admin-id").value.trim();
+      const adminPassword = document.getElementById("admin-password").value;
+
+      if (adminId === "admin" && adminPassword === "adminpass") {
+        sessionStorage.setItem("admin_logged_in", "1");
+        sessionStorage.setItem("admin_username", adminId);
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      alert("ユーザー名orパスワードが間違ってます");
+    });
+  </script>
+</body>
+</html>

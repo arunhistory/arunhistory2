@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>準管理者管理</title>
+  <title>準管理者メニュー</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
@@ -20,7 +20,7 @@
       margin: 0 auto;
     }
 
-    h1, h2 {
+    h1, h2, h3 {
       text-align: center;
       margin-top: 0;
       color: #111;
@@ -29,6 +29,11 @@
 
     h1 {
       font-size: 2.5rem;
+    }
+
+    h3 {
+      font-size: 1.3rem;
+      margin-bottom: 12px;
     }
 
     a {
@@ -92,41 +97,6 @@
       background-color: #6aa676;
     }
 
-    .danger-button {
-      background-color: #b85b5b;
-    }
-
-    .danger-button:hover {
-      background-color: #cf7777;
-    }
-
-    .subadmin-item {
-      padding: 14px 0;
-      border-bottom: 1px solid rgba(0,0,0,0.12);
-    }
-
-    .subadmin-item:last-child {
-      border-bottom: none;
-    }
-
-    .subadmin-name {
-      font-weight: bold;
-      margin-bottom: 6px;
-    }
-
-    .subadmin-meta {
-      color: #222;
-      white-space: pre-wrap;
-      margin-bottom: 10px;
-      line-height: 1.8;
-    }
-
-    .subadmin-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
     .permission-box {
       margin: 16px 0;
     }
@@ -147,6 +117,37 @@
       display: inline-block;
       margin-top: 5px;
       padding: 0;
+    }
+
+    .subadmin-item {
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+    }
+
+    .subadmin-item:last-child {
+      border-bottom: none;
+    }
+
+    .subadmin-link {
+      display: block;
+      text-decoration: none;
+      color: #111;
+    }
+
+    .subadmin-link:hover {
+      text-decoration: underline;
+    }
+
+    .subadmin-name {
+      font-weight: bold;
+      margin-bottom: 6px;
+      font-size: 1.1rem;
+    }
+
+    .subadmin-meta {
+      color: #222;
+      white-space: pre-wrap;
+      line-height: 1.8;
     }
 
     .center-link {
@@ -180,7 +181,7 @@
       <a id="admin-user-link" href="#">管理者さん</a>
     </p>
 
-    <h1>準管理者管理</h1>
+    <h1>準管理者メニュー</h1>
 
     <p class="center-link">
       <a href="admin-home.html">戻る</a>
@@ -200,6 +201,7 @@
           <input type="password" id="subadmin-password" required>
         </p>
 
+        <h3>権限付与</h3>
         <div class="permission-box" id="create-permissions">
           <label><input type="checkbox" name="permissions" value="account_management">アカウント管理</label>
           <label><input type="checkbox" name="permissions" value="user_danger_control">ユーザー削除・停止</label>
@@ -311,14 +313,6 @@
         return Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
       }
 
-      function permissionEditorHtml(idPrefix, selectedPermissions = []) {
-        const keys = Object.keys(permissionLabels);
-        return keys.map((key) => {
-          const checked = selectedPermissions.includes(key) ? "checked" : "";
-          return `<label><input type="checkbox" data-group="${idPrefix}" value="${key}" ${checked}>${permissionLabels[key]}</label>`;
-        }).join("");
-      }
-
       async function loadSubadmins() {
         subadminList.innerHTML = "<p>読み込み中...</p>";
 
@@ -350,6 +344,10 @@
           const row = document.createElement("div");
           row.className = "subadmin-item";
 
+          const link = document.createElement("a");
+          link.className = "subadmin-link";
+          link.href = "admin-user-detail.html?id=" + encodeURIComponent(item.id);
+
           const name = document.createElement("div");
           name.className = "subadmin-name";
           name.textContent = item.username || "名称未設定";
@@ -360,212 +358,9 @@
             "状態: " + statusLabel(item.status) + "\n" +
             "権限: " + permissionText(item.permissions);
 
-          const actions = document.createElement("div");
-          actions.className = "subadmin-actions";
-
-          const editNameBtn = document.createElement("button");
-          editNameBtn.type = "button";
-          editNameBtn.textContent = "ユーザー名変更";
-          editNameBtn.addEventListener("click", async () => {
-            const newName = window.prompt("新しいユーザー名を入力してください", item.username || "");
-            if (newName === null) return;
-            const trimmed = newName.trim();
-            if (!trimmed) return;
-
-            const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "apikey": supabaseKey
-              },
-              body: JSON.stringify({
-                admin_username: adminUsername,
-                subadmin_id: item.id,
-                username: trimmed
-              })
-            });
-
-            const result = await response.json();
-            if (!response.ok || !result?.ok) {
-              alert(result?.error || "変更に失敗しました。");
-              renderDebug("ユーザー名変更エラー: " + (result?.error || response.status));
-              return;
-            }
-
-            await loadSubadmins();
-          });
-
-          const editPasswordBtn = document.createElement("button");
-          editPasswordBtn.type = "button";
-          editPasswordBtn.textContent = "パスワード変更";
-          editPasswordBtn.addEventListener("click", async () => {
-            const newPassword = window.prompt("新しいパスワードを入力してください");
-            if (newPassword === null) return;
-            if (!newPassword) return;
-
-            const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "apikey": supabaseKey
-              },
-              body: JSON.stringify({
-                admin_username: adminUsername,
-                subadmin_id: item.id,
-                password: newPassword
-              })
-            });
-
-            const result = await response.json();
-            if (!response.ok || !result?.ok) {
-              alert(result?.error || "変更に失敗しました。");
-              renderDebug("パスワード変更エラー: " + (result?.error || response.status));
-              return;
-            }
-
-            alert("パスワードを変更しました。");
-            await loadSubadmins();
-          });
-
-          const editPermissionsBtn = document.createElement("button");
-          editPermissionsBtn.type = "button";
-          editPermissionsBtn.textContent = "権限変更";
-          editPermissionsBtn.addEventListener("click", async () => {
-            const wrap = document.createElement("div");
-            wrap.className = "permission-box";
-            wrap.innerHTML = permissionEditorHtml("edit-" + item.id, item.permissions || []);
-
-            const temp = document.createElement("div");
-            temp.appendChild(wrap);
-
-            const ok = window.confirm("権限編集モードに入るため、OKを押したあと下の通信結果を確認してください。");
-            if (!ok) return;
-
-            subadminList.innerHTML = "";
-            const editRow = document.createElement("div");
-            editRow.className = "subadmin-item";
-
-            const title = document.createElement("div");
-            title.className = "subadmin-name";
-            title.textContent = item.username + " の権限変更";
-
-            const box = document.createElement("div");
-            box.className = "permission-box";
-            box.innerHTML = permissionEditorHtml("live-" + item.id, item.permissions || []);
-
-            const saveBtn = document.createElement("button");
-            saveBtn.type = "button";
-            saveBtn.textContent = "権限を保存";
-            saveBtn.addEventListener("click", async () => {
-              const nextPermissions = Array.from(box.querySelectorAll('input[type="checkbox"]:checked')).map(input => input.value);
-
-              const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  "apikey": supabaseKey
-                },
-                body: JSON.stringify({
-                  admin_username: adminUsername,
-                  subadmin_id: item.id,
-                  permissions: nextPermissions
-                })
-              });
-
-              const result = await response.json();
-              if (!response.ok || !result?.ok) {
-                alert(result?.error || "権限変更に失敗しました。");
-                renderDebug("権限変更エラー: " + (result?.error || response.status));
-                return;
-              }
-
-              await loadSubadmins();
-            });
-
-            const cancelBtn = document.createElement("button");
-            cancelBtn.type = "button";
-            cancelBtn.className = "danger-button";
-            cancelBtn.textContent = "キャンセル";
-            cancelBtn.addEventListener("click", async () => {
-              await loadSubadmins();
-            });
-
-            editRow.appendChild(title);
-            editRow.appendChild(box);
-            editRow.appendChild(saveBtn);
-            editRow.appendChild(cancelBtn);
-            subadminList.appendChild(editRow);
-          });
-
-          const stopBtn = document.createElement("button");
-          stopBtn.type = "button";
-          stopBtn.textContent = item.status === "stopped" ? "有効化" : "停止";
-          stopBtn.addEventListener("click", async () => {
-            const nextStatus = item.status === "stopped" ? "active" : "stopped";
-
-            const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "apikey": supabaseKey
-              },
-              body: JSON.stringify({
-                admin_username: adminUsername,
-                subadmin_id: item.id,
-                status: nextStatus
-              })
-            });
-
-            const result = await response.json();
-            if (!response.ok || !result?.ok) {
-              alert(result?.error || "状態変更に失敗しました。");
-              renderDebug("状態変更エラー: " + (result?.error || response.status));
-              return;
-            }
-
-            await loadSubadmins();
-          });
-
-          const deleteBtn = document.createElement("button");
-          deleteBtn.type = "button";
-          deleteBtn.className = "danger-button";
-          deleteBtn.textContent = "削除";
-          deleteBtn.addEventListener("click", async () => {
-            const ok = window.confirm("この準管理者を削除しますか？");
-            if (!ok) return;
-
-            const response = await fetch("https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                "apikey": supabaseKey
-              },
-              body: JSON.stringify({
-                admin_username: adminUsername,
-                subadmin_id: item.id
-              })
-            });
-
-            const result = await response.json();
-            if (!response.ok || !result?.ok) {
-              alert(result?.error || "削除に失敗しました。");
-              renderDebug("削除エラー: " + (result?.error || response.status));
-              return;
-            }
-
-            await loadSubadmins();
-          });
-
-          actions.appendChild(editNameBtn);
-          actions.appendChild(editPasswordBtn);
-          actions.appendChild(editPermissionsBtn);
-          actions.appendChild(stopBtn);
-          actions.appendChild(deleteBtn);
-
-          row.appendChild(name);
-          row.appendChild(meta);
-          row.appendChild(actions);
-
+          link.appendChild(name);
+          link.appendChild(meta);
+          row.appendChild(link);
           subadminList.appendChild(row);
         });
       }

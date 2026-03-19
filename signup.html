@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>新規登録</title>
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      color: #f5f5f5;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.5rem;
+      line-height: 1.4;
+    }
+
+    a {
+      color: #f2d9e8;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #ffe7f3;
+      text-decoration: none;
+    }
+
+    .form-box {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.25);
+      padding: 24px;
+    }
+
+    form {
+      margin: 0;
+    }
+
+    .form-box p {
+      margin: 0 0 16px 0;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+    }
+
+    input,
+    select {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.95);
+      color: #222;
+      font-family: inherit;
+    }
+
+    input[type="date"] {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      display: block;
+      box-sizing: border-box;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.95);
+      color: #222;
+      font-family: inherit;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    .agree-box {
+      margin: 16px 0;
+    }
+
+    .agree-box label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-weight: normal;
+      line-height: 1.8;
+      margin-bottom: 10px;
+    }
+
+    .agree-box input[type="checkbox"] {
+      width: auto;
+      min-width: auto;
+      max-width: none;
+      display: inline-block;
+      margin-top: 5px;
+      padding: 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      background-color: #7a5c61;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #9a747b;
+    }
+
+    .sub-links {
+      text-align: center;
+      margin-top: 20px;
+    }
+
+    .sub-links p {
+      margin: 8px 0;
+    }
+
+    .cf-turnstile {
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>新規登録</h1>
+
+    <div class="form-box">
+      <form id="signup-form">
+        <p>
+          <label for="email">メールアドレス（必須）</label>
+          <input type="email" id="email" name="email" required>
+        </p>
+
+        <p>
+          <label for="password">パスワード</label>
+          <input type="password" id="password" name="password" required>
+        </p>
+
+        <p>
+          <label for="username">ユーザー名（必須）</label>
+          <input type="text" id="username" name="username" required>
+        </p>
+
+        <p>
+          <label for="birthdate">生年月日（必須）</label>
+          <input type="date" id="birthdate" name="birthdate" required>
+        </p>
+
+        <p>
+          <label for="gender">性別</label>
+          <select id="gender" name="gender" required>
+            <option value="">選択してください</option>
+            <option value="男性">男性</option>
+            <option value="女性">女性</option>
+            <option value="不明">不明</option>
+            <option value="未回答">未回答</option>
+          </select>
+        </p>
+
+        <p>
+          <label for="country">国</label>
+          <input type="text" id="country" name="country">
+        </p>
+
+        <div class="agree-box">
+          <label for="agree-novel">
+            <input type="checkbox" id="agree-novel" name="agree-novel">
+            <span><a href="novel-tou.html" target="_blank">小説利用規約</a>に同意します</span>
+          </label>
+
+          <label for="agree-music">
+            <input type="checkbox" id="agree-music" name="agree-music">
+            <span><a href="music-tuc.html" target="_blank">音楽利用規約</a>に同意します</span>
+          </label>
+
+          <label for="agree-privacy">
+            <input type="checkbox" id="agree-privacy" name="agree-privacy">
+            <span><a href="privacy-policy.html" target="_blank">プライバシーポリシー</a>に同意します</span>
+          </label>
+        </div>
+
+        <div class="cf-turnstile" data-sitekey="0x4AAAAAACr-YTe5sfRv68rR"></div>
+
+        <p style="margin-top: 16px;">
+          <button type="submit">登録する</button>
+        </p>
+      </form>
+
+      <div class="sub-links">
+        <p>すでにアカウントをお持ちの方は <a id="login-link" href="login.html">ログインはこちら</a></p>
+        <p><a id="back-link" href="index.html">前のページへ戻る</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const params = new URLSearchParams(window.location.search);
+      const redirect = params.get("redirect") || "index.html";
+
+      const backLink = document.getElementById("back-link");
+      const loginLink = document.getElementById("login-link");
+      const form = document.getElementById("signup-form");
+      const submitButton = form.querySelector('button[type="submit"]');
+
+      backLink.href = redirect;
+      loginLink.href = "login.html?redirect=" + encodeURIComponent(redirect);
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        alert("Supabase の読み込みに失敗しました。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        const { data: maintenanceSetting, error: maintenanceError } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+          window.location.href = "maintenance.html";
+          return;
+        }
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
+        if (!turnstileResponse) {
+          alert("bot対策の確認を完了してください。");
+          return;
+        }
+
+        const agreeNovel = document.getElementById("agree-novel").checked;
+        const agreeMusic = document.getElementById("agree-music").checked;
+        const agreePrivacy = document.getElementById("agree-privacy").checked;
+
+        if (!agreeNovel || !agreeMusic || !agreePrivacy) {
+          alert("利用規約およびプライバシーポリシーへの同意が必要です。");
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "登録中...";
+
+        try {
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value;
+          const username = document.getElementById("username").value.trim();
+          const birthdate = document.getElementById("birthdate").value;
+          const gender = document.getElementById("gender").value;
+          const country = document.getElementById("country").value.trim();
+
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: {
+                username,
+                birthdate,
+                gender,
+                country
+              }
+            }
+          });
+
+          if (error) {
+            alert("登録に失敗しました: " + error.message);
+            return;
+          }
+
+          alert("登録されました");
+          window.location.href = "login.html?redirect=" + encodeURIComponent(redirect);
+        } catch (err) {
+          alert("予期しないエラーが発生しました。");
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "登録する";
+          if (window.turnstile) {
+            window.turnstile.reset();
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>

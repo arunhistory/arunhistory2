@@ -245,19 +245,43 @@
         submitButton.textContent = "送信中...";
 
         try {
-          const { error } = await supabase
+          const fileExt = selectedFile.name.includes(".")
+            ? selectedFile.name.split(".").pop().toLowerCase()
+            : "png";
+
+          const safeExt = ["jpg", "jpeg", "png", "webp"].includes(fileExt)
+            ? fileExt
+            : "png";
+
+          const fileName = `${user.id}/support_${Date.now()}.${safeExt}`;
+
+          const { error: uploadError } = await supabase.storage
+            .from("novel-support-images")
+            .upload(fileName, selectedFile, {
+              upsert: false
+            });
+
+          if (uploadError) {
+            alert("画像アップロードに失敗しました: " + uploadError.message);
+            return;
+          }
+
+          const screenshotUrl = fileName;
+
+          const { error: insertError } = await supabase
             .from("novel_support_applications")
             .insert([
               {
                 user_id: user.id,
-                screenshot_url: null,
+                note_name: "",
+                screenshot_url: screenshotUrl,
                 detected_plan: null,
                 status: "申請中"
               }
             ]);
 
-          if (error) {
-            alert("申請に失敗しました: " + error.message);
+          if (insertError) {
+            alert("申請に失敗しました: " + insertError.message);
             return;
           }
 

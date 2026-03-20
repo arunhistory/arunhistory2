@@ -69,7 +69,7 @@
     .image-wrap {
       overflow: hidden;
       border: 1px solid rgba(0,0,0,0.15);
-      background: #fff;
+      background: #444;
       padding: 0;
       height: 70vh;
       min-height: 420px;
@@ -85,18 +85,20 @@
 
     #support-image {
       display: block;
+      max-width: 100%;
+      max-height: 100%;
       width: auto;
       height: auto;
-      max-width: none;
-      max-height: none;
       position: absolute;
-      top: 50%;
-      left: 50%;
-      transform-origin: center center;
+      top: 0;
+      left: 0;
+      transform-origin: top left;
       will-change: transform;
       user-select: none;
       -webkit-user-drag: none;
       pointer-events: none;
+      border: 2px solid #222;
+      box-sizing: border-box;
     }
 
     .message {
@@ -218,32 +220,38 @@
         const scaledWidth = naturalWidth * scale;
         const scaledHeight = naturalHeight * scale;
 
-        const limitX = Math.max(0, (scaledWidth - wrapWidth) / 2);
-        const limitY = Math.max(0, (scaledHeight - wrapHeight) / 2);
+        const minX = Math.min(0, wrapWidth - scaledWidth);
+        const minY = Math.min(0, wrapHeight - scaledHeight);
+        const maxX = 0;
+        const maxY = 0;
 
         if (scaledWidth <= wrapWidth) {
-          offsetX = 0;
+          offsetX = (wrapWidth - scaledWidth) / 2;
         } else {
-          offsetX = Math.max(-limitX, Math.min(limitX, offsetX));
+          offsetX = Math.max(minX, Math.min(maxX, offsetX));
         }
 
         if (scaledHeight <= wrapHeight) {
-          offsetY = 0;
+          offsetY = (wrapHeight - scaledHeight) / 2;
         } else {
-          offsetY = Math.max(-limitY, Math.min(limitY, offsetY));
+          offsetY = Math.max(minY, Math.min(maxY, offsetY));
         }
       }
 
       function applyTransform() {
         clampOffsets();
-        supportImage.style.transform =
-          `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) scale(${scale})`;
+        supportImage.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
       }
 
       function resetView() {
         scale = 1;
-        offsetX = 0;
-        offsetY = 0;
+
+        const wrapWidth = imageWrap.clientWidth;
+        const wrapHeight = imageWrap.clientHeight;
+
+        offsetX = (wrapWidth - naturalWidth) / 2;
+        offsetY = (wrapHeight - naturalHeight) / 2;
+
         applyTransform();
       }
 

@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>危険操作設定</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.3rem;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    a {
+      color: #111;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #111;
+      text-decoration: underline;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .box p {
+      margin: 12px 0;
+      line-height: 1.8;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    input,
+    select,
+    textarea {
+      display: block;
+      padding: 10px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: #fff;
+      color: #111;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    input[readonly] {
+      background: rgba(240,240,240,0.95);
+      color: #555;
+    }
+
+    .danger-button {
+      width: 100%;
+      padding: 16px;
+      font-size: 20px;
+      border: 2px solid #111;
+      background: repeating-linear-gradient(
+        -45deg,
+        #ffd400 0px,
+        #ffd400 14px,
+        #111 14px,
+        #111 28px
+      );
+      color: #c00000;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: bold;
+      letter-spacing: 1px;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.35);
+    }
+
+    .danger-button:hover {
+      filter: brightness(1.05);
+    }
+
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    .warning-box {
+      background: rgba(255,255,255,0.75);
+      border: 2px solid rgba(120,0,0,0.45);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .warning-title {
+      font-weight: bold;
+      color: #b00000;
+      margin-bottom: 8px;
+    }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p style="text-align: left; margin-top: 0;">
+      <a id="admin-user-link" href="#">管理者さん</a>
+    </p>
+
+    <h1>危険操作設定</h1>
+
+    <div class="warning-box">
+      <p class="warning-title">警告</p>
+      <p>
+        この画面は危険操作専用です。<br>
+        内容を確認したうえで進んでください。
+      </p>
+    </div>
+
+    <div class="box">
+      <form id="danger-settings-form">
+        <p>
+          <label for="danger-action">申請</label>
+          <select id="danger-action" name="danger-action" required>
+            <option value="">選択してください</option>
+            <option value="BAN">BAN</option>
+            <option value="利用停止">利用停止</option>
+            <option value="一部利用停止">一部利用停止</option>
+            <option value="利用再開">利用再開</option>
+            <option value="削除">削除</option>
+          </select>
+        </p>
+
+        <p>
+          <label for="danger-reason">理由</label>
+          <textarea id="danger-reason" name="danger-reason" required></textarea>
+        </p>
+
+        <p>
+          <label for="danger-by">どのアカウントが</label>
+          <input type="text" id="danger-by" name="danger-by" readonly>
+        </p>
+
+        <p>
+          <label for="danger-at">いつこの処理をする</label>
+          <input type="text" id="danger-at" name="danger-at" readonly>
+        </p>
+
+        <p>
+          <button type="submit" class="danger-button" id="danger-submit-button">進む</button>
+        </p>
+      </form>
+
+      <p class="center-link">
+        <a id="back-link" href="#">戻る</a>
+      </p>
+    </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminId = sessionStorage.getItem("admin_id");
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+
+      let adminPermissions = [];
+      try {
+        adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+        if (!Array.isArray(adminPermissions)) {
+          adminPermissions = [];
+        }
+      } catch {
+        adminPermissions = [];
+      }
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+      const submitButton = document.getElementById("danger-submit-button");
+
+      adminUserLink.textContent = adminUsername + "さん";
+
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get("id");
+
+      function clearAdminSession() {
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_id");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
+      }
+
+      function renderDebug(extra = "") {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_id: " + (adminId || "") + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "user_id: " + (userId || "") + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
+      }
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        clearAdminSession();
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      if (!userId) {
+        alert("対象ユーザーが指定されていません。");
+        window.location.href = "account-info-admin.html";
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+
+      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = null, logTargetId = null) {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            target_type: logTargetType !== null ? logTargetType : (adminRole === "sub_admin" ? "sub_admin" : null),
+            target_id: logTargetId !== null ? logTargetId : (adminRole === "sub_admin" ? adminId : null),
+            action_type: actionType,
+            action_label: actionLabel,
+            action_detail: actionDetail
+          })
+        });
+
+        const rawText = await response.text();
+
+        renderDebug(
+          "log status: " + response.status +
+          "\nlog response:\n" + rawText
+        );
+
+        return response.ok;
+      }
+
+      const canUseDangerSettings =
+        adminRole === "admin" ||
+        (adminRole === "sub_admin" && adminPermissions.includes("user_danger_control"));
+
+      if (!canUseDangerSettings) {
+        try {
+          await writePageLog(
+            "admin_forbidden_page_access",
+            "権限外ページアクセス",
+            "page: user-danger-settings.html / reason: user_danger_control権限なし",
+            "user",
+            userId
+          );
+        } catch (error) {
+          renderDebug("拒否ログ保存失敗: " + String(error));
+        }
+
+        alert("この機能を使う権限がありません。");
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      const dangerVerifiedUserId = sessionStorage.getItem("danger_verified_user_id");
+      const dangerVerifiedBy = sessionStorage.getItem("danger_verified_by");
+      const dangerVerifiedAt = sessionStorage.getItem("danger_verified_at");
+
+      if (!dangerVerifiedUserId || dangerVerifiedUserId !== userId || !dangerVerifiedBy || !dangerVerifiedAt) {
+        alert("危険操作用の再認証が必要です。");
+        window.location.href = "admin-danger-login.html?id=" + encodeURIComponent(userId);
+        return;
+      }
+
+      try {
+        await writePageLog(
+          "user_danger_settings_view",
+          "危険操作設定閲覧",
+          `page: user-danger-settings.html / user_id: ${userId} / role: ${adminRole}`,
+          "user",
+          userId
+        );
+      } catch (error) {
+        renderDebug("閲覧ログ保存失敗: " + String(error));
+      }
+
+      document.getElementById("danger-by").value = dangerVerifiedBy;
+      document.getElementById("danger-at").value = new Date(dangerVerifiedAt).toLocaleString("ja-JP");
+      document.getElementById("back-link").href = "user-detail.html?id=" + encodeURIComponent(userId);
+
+      document.getElementById("danger-settings-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const action = document.getElementById("danger-action").value;
+        const reason = document.getElementById("danger-reason").value.trim();
+
+        if (!action || reason === "") {
+          alert("申請と理由を入力してください。");
+          return;
+        }
+
+        const confirmed = window.confirm("本当によろしいですか？");
+        if (!confirmed) {
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "処理中...";
+
+        try {
+          await writePageLog(
+            "user_danger_settings_submit",
+            "危険操作設定入力",
+            `page: user-danger-settings.html / user_id: ${userId} / action: ${action} / reason: ${reason}`,
+            "user",
+            userId
+          );
+        } catch (error) {
+          renderDebug("入力ログ保存失敗: " + String(error));
+        }
+
+        sessionStorage.setItem("danger_action_target_user_id", userId);
+        sessionStorage.setItem("danger_action_type", action);
+        sessionStorage.setItem("danger_action_reason", reason);
+
+        window.location.href = "user-danger-confirm.html?id=" + encodeURIComponent(userId);
+      });
+
+      renderDebug("危険操作設定表示成功");
+    });
+  </script>
+</body>
+</html>

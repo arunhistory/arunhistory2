@@ -237,6 +237,7 @@
 
           sessionStorage.setItem("admin_logged_in", "1");
           sessionStorage.setItem("admin_username", result.admin.username);
+          sessionStorage.setItem("admin_id", String(result.admin.id));
           sessionStorage.setItem("admin_role", result.admin.role);
           sessionStorage.setItem("admin_status", result.admin.status);
           sessionStorage.setItem("admin_permissions", JSON.stringify(result.admin.permissions || []));

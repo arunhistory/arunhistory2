@@ -73,8 +73,6 @@
 
     input[type="file"] {
       padding: 8px;
-      background: rgba(255,255,255,0.95);
-      color: #222;
     }
 
     button {
@@ -112,27 +110,6 @@
       color: #f5f5f5;
       margin-top: 16px;
     }
-
-    details {
-      margin-top: 20px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 12px;
-    }
-
-    summary {
-      cursor: pointer;
-      font-weight: bold;
-      color: #f5f5f5;
-    }
-
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      margin: 12px 0 0 0;
-      font-size: 14px;
-      color: #f5f5f5;
-    }
   </style>
 </head>
 <body>
@@ -165,28 +142,17 @@
       </form>
 
       <p class="center-link">
-        <a href="user-applications.html">戻る</a>
+        <a href="application-status.html">戻る</a>
       </p>
     </div>
 
-    <details>
-      <summary>通信結果</summary>
-      <pre id="debug-box">読み込み中...</pre>
-    </details>
-  </div>
-
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      const debugBox = document.getElementById("debug-box");
       const form = document.getElementById("novel-support-form");
       const submitButton = document.getElementById("submit-button");
       const screenshotInput = document.getElementById("support-screenshot");
       const previewImage = document.getElementById("preview-image");
       const previewEmpty = document.getElementById("preview-empty");
-
-      function renderDebug(extra = "") {
-        debugBox.textContent = extra || "待機中";
-      }
 
       function showPreview(file) {
         if (!file) {
@@ -211,8 +177,7 @@
       });
 
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
-        renderDebug("Supabase の読み込みに失敗しました。");
+        alert("ページの読み込みに失敗しました。");
         return;
       }
 
@@ -225,12 +190,9 @@
       } = await supabase.auth.getSession();
 
       if (!session) {
-        alert("ログインが必要です。");
         window.location.href = "login.html?redirect=" + encodeURIComponent("application-novel-support.html");
         return;
       }
-
-      renderDebug("初期表示成功");
 
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -254,19 +216,14 @@
           const { error: uploadError } = await supabase
             .storage
             .from("novel-support-screenshots")
-            .upload(filePath, file, {
-              upsert: false
-            });
+            .upload(filePath, file, { upsert: false });
 
           if (uploadError) {
-            renderDebug("Storage upload error\n\n" + uploadError.message);
             alert("画像のアップロードに失敗しました。");
             submitButton.disabled = false;
             submitButton.textContent = "送信";
             return;
           }
-
-          const screenshotUrl = filePath;
 
           const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application`, {
             method: "POST",
@@ -277,7 +234,7 @@
             },
             body: JSON.stringify({
               note_name: noteName,
-              screenshot_url: screenshotUrl
+              screenshot_url: filePath
             })
           });
 
@@ -287,11 +244,6 @@
           try {
             submitResult = submitRawText ? JSON.parse(submitRawText) : {};
           } catch (_) {
-            renderDebug(
-              "submit response parse error\n\n" +
-              "status=" + submitResponse.status + "\n\n" +
-              submitRawText
-            );
             alert("申請の送信に失敗しました。");
             submitButton.disabled = false;
             submitButton.textContent = "送信";
@@ -299,10 +251,6 @@
           }
 
           if (!submitResponse.ok || !submitResult || !submitResult.ok) {
-            renderDebug(
-              "submit response error\n\n" +
-              JSON.stringify(submitResult, null, 2)
-            );
             alert(submitResult?.error || "申請の送信に失敗しました。");
             submitButton.disabled = false;
             submitButton.textContent = "送信";
@@ -312,10 +260,6 @@
           const applicationId = submitResult.application_id;
 
           if (!applicationId) {
-            renderDebug(
-              "application_id missing\n\n" +
-              JSON.stringify(submitResult, null, 2)
-            );
             alert("申請は送信されましたが、分類処理に進めませんでした。");
             submitButton.disabled = false;
             submitButton.textContent = "送信";
@@ -340,11 +284,6 @@
           try {
             classifyResult = classifyRawText ? JSON.parse(classifyRawText) : {};
           } catch (_) {
-            renderDebug(
-              "classify response parse error\n\n" +
-              "status=" + classifyResponse.status + "\n\n" +
-              classifyRawText
-            );
             alert("申請は送信されましたが、分類処理に失敗しました。");
             form.reset();
             showPreview(null);
@@ -352,11 +291,6 @@
             submitButton.textContent = "送信";
             return;
           }
-
-          renderDebug(
-            "submit response:\n" + JSON.stringify(submitResult, null, 2) +
-            "\n\nclassify response:\n" + JSON.stringify(classifyResult, null, 2)
-          );
 
           if (!classifyResponse.ok || !classifyResult || !classifyResult.ok) {
             alert(classifyResult?.error || "申請は送信されましたが、分類処理に失敗しました。");
@@ -380,7 +314,6 @@
           form.reset();
           showPreview(null);
         } catch (error) {
-          renderDebug("fetch error\n\n" + String(error));
           alert("送信に失敗しました。");
         } finally {
           submitButton.disabled = false;

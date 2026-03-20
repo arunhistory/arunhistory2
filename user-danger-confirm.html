@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>危険操作確認</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -137,6 +136,7 @@
     <div class="box">
       <p>対象ユーザーID: <span id="target-user-id">読み込み中...</span></p>
       <p>処理内容: <span id="danger-action">読み込み中...</span></p>
+      <p>一部利用停止内容: <span id="danger-restrictions">読み込み中...</span></p>
       <p>理由: <span id="danger-reason">読み込み中...</span></p>
       <p>実行アカウント: <span id="danger-by">読み込み中...</span></p>
       <p>認証時刻: <span id="danger-at">読み込み中...</span></p>
@@ -209,6 +209,7 @@
         sessionStorage.removeItem("danger_action_target_user_id");
         sessionStorage.removeItem("danger_action_type");
         sessionStorage.removeItem("danger_action_reason");
+        sessionStorage.removeItem("danger_action_restrictions");
         sessionStorage.removeItem("danger_verified_user_id");
         sessionStorage.removeItem("danger_verified_by");
         sessionStorage.removeItem("danger_verified_at");
@@ -223,6 +224,25 @@
           "user_id: " + (userId || "") + "\n" +
           "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
           (extra ? "\n\n" + extra : "");
+      }
+
+      function actionLabel(value) {
+        if (value === "partial_suspended") return "一部利用停止";
+        if (value === "suspended") return "利用停止";
+        if (value === "active") return "利用再開";
+        if (value === "banned") return "BAN";
+        if (value === "delete") return "削除";
+        return value || "";
+      }
+
+      function restrictionLabel(values) {
+        if (!Array.isArray(values) || values.length === 0) return "なし";
+
+        return values.map((value) => {
+          if (value === "novel_blocked") return "小説利用停止";
+          if (value === "music_blocked") return "音楽利用停止";
+          return value;
+        }).join(" / ");
       }
 
       if (adminStatus !== "active") {
@@ -240,8 +260,9 @@
 
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const applyEndpoint = `${supabaseUrl}/functions/v1/admin-apply-user-danger-action`;
 
-      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = null, logTargetId = null) {
+      async function writePageLog(actionType, actionLabelText, actionDetail, logTargetType = "user", logTargetId = userId) {
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
           method: "POST",
           headers: {
@@ -251,10 +272,10 @@
           },
           body: JSON.stringify({
             admin_username: adminUsername,
-            target_type: logTargetType !== null ? logTargetType : (adminRole === "sub_admin" ? "sub_admin" : null),
-            target_id: logTargetId !== null ? logTargetId : (adminRole === "sub_admin" ? adminId : null),
+            target_type: logTargetType,
+            target_id: logTargetId,
             action_type: actionType,
-            action_label: actionLabel,
+            action_label: actionLabelText,
             action_detail: actionDetail
           })
         });
@@ -278,9 +299,7 @@
           await writePageLog(
             "admin_forbidden_page_access",
             "権限外ページアクセス",
-            "page: user-danger-confirm.html / reason: user_danger_control権限なし",
-            "user",
-            userId
+            "page: user-danger-confirm.html / reason: user_danger_control権限なし"
           );
         } catch (error) {
           renderDebug("拒否ログ保存失敗: " + String(error));
@@ -295,10 +314,18 @@
       const verifiedBy = sessionStorage.getItem("danger_verified_by");
       const verifiedAt = sessionStorage.getItem("danger_verified_at");
       const actionUserId = sessionStorage.getItem("danger_action_target_user_id");
-      const actionType = sessionStorage.getItem("danger_action_type");
+      const actionTypeValue = sessionStorage.getItem("danger_action_type");
       const actionReason = sessionStorage.getItem("danger_action_reason");
 
-      if (!verifiedUserId || !verifiedBy || !verifiedAt || !actionUserId || !actionType || !actionReason) {
+      let actionRestrictions = [];
+      try {
+        actionRestrictions = JSON.parse(sessionStorage.getItem("danger_action_restrictions") || "[]");
+        if (!Array.isArray(actionRestrictions)) actionRestrictions = [];
+      } catch {
+        actionRestrictions = [];
+      }
+
+      if (!verifiedUserId || !verifiedBy || !verifiedAt || !actionUserId || !actionTypeValue || !actionReason) {
         alert("危険操作情報が不足しています。");
         window.location.href = "account-info-admin.html";
         return;
@@ -314,29 +341,21 @@
         await writePageLog(
           "user_danger_confirm_view",
           "危険操作確認閲覧",
-          `page: user-danger-confirm.html / user_id: ${userId} / action: ${actionType} / role: ${adminRole}`,
-          "user",
-          userId
+          `page: user-danger-confirm.html / user_id: ${userId} / action: ${actionTypeValue} / role: ${adminRole}`
         );
       } catch (error) {
         renderDebug("閲覧ログ保存失敗: " + String(error));
       }
 
       document.getElementById("target-user-id").textContent = userId;
-      document.getElementById("danger-action").textContent = actionType;
+      document.getElementById("danger-action").textContent = actionLabel(actionTypeValue);
+      document.getElementById("danger-restrictions").textContent = restrictionLabel(actionRestrictions);
       document.getElementById("danger-reason").textContent = actionReason;
       document.getElementById("danger-by").textContent = verifiedBy;
       document.getElementById("danger-at").textContent = new Date(verifiedAt).toLocaleString("ja-JP");
 
       document.getElementById("back-link").href = "user-danger-settings.html?id=" + encodeURIComponent(userId);
       document.getElementById("detail-link").href = "user-detail.html?id=" + encodeURIComponent(userId);
-
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
-        return;
-      }
-
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       executeButton.addEventListener("click", async () => {
         const confirmed = window.confirm("本当によろしいですか？");
@@ -349,36 +368,49 @@
         executeButton.textContent = "処理中...";
 
         try {
-          let updateData = {};
+          const payload = {
+            admin_username: adminUsername,
+            user_id: userId,
+            action_type: actionTypeValue,
+            reason: actionReason,
+            service_restrictions: actionRestrictions
+          };
 
-          if (actionType === "BAN") {
-            updateData = { status: "banned" };
-          } else if (actionType === "利用停止") {
-            updateData = { status: "suspended" };
-          } else if (actionType === "一部利用停止") {
-            updateData = { status: "partial_suspended" };
-          } else if (actionType === "利用再開") {
-            updateData = { status: "active" };
-          } else if (actionType === "削除") {
-            updateData = { status: "delete_requested" };
+          const response = await fetch(applyEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const rawText = await response.text();
+          let result = null;
+
+          try {
+            result = rawText ? JSON.parse(rawText) : {};
+          } catch (_) {
+            renderDebug(
+              "apply response parse error\n\n" +
+              "status: " + response.status + "\n" +
+              rawText
+            );
+            alert("危険操作の実行に失敗しました。");
+            executeButton.disabled = false;
+            executeButton.textContent = "進む";
+            return;
           }
 
           renderDebug(
-            "danger execute start\n\n" +
-            "user_id: " + userId + "\n" +
-            "action: " + actionType + "\n" +
-            "reason: " + actionReason + "\n" +
-            "updateData: " + JSON.stringify(updateData, null, 2)
+            "apply payload:\n" + JSON.stringify(payload, null, 2) +
+            "\n\nstatus: " + response.status +
+            "\nresponse:\n" + JSON.stringify(result, null, 2)
           );
 
-          const { error: updateError } = await supabase
-            .from("accounts")
-            .update(updateData)
-            .eq("user_id", userId);
-
-          if (updateError) {
-            alert("処理に失敗しました: " + updateError.message);
-            renderDebug("危険操作更新エラー: " + updateError.message);
+          if (!response.ok || !result || !result.ok) {
+            alert(result?.error || "危険操作の実行に失敗しました。");
             executeButton.disabled = false;
             executeButton.textContent = "進む";
             return;
@@ -388,23 +420,20 @@
             await writePageLog(
               "user_danger_execute",
               "危険操作実行",
-              `user_id: ${userId} / action: ${actionType} / reason: ${actionReason} / executed_by: ${verifiedBy}`,
-              "user",
-              userId
+              `user_id: ${userId} / action: ${actionTypeValue} / restrictions: ${JSON.stringify(actionRestrictions)} / reason: ${actionReason} / executed_by: ${verifiedBy}`
             );
           } catch (error) {
             renderDebug("実行ログ保存失敗: " + String(error));
           }
 
-          resultMessage.textContent = "処理を実行しました。";
+          resultMessage.textContent = result.message || "処理を実行しました。";
           resultBox.style.display = "block";
 
           clearDangerSession();
-
           executeButton.style.display = "none";
-        } catch (err) {
-          alert("予期しないエラーが発生しました。");
-          renderDebug("予期しないエラー: " + String(err));
+        } catch (error) {
+          renderDebug("apply fetch error: " + String(error));
+          alert("危険操作の実行に失敗しました。");
           executeButton.disabled = false;
           executeButton.textContent = "進む";
         }

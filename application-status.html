@@ -34,22 +34,22 @@
 
     a:hover {
       color: #ffe7f3;
-      text-decoration: none;
+      text-decoration: underline;
     }
 
-    .box {
+    .form-box {
       background: rgba(255,255,255,0.08);
       border: 1px solid rgba(255,255,255,0.25);
       padding: 24px;
     }
 
-    .box p {
+    .form-box p {
       margin: 12px 0;
       line-height: 1.8;
     }
 
-    .disabled-text {
-      color: rgba(255,255,255,0.7);
+    .muted {
+      color: rgba(245,245,245,0.75);
     }
   </style>
 </head>
@@ -59,25 +59,25 @@
 
     <h1>申請状況</h1>
 
-    <div class="box">
-      <p>ライセンス申請: <span id="license-application-status">読み込み中...</span></p>
-      <p>小説応援申請: <span id="novel-support-application-status">読み込み中...</span></p>
+    <div class="form-box">
+      <p>音楽ライセンス状況: <span id="music-license-status">読み込み中...</span></p>
+      <p>音楽ライセンス申請状況: <span id="music-license-application-status">読み込み中...</span></p>
 
-      <p id="license-application-link-wrap"><a href="license-application.html">ライセンス申請へ</a></p>
-      <p id="novel-support-application-link-wrap"><a href="novel-support-application.html">小説応援申請へ</a></p>
+      <p>小説応援状況: <span id="novel-support-current-status">読み込み中...</span></p>
+      <p>小説応援申請状況: <span id="novel-support-application-status">読み込み中...</span></p>
 
+      <p>お問い合わせ: <span id="contact-status">読み込み中...</span></p>
+
+      <p id="music-license-link-wrap">読み込み中...</p>
+      <p id="novel-support-link-wrap">読み込み中...</p>
+
+      <p><a href="contact-page.html">お問い合わせへ</a></p>
       <p><a href="mypage.html">マイページへ戻る</a></p>
     </div>
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      const usernameLine = document.getElementById("username-line");
-      const licenseStatusEl = document.getElementById("license-application-status");
-      const novelStatusEl = document.getElementById("novel-support-application-status");
-      const licenseLinkWrap = document.getElementById("license-application-link-wrap");
-      const novelLinkWrap = document.getElementById("novel-support-application-link-wrap");
-
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
         alert("Supabase の読み込みに失敗しました。");
         return;
@@ -87,49 +87,49 @@
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      if (sessionStorage.getItem("admin_logged_in") !== "1") {
-        const { data: maintenanceSetting, error: maintenanceError } = await supabase
-          .from("site_settings")
-          .select("setting_value")
-          .eq("setting_key", "maintenance_mode")
-          .maybeSingle();
-
-        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
-          window.location.href = "maintenance.html";
-          return;
-        }
-      }
-
       const { data: userData } = await supabase.auth.getUser();
       const user = userData?.user;
 
       if (!user) {
-        window.location.href = "login.html?redirect=application-status.html";
+        window.location.href = "login.html?redirect=" + encodeURIComponent("application-status.html");
         return;
       }
 
-      const { data: account } = await supabase
+      const { data: account, error: accountError } = await supabase
         .from("accounts")
-        .select("display_name")
+        .select("display_name, license_status, novel_support_status")
         .eq("user_id", user.id)
         .maybeSingle();
 
+      if (accountError) {
+        alert("アカウント情報の取得に失敗しました。");
+        return;
+      }
+
       const displayName =
         account?.display_name ||
+        user.user_metadata?.display_name ||
+        user.user_metadata?.name ||
         user.user_metadata?.username ||
         "ユーザー";
 
-      usernameLine.textContent = displayName + "さん";
+      document.getElementById("username-line").textContent = displayName + "さん";
 
-      const { data: licenseApplication } = await supabase
-        .from("license_applications")
+      const currentMusicLicense = account?.license_status || "無し";
+      const currentNovelSupport = account?.novel_support_status || "なし";
+
+      document.getElementById("music-license-status").textContent = currentMusicLicense;
+      document.getElementById("novel-support-current-status").textContent = currentNovelSupport;
+
+      const { data: musicApplication } = await supabase
+        .from("music_license_applications")
         .select("status")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      const { data: novelSupportApplication } = await supabase
+      const { data: novelApplication } = await supabase
         .from("novel_support_applications")
         .select("status")
         .eq("user_id", user.id)
@@ -137,22 +137,59 @@
         .limit(1)
         .maybeSingle();
 
-      const licenseStatus = licenseApplication?.status || "申請前";
-      const novelStatus = novelSupportApplication?.status || "申請前";
+      const { data: inquiry } = await supabase
+        .from("inquiries")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("status", "未解決")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-      licenseStatusEl.textContent = licenseStatus;
-      novelStatusEl.textContent = novelStatus;
-
-      if (licenseStatus === "申請前" || licenseStatus === "却下") {
-        licenseLinkWrap.innerHTML = '<a href="license-application.html">ライセンス申請へ</a>';
-      } else {
-        licenseLinkWrap.innerHTML = '<span class="disabled-text">ライセンス申請は現在できません</span>';
+      function musicApplicationStatusLabel(value) {
+        if (value === "pending") return "申請中";
+        if (value === "approved") return "承認";
+        if (value === "rejected") return "棄却";
+        return "申請前";
       }
 
-      if (novelStatus === "申請前" || novelStatus === "却下") {
-        novelLinkWrap.innerHTML = '<a href="novel-support-application.html">小説応援申請へ</a>';
+      function novelApplicationStatusLabel(value) {
+        if (value === "pending") return "申請中";
+        if (value === "approved") return "承認";
+        if (value === "changed") return "承認";
+        if (value === "rejected") return "棄却";
+        if (value === "cancelled") return "棄却";
+        return "申請前";
+      }
+
+      const musicApplicationStatus = musicApplicationStatusLabel(musicApplication?.status);
+      const novelApplicationStatus = novelApplicationStatusLabel(novelApplication?.status);
+
+      document.getElementById("music-license-application-status").textContent = musicApplicationStatus;
+      document.getElementById("novel-support-application-status").textContent = novelApplicationStatus;
+      document.getElementById("contact-status").textContent = inquiry ? "未解決" : "なし";
+
+      const musicLinkWrap = document.getElementById("music-license-link-wrap");
+      const novelLinkWrap = document.getElementById("novel-support-link-wrap");
+
+      const canApplyMusic =
+        currentMusicLicense !== "ライセンスA" &&
+        currentMusicLicense !== "ライセンスB" &&
+        musicApplicationStatus !== "申請中";
+
+      const canApplyNovel =
+        novelApplicationStatus !== "申請中";
+
+      if (canApplyMusic) {
+        musicLinkWrap.innerHTML = '<a href="application-music-license.html">音楽ライセンス申請へ</a>';
       } else {
-        novelLinkWrap.innerHTML = '<span class="disabled-text">小説応援申請は現在できません</span>';
+        musicLinkWrap.innerHTML = '<span class="muted">音楽ライセンス申請は現在できません。</span>';
+      }
+
+      if (canApplyNovel) {
+        novelLinkWrap.innerHTML = '<a href="application-novel-support.html">小説応援申請へ</a>';
+      } else {
+        novelLinkWrap.innerHTML = '<span class="muted">小説応援申請は現在できません。</span>';
       }
     });
   </script>

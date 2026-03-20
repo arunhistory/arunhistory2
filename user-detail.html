@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ユーザー情報</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -138,9 +137,13 @@
       <p>音楽ライセンス: <span id="license-status-value">読み込み中...</span></p>
       <p>小説応援: <span id="novel-support-value">読み込み中...</span></p>
       <p>現在の状態: <span id="account-status-value">読み込み中...</span></p>
+      <p>一部利用停止内容: <span id="service-restrictions-value">読み込み中...</span></p>
+      <p>状態変更理由: <span id="status-reason-value">読み込み中...</span></p>
+      <p>状態変更日時: <span id="status-changed-at-value">読み込み中...</span></p>
       <p>退会申請状況: <span id="withdraw-status-value">読み込み中...</span></p>
       <p>お問い合わせ状況: <span id="inquiry-status-value">読み込み中...</span></p>
       <p>最終ログイン日時: <span id="last-login-value">読み込み中...</span></p>
+      <p>登録日時: <span id="created-at-value">読み込み中...</span></p>
 
       <p class="center-link">
         <a href="account-info-admin.html">戻る</a>
@@ -210,6 +213,25 @@
           (extra ? "\n\n" + extra : "");
       }
 
+      function statusLabel(value) {
+        if (value === "active") return "利用中";
+        if (value === "partial_suspended") return "一部利用停止";
+        if (value === "suspended") return "利用停止";
+        if (value === "banned") return "BAN";
+        if (value === "delete_requested") return "削除対象";
+        return value || "";
+      }
+
+      function restrictionLabel(values) {
+        if (!Array.isArray(values) || values.length === 0) return "なし";
+
+        return values.map((value) => {
+          if (value === "novel_blocked") return "小説利用停止";
+          if (value === "music_blocked") return "音楽利用停止";
+          return value;
+        }).join(" / ");
+      }
+
       if (adminStatus !== "active") {
         alert("この管理者アカウントは停止中です。");
         clearAdminSession();
@@ -225,6 +247,7 @@
 
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const detailEndpoint = `${supabaseUrl}/functions/v1/admin-get-account-detail`;
 
       async function writePageLog(actionType, actionLabel, actionDetail) {
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
@@ -236,8 +259,8 @@
           },
           body: JSON.stringify({
             admin_username: adminUsername,
-            target_type: adminRole === "sub_admin" ? "sub_admin" : null,
-            target_id: adminRole === "sub_admin" ? adminId : null,
+            target_type: "user",
+            target_id: userId,
             action_type: actionType,
             action_label: actionLabel,
             action_detail: actionDetail
@@ -284,75 +307,79 @@
         renderDebug("閲覧ログ保存失敗: " + String(error));
       }
 
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
-        return;
-      }
-
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
       document.getElementById("danger-button").addEventListener("click", () => {
         window.location.href = "admin-danger-login.html?id=" + encodeURIComponent(userId);
       });
 
-      const { data: account, error: accountError } = await supabase
-        .from("accounts")
-        .select("user_id, email, display_name, birthdate, gender, country, status, license_status, novel_support_status, last_login_at")
-        .eq("user_id", userId)
-        .maybeSingle();
+      try {
+        const response = await fetch(detailEndpoint, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            user_id: userId
+          })
+        });
 
-      if (accountError || !account) {
+        const rawText = await response.text();
+        let result = null;
+
+        try {
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (_) {
+          renderDebug(
+            "detail response parse error\n\n" +
+            "status: " + response.status + "\n" +
+            rawText
+          );
+          alert("ユーザー情報の読み込みに失敗しました。");
+          window.location.href = "account-info-admin.html";
+          return;
+        }
+
+        renderDebug(
+          "detail status: " + response.status + "\n\n" +
+          JSON.stringify(result, null, 2)
+        );
+
+        if (!response.ok || !result || !result.ok || !result.account) {
+          alert(result?.error || "ユーザー情報の読み込みに失敗しました。");
+          window.location.href = "account-info-admin.html";
+          return;
+        }
+
+        const account = result.account;
+
+        document.getElementById("email-value").textContent = account.email || "";
+        document.getElementById("display-name-value").textContent = account.display_name || "";
+        document.getElementById("birthdate-value").textContent = account.birthdate || "";
+        document.getElementById("gender-value").textContent = account.gender || "";
+        document.getElementById("country-value").textContent = account.country || "";
+        document.getElementById("license-status-value").textContent = account.license_status || "無し";
+        document.getElementById("novel-support-value").textContent = account.novel_support_status || "なし";
+        document.getElementById("account-status-value").textContent = statusLabel(account.status);
+        document.getElementById("service-restrictions-value").textContent = restrictionLabel(account.service_restrictions);
+        document.getElementById("status-reason-value").textContent = account.status_reason || "なし";
+        document.getElementById("status-changed-at-value").textContent = account.status_changed_at
+          ? new Date(account.status_changed_at).toLocaleString("ja-JP")
+          : "なし";
+        document.getElementById("withdraw-status-value").textContent = account.withdraw_status || "なし";
+        document.getElementById("inquiry-status-value").textContent = account.inquiry_status || "なし";
+        document.getElementById("last-login-value").textContent = account.last_login_at
+          ? new Date(account.last_login_at).toLocaleString("ja-JP")
+          : "";
+        document.getElementById("created-at-value").textContent = account.created_at
+          ? new Date(account.created_at).toLocaleString("ja-JP")
+          : "";
+      } catch (error) {
+        renderDebug("detail fetch error: " + String(error));
         alert("ユーザー情報の読み込みに失敗しました。");
-        renderDebug("ユーザー情報取得失敗: " + (accountError?.message || "not found"));
         window.location.href = "account-info-admin.html";
-        return;
       }
-
-      document.getElementById("email-value").textContent = account.email || "";
-      document.getElementById("display-name-value").textContent = account.display_name || "";
-      document.getElementById("birthdate-value").textContent = account.birthdate || "";
-      document.getElementById("gender-value").textContent = account.gender || "";
-      document.getElementById("country-value").textContent = account.country || "";
-      document.getElementById("license-status-value").textContent = account.license_status || "無し";
-      document.getElementById("novel-support-value").textContent = account.novel_support_status || "なし";
-      document.getElementById("last-login-value").textContent = account.last_login_at
-        ? new Date(account.last_login_at).toLocaleString("ja-JP")
-        : "";
-
-      const statusMap = {
-        active: "利用中",
-        suspended: "利用停止",
-        partial_suspended: "一部利用停止",
-        banned: "BAN",
-        delete_requested: "削除対象"
-      };
-
-      document.getElementById("account-status-value").textContent =
-        statusMap[account.status] || account.status || "";
-
-      const { data: withdrawRequest } = await supabase
-        .from("withdraw_requests")
-        .select("status")
-        .eq("user_id", userId)
-        .order("requested_at", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      document.getElementById("withdraw-status-value").textContent =
-        withdrawRequest?.status || "なし";
-
-      const { data: inquiry } = await supabase
-        .from("inquiries")
-        .select("id")
-        .eq("user_id", userId)
-        .eq("status", "未解決")
-        .limit(1)
-        .maybeSingle();
-
-      document.getElementById("inquiry-status-value").textContent =
-        inquiry ? "未解決" : "なし";
-
-      renderDebug("ユーザー情報表示成功");
     });
   </script>
 </body>

@@ -59,7 +59,8 @@
     }
 
     input,
-    select {
+    select,
+    button {
       width: 100%;
       max-width: 100%;
       min-width: 0;
@@ -74,17 +75,6 @@
     }
 
     input[type="date"] {
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      display: block;
-      box-sizing: border-box;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.95);
-      color: #222;
-      font-family: inherit;
       -webkit-appearance: none;
       appearance: none;
     }
@@ -112,9 +102,6 @@
     }
 
     button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
       border: none;
       background-color: #7a5c61;
       color: #fff;
@@ -201,7 +188,7 @@
         <div class="cf-turnstile" data-sitekey="0x4AAAAAACr-YTe5sfRv68rR"></div>
 
         <p style="margin-top: 16px;">
-          <button type="submit">登録する</button>
+          <button type="submit" id="signup-button">登録する</button>
         </p>
       </form>
 
@@ -220,18 +207,18 @@
       const backLink = document.getElementById("back-link");
       const loginLink = document.getElementById("login-link");
       const form = document.getElementById("signup-form");
-      const submitButton = form.querySelector('button[type="submit"]');
+      const submitButton = document.getElementById("signup-button");
 
       backLink.href = redirect;
       loginLink.href = "login.html?redirect=" + encodeURIComponent(redirect);
 
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
+        alert("ページの読み込みに失敗しました。");
         return;
       }
 
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabaseKey = "YOUR_ANON_KEY";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
       if (sessionStorage.getItem("admin_logged_in") !== "1") {
@@ -276,12 +263,34 @@
           const gender = document.getElementById("gender").value;
           const country = document.getElementById("country").value.trim();
 
+          const { data: existingAccount, error: existingAccountError } = await supabase
+            .from("accounts")
+            .select("email")
+            .eq("email", email)
+            .maybeSingle();
+
+          if (existingAccountError) {
+            alert("登録前確認に失敗しました。時間をおいて再度お試しください。");
+            submitButton.disabled = false;
+            submitButton.textContent = "登録する";
+            if (window.turnstile) window.turnstile.reset();
+            return;
+          }
+
+          if (existingAccount) {
+            alert("このメールアドレスはすでに使用されています。");
+            submitButton.disabled = false;
+            submitButton.textContent = "登録する";
+            if (window.turnstile) window.turnstile.reset();
+            return;
+          }
+
           const { error } = await supabase.auth.signUp({
             email,
             password,
             options: {
               data: {
-                username,
+                display_name: username,
                 birthdate,
                 gender,
                 country
@@ -291,6 +300,9 @@
 
           if (error) {
             alert("登録に失敗しました: " + error.message);
+            submitButton.disabled = false;
+            submitButton.textContent = "登録する";
+            if (window.turnstile) window.turnstile.reset();
             return;
           }
 

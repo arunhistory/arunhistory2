@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>小説応援申請</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -172,15 +171,6 @@
         reader.readAsDataURL(file);
       }
 
-      async function extractTextFromImage(file) {
-        try {
-          const result = await Tesseract.recognize(file, "jpn+eng");
-          return (result?.data?.text || "").trim();
-        } catch (_) {
-          return "";
-        }
-      }
-
       screenshotInput.addEventListener("change", () => {
         const file = screenshotInput.files && screenshotInput.files[0] ? screenshotInput.files[0] : null;
         showPreview(file);
@@ -241,9 +231,7 @@
             return;
           }
 
-          const detectedText = await extractTextFromImage(file);
-
-          const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v4`, {
+          const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v3`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -253,8 +241,7 @@
             body: JSON.stringify({
               access_token: session.access_token,
               note_name: noteName,
-              screenshot_url: filePath,
-              detected_plan: detectedText
+              screenshot_url: filePath
             })
           });
 

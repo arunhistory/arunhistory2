@@ -585,6 +585,8 @@
       });
 
       document.getElementById("delete-button").addEventListener("click", async () => {
+        alert("delete click ok");
+        
         const okDelete = window.confirm("この準管理者を削除しますか？");
         if (!okDelete) return;
 

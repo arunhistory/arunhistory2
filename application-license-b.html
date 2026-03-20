@@ -210,4 +210,251 @@
         return;
       }
 
-      const supabaseU
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const canUsePage =
+        adminRole === "admin" ||
+        (adminRole === "sub_admin" && adminPermissions.includes("account_management"));
+
+      if (!canUsePage) {
+        alert("この機能を使う権限がありません。");
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      function statusLabel(value) {
+        if (value === "pending") return "申請中";
+        if (value === "approved") return "承認";
+        if (value === "rejected") return "棄却";
+        return value || "";
+      }
+
+      function renderApplications(items) {
+        applicationList.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          applicationList.innerHTML = "<p>該当する申請はありません。</p>";
+          return;
+        }
+
+        items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "item";
+
+          const title = document.createElement("div");
+          title.className = "item-title";
+          title.textContent = (item.display_name || "名前未設定") + " / " + (item.note_account_name || "");
+
+          const meta = document.createElement("div");
+          meta.className = "item-meta";
+          meta.textContent =
+            "ユーザー名: " + (item.display_name || "") + "\n" +
+            "noteアカウント名: " + (item.note_account_name || "") + "\n" +
+            "ライセンス使用者名: " + (item.license_user_name || "") + "\n" +
+            "希望ライセンス: ライセンスB\n" +
+            "状態: " + statusLabel(item.status) + "\n" +
+            "申請日時: " + (item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : "");
+
+          row.appendChild(title);
+          row.appendChild(meta);
+
+          if (item.status === "pending") {
+            const buttons = document.createElement("div");
+            buttons.className = "button-row";
+
+            const approveButton = document.createElement("button");
+            approveButton.type = "button";
+            approveButton.className = "approve-button";
+            approveButton.textContent = "承認";
+
+            approveButton.addEventListener("click", async () => {
+              const confirmed = window.confirm("この申請を承認しますか？");
+              if (!confirmed) return;
+
+              approveButton.disabled = true;
+              rejectButton.disabled = true;
+
+              try {
+                const response = await fetch(`${supabaseUrl}/functions/v1/admin-review-music-license-application`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "apikey": supabaseKey,
+                    "Authorization": "Bearer " + supabaseKey
+                  },
+                  body: JSON.stringify({
+                    admin_username: adminUsername,
+                    application_id: item.id,
+                    review_action: "approved"
+                  })
+                });
+
+                const rawText = await response.text();
+                let result = null;
+
+                try {
+                  result = rawText ? JSON.parse(rawText) : {};
+                } catch (_) {
+                  alert("承認に失敗しました。");
+                  renderDebug("approve parse error\n\n" + rawText);
+                  approveButton.disabled = false;
+                  rejectButton.disabled = false;
+                  return;
+                }
+
+                renderDebug("approve response:\n" + JSON.stringify(result, null, 2));
+
+                if (!response.ok || !result || !result.ok) {
+                  alert(result?.error || "承認に失敗しました。");
+                  approveButton.disabled = false;
+                  rejectButton.disabled = false;
+                  return;
+                }
+
+                alert("承認しました。");
+                await loadApplications();
+              } catch (error) {
+                renderDebug("approve fetch error:\n" + String(error));
+                alert("承認に失敗しました。");
+                approveButton.disabled = false;
+                rejectButton.disabled = false;
+              }
+            });
+
+            const rejectButton = document.createElement("button");
+            rejectButton.type = "button";
+            rejectButton.className = "reject-button";
+            rejectButton.textContent = "却下";
+
+            rejectButton.addEventListener("click", async () => {
+              const reason = window.prompt("却下理由を入力してください。");
+              if (reason === null) return;
+
+              const trimmedReason = reason.trim();
+              if (trimmedReason === "") {
+                alert("却下理由を入力してください。");
+                return;
+              }
+
+              const confirmed = window.confirm("この申請を却下しますか？");
+              if (!confirmed) return;
+
+              approveButton.disabled = true;
+              rejectButton.disabled = true;
+
+              try {
+                const response = await fetch(`${supabaseUrl}/functions/v1/admin-review-music-license-application`, {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    "apikey": supabaseKey,
+                    "Authorization": "Bearer " + supabaseKey
+                  },
+                  body: JSON.stringify({
+                    admin_username: adminUsername,
+                    application_id: item.id,
+                    review_action: "rejected",
+                    reason: trimmedReason
+                  })
+                });
+
+                const rawText = await response.text();
+                let result = null;
+
+                try {
+                  result = rawText ? JSON.parse(rawText) : {};
+                } catch (_) {
+                  alert("却下に失敗しました。");
+                  renderDebug("reject parse error\n\n" + rawText);
+                  approveButton.disabled = false;
+                  rejectButton.disabled = false;
+                  return;
+                }
+
+                renderDebug("reject response:\n" + JSON.stringify(result, null, 2));
+
+                if (!response.ok || !result || !result.ok) {
+                  alert(result?.error || "却下に失敗しました。");
+                  approveButton.disabled = false;
+                  rejectButton.disabled = false;
+                  return;
+                }
+
+                alert("却下しました。");
+                await loadApplications();
+              } catch (error) {
+                renderDebug("reject fetch error:\n" + String(error));
+                alert("却下に失敗しました。");
+                approveButton.disabled = false;
+                rejectButton.disabled = false;
+              }
+            });
+
+            buttons.appendChild(approveButton);
+            buttons.appendChild(rejectButton);
+            row.appendChild(buttons);
+          }
+
+          applicationList.appendChild(row);
+        });
+      }
+
+      async function loadApplications() {
+        applicationList.innerHTML = "<p>読み込み中...</p>";
+
+        const { data, error } = await supabase
+          .from("music_license_applications")
+          .select(`
+            id,
+            user_id,
+            requested_license,
+            note_account_name,
+            license_user_name,
+            status,
+            created_at
+          `)
+          .eq("requested_license", "license_b")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          applicationList.innerHTML = "<p>読み込みに失敗しました。</p>";
+          renderDebug("applications error:\n" + error.message);
+          return;
+        }
+
+        const userIds = Array.from(new Set((data || []).map(item => item.user_id).filter(Boolean)));
+
+        let accountsMap = {};
+
+        if (userIds.length > 0) {
+          const { data: accountsData, error: accountsError } = await supabase
+            .from("accounts")
+            .select("user_id, display_name")
+            .in("user_id", userIds);
+
+          if (accountsError) {
+            renderDebug("accounts error:\n" + accountsError.message);
+          } else {
+            accountsMap = Object.fromEntries(
+              (accountsData || []).map(account => [account.user_id, account.display_name || ""])
+            );
+          }
+        }
+
+        const merged = (data || []).map(item => ({
+          ...item,
+          display_name: accountsMap[item.user_id] || ""
+        }));
+
+        renderApplications(merged);
+        renderDebug("loaded count: " + merged.length);
+      }
+
+      await loadApplications();
+    });
+  </script>
+</body>
+</html>

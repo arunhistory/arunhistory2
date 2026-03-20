@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>メンテナンス中</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -80,37 +81,71 @@
     const TAP_KEY = "maintenance_tap_unlocked";
     const WORD_KEY = "maintenance_secret_word";
 
-    const title = document.getElementById("maintenance-title");
-    const secretWrap = document.getElementById("secret-wrap");
-    const secretInput = document.getElementById("secret-input");
+    document.addEventListener("DOMContentLoaded", async () => {
+      const title = document.getElementById("maintenance-title");
+      const secretWrap = document.getElementById("secret-wrap");
+      const secretInput = document.getElementById("secret-input");
 
-    let tapCount = 0;
+      let tapCount = 0;
 
-    title.addEventListener("click", () => {
-      tapCount += 1;
+      title.addEventListener("click", () => {
+        tapCount += 1;
 
-      if (tapCount >= 20) {
-        localStorage.setItem(TAP_KEY, "1");
+        if (tapCount >= 20) {
+          localStorage.setItem(TAP_KEY, "1");
+          secretWrap.style.display = "block";
+        }
+      });
+
+      const unlocked = localStorage.getItem(TAP_KEY) === "1";
+      const savedWord = localStorage.getItem(WORD_KEY) || "";
+
+      if (unlocked) {
+        secretWrap.style.display = "block";
+        secretInput.value = savedWord;
+      }
+
+      secretInput.addEventListener("input", () => {
+        localStorage.setItem(WORD_KEY, secretInput.value);
+
+        if (secretInput.value === SECRET_WORD) {
+          localStorage.removeItem(TAP_KEY);
+          localStorage.removeItem(WORD_KEY);
+          window.location.href = "admin-login.html";
+        }
+      });
+
+      if (!window.supabase || typeof window.supabase.createClient !== "function") {
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("setting_value")
+          .eq("setting_key", "maintenance_mode")
+          .maybeSingle();
+
+        if (error) {
+          return;
+        }
+
+        const value = String(data?.setting_value || "").trim().toLowerCase();
+
+        if (value === "off") {
+          window.location.href = "index.html";
+          return;
+        }
+
+        // on の時はそのまま maintenance.html を表示継続
+      } catch (_) {
+        // エラー時はそのまま maintenance.html を表示継続
       }
     });
-
-    const unlocked = localStorage.getItem(TAP_KEY) === "1";
-    const savedWord = localStorage.getItem(WORD_KEY) || "";
-
-    if (unlocked) {
-      secretWrap.style.display = "block";
-      secretInput.value = savedWord;
-    }
-
-    secretInput.addEventListener("input", () => {
-      localStorage.setItem(WORD_KEY, secretInput.value);
-    });
-
-    if (unlocked && savedWord === SECRET_WORD) {
-      localStorage.removeItem(TAP_KEY);
-      localStorage.removeItem(WORD_KEY);
-      window.location.href = "admin-login.html";
-    }
   </script>
 </body>
 </html>

@@ -171,8 +171,8 @@
           },
           body: JSON.stringify({
             admin_username: adminUsername,
-            target_type: null,
-            target_id: null,
+            target_type: adminRole === "sub_admin" ? "sub_admin" : null,
+              target_id: adminRole === "sub_admin" ? sessionStorage.getItem("admin_id") : null,
             action_type: "admin_logout",
             action_label: "管理者ログアウト",
             action_detail: `role: ${adminRole}`

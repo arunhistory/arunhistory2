@@ -70,7 +70,7 @@
       overflow: hidden;
       border: 1px solid rgba(0,0,0,0.15);
       background: #fff;
-      padding: 12px;
+      padding: 0;
       height: 70vh;
       min-height: 420px;
       position: relative;
@@ -84,12 +84,15 @@
     }
 
     #support-image {
+      display: block;
+      width: auto;
+      height: auto;
       max-width: none;
       max-height: none;
       position: absolute;
-      top: 0;
-      left: 0;
-      transform-origin: top left;
+      top: 50%;
+      left: 50%;
+      transform-origin: center center;
       will-change: transform;
       user-select: none;
       -webkit-user-drag: none;
@@ -215,27 +218,26 @@
         const scaledWidth = naturalWidth * scale;
         const scaledHeight = naturalHeight * scale;
 
-        const minX = Math.min(0, wrapWidth - scaledWidth);
-        const minY = Math.min(0, wrapHeight - scaledHeight);
-        const maxX = 0;
-        const maxY = 0;
+        const limitX = Math.max(0, (scaledWidth - wrapWidth) / 2);
+        const limitY = Math.max(0, (scaledHeight - wrapHeight) / 2);
 
         if (scaledWidth <= wrapWidth) {
-          offsetX = (wrapWidth - scaledWidth) / 2;
+          offsetX = 0;
         } else {
-          offsetX = Math.min(maxX, Math.max(minX, offsetX));
+          offsetX = Math.max(-limitX, Math.min(limitX, offsetX));
         }
 
         if (scaledHeight <= wrapHeight) {
-          offsetY = (wrapHeight - scaledHeight) / 2;
+          offsetY = 0;
         } else {
-          offsetY = Math.min(maxY, Math.max(minY, offsetY));
+          offsetY = Math.max(-limitY, Math.min(limitY, offsetY));
         }
       }
 
       function applyTransform() {
         clampOffsets();
-        supportImage.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+        supportImage.style.transform =
+          `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px)) scale(${scale})`;
       }
 
       function resetView() {
@@ -376,6 +378,10 @@
           naturalWidth = supportImage.naturalWidth;
           naturalHeight = supportImage.naturalHeight;
           imageLoaded = true;
+
+          supportImage.style.width = naturalWidth + "px";
+          supportImage.style.height = naturalHeight + "px";
+
           messageBox.style.display = "none";
           imageWrap.style.display = "block";
           resetView();

@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>観測者申請</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 2.4rem;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    a {
+      color: #111;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .item {
+      border-bottom: 1px solid rgba(0,0,0,0.12);
+      padding: 16px 0;
+    }
+
+    .item:last-child {
+      border-bottom: none;
+    }
+
+    .item-title {
+      font-weight: bold;
+      font-size: 1.08rem;
+      margin-bottom: 8px;
+    }
+
+    .item-meta {
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-bottom: 12px;
+    }
+
+    .button-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    button {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    .approve-button {
+      background-color: #4f8f5b;
+      color: #111;
+    }
+
+    .approve-button:hover {
+      background-color: #6aa676;
+    }
+
+    .reject-button {
+      background-color: #d9b3b3;
+      color: #111;
+    }
+
+    .reject-button:hover {
+      background-color: #c99393;
+    }
+
+    .image-button {
+      background-color: #b7c9e6;
+      color: #111;
+    }
+
+    .image-button:hover {
+      background-color: #9eb7dd;
+    }
+
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .button-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p style="text-align:left; margin-top:0;">
+      <a id="admin-user-link" href="#">管理者さん</a>
+    </p>
+
+    <h1>観測者申請</h1>
+
+    <div class="box">
+      <div id="application-list">
+        <p>読み込み中...</p>
+      </div>
+
+      <p class="center-link">
+        <a href="user-applications.html">戻る</a>
+      </p>
+    </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminId = sessionStorage.getItem("admin_id");
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+
+      let adminPermissions = [];
+      try {
+        adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+        if (!Array.isArray(adminPermissions)) adminPermissions = [];
+      } catch {
+        adminPermissions = [];
+      }
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+      const applicationList = document.getElementById("application-list");
+
+      adminUserLink.textContent = adminUsername + "さん";
+
+      function clearAdminSession() {
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_id");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
+      }
+
+      function renderDebug(extra = "") {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_id: " + (adminId || "") + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
+      }
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        clearAdminSession();
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const canUsePage =
+        adminRole === "admin" ||
+        (adminRole === "sub_admin" && adminPermissions.includes("account_management"));
+
+      if (!canUsePage) {
+        alert("この機能を使う権限がありません。");
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      function statusLabel(value) {
+        if (value === "pending") return "申請中";
+        if (value === "approved") return "承認";
+        if (value === "changed") return "変更承認";
+        if (value === "rejected") return "棄却";
+        if (value === "cancelled") return "取り消し";
+        return value || "";
+      }
+
+      async function openImage(path) {
+        try {
+          const { data, error } = await supabase
+            .storage
+            .from("novel-support-screenshots")
+            .createSignedUrl(path, 60 * 10);
+
+          if (error || !data?.signedUrl) {
+            alert("画像の取得に失敗しました。");
+            renderDebug("signed url error:\n" + (error ? error.message : "signedUrlなし"));
+            return;
+          }
+
+          window.open(data.signedUrl, "_blank");
+        } catch (error) {
+          renderDebug("openImage error:\n" + String(error));
+          alert("画像の取得に失敗しました。");
+        }
+      }
+
+      async function approveApplication(item, approveButton, rejectButton, imageButton) {
+        const confirmed = window.confirm("この申請を承認しますか？");
+        if (!confirmed) return;
+
+        approveButton.disabled = true;
+        rejectButton.disabled = true;
+        imageButton.disabled = true;
+
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-review-novel-support-application`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify({
+              admin_username: adminUsername,
+              application_id: item.id,
+              review_action: "approved",
+              final_support_type: "観測者"
+            })
+          });
+
+          const rawText = await response.text();
+          let result = null;
+
+          try {
+            result = rawText ? JSON.parse(rawText) : {};
+          } catch (_) {
+            alert("承認に失敗しました。");
+            renderDebug("approve parse error\n\n" + rawText);
+            approveButton.disabled = false;
+            rejectButton.disabled = false;
+            imageButton.disabled = false;
+            return;
+          }
+
+          renderDebug("approve response:\n" + JSON.stringify(result, null, 2));
+
+          if (!response.ok || !result || !result.ok) {
+            alert(result?.error || "承認に失敗しました。");
+            approveButton.disabled = false;
+            rejectButton.disabled = false;
+            imageButton.disabled = false;
+            return;
+          }
+
+          alert("承認しました。");
+          await loadApplications();
+        } catch (error) {
+          renderDebug("approve fetch error:\n" + String(error));
+          alert("承認に失敗しました。");
+          approveButton.disabled = false;
+          rejectButton.disabled = false;
+          imageButton.disabled = false;
+        }
+      }
+
+      async function rejectApplication(item, approveButton, rejectButton, imageButton) {
+        const reason = window.prompt("却下理由を入力してください。");
+        if (reason === null) return;
+
+        const trimmedReason = reason.trim();
+        if (trimmedReason === "") {
+          alert("却下理由を入力してください。");
+          return;
+        }
+
+        const confirmed = window.confirm("この申請を却下しますか？");
+        if (!confirmed) return;
+
+        approveButton.disabled = true;
+        rejectButton.disabled = true;
+        imageButton.disabled = true;
+
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-review-novel-support-application`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify({
+              admin_username: adminUsername,
+              application_id: item.id,
+              review_action: "rejected",
+              reason: trimmedReason
+            })
+          });
+
+          const rawText = await response.text();
+          let result = null;
+
+          try {
+            result = rawText ? JSON.parse(rawText) : {};
+          } catch (_) {
+            alert("却下に失敗しました。");
+            renderDebug("reject parse error\n\n" + rawText);
+            approveButton.disabled = false;
+            rejectButton.disabled = false;
+            imageButton.disabled = false;
+            return;
+          }
+
+          renderDebug("reject response:\n" + JSON.stringify(result, null, 2));
+
+          if (!response.ok || !result || !result.ok) {
+            alert(result?.error || "却下に失敗しました。");
+            approveButton.disabled = false;
+            rejectButton.disabled = false;
+            imageButton.disabled = false;
+            return;
+          }
+
+          alert("却下しました。");
+          await loadApplications();
+        } catch (error) {
+          renderDebug("reject fetch error:\n" + String(error));
+          alert("却下に失敗しました。");
+          approveButton.disabled = false;
+          rejectButton.disabled = false;
+          imageButton.disabled = false;
+        }
+      }
+
+      function renderApplications(items) {
+        applicationList.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          applicationList.innerHTML = "<p>該当する申請はありません。</p>";
+          return;
+        }
+
+        items.forEach((item) => {
+          const row = document.createElement("div");
+          row.className = "item";
+
+          const title = document.createElement("div");
+          title.className = "item-title";
+          title.textContent = (item.display_name || "名前未設定") + " / " + (item.note_name || "");
+
+          const meta = document.createElement("div");
+          meta.className = "item-meta";
+          meta.textContent =
+            "ユーザー名: " + (item.display_name || "") + "\n" +
+            "noteアカウント名: " + (item.note_name || "") + "\n" +
+            "自動判定: " + (item.detected_support_type || "未判定") + "\n" +
+            "状態: " + statusLabel(item.status) + "\n" +
+            "申請日時: " + (item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : "");
+
+          row.appendChild(title);
+          row.appendChild(meta);
+
+          const buttons = document.createElement("div");
+          buttons.className = "button-row";
+
+          const approveButton = document.createElement("button");
+          approveButton.type = "button";
+          approveButton.className = "approve-button";
+          approveButton.textContent = "承認";
+
+          const rejectButton = document.createElement("button");
+          rejectButton.type = "button";
+          rejectButton.className = "reject-button";
+          rejectButton.textContent = "却下";
+
+          const imageButton = document.createElement("button");
+          imageButton.type = "button";
+          imageButton.className = "image-button";
+          imageButton.textContent = "画像確認";
+
+          approveButton.addEventListener("click", async () => {
+            await approveApplication(item, approveButton, rejectButton, imageButton);
+          });
+
+          rejectButton.addEventListener("click", async () => {
+            await rejectApplication(item, approveButton, rejectButton, imageButton);
+          });
+
+          imageButton.addEventListener("click", async () => {
+            await openImage(item.screenshot_url);
+          });
+
+          buttons.appendChild(approveButton);
+          buttons.appendChild(rejectButton);
+          buttons.appendChild(imageButton);
+          row.appendChild(buttons);
+
+          applicationList.appendChild(row);
+        });
+      }
+
+      async function loadApplications() {
+        applicationList.innerHTML = "<p>読み込み中...</p>";
+
+        const { data, error } = await supabase
+          .from("novel_support_applications")
+          .select(`
+            id,
+            user_id,
+            note_name,
+            screenshot_url,
+            detected_support_type,
+            status,
+            created_at
+          `)
+          .eq("detected_support_type", "観測者")
+          .eq("status", "pending")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          applicationList.innerHTML = "<p>読み込みに失敗しました。</p>";
+          renderDebug("applications error:\n" + error.message);
+          return;
+        }
+
+        const userIds = Array.from(new Set((data || []).map(item => item.user_id).filter(Boolean)));
+
+        let accountsMap = {};
+
+        if (userIds.length > 0) {
+          const { data: accountsData, error: accountsError } = await supabase
+            .from("accounts")
+            .select("user_id, display_name")
+            .in("user_id", userIds);
+
+          if (accountsError) {
+            renderDebug("accounts error:\n" + accountsError.message);
+          } else {
+            accountsMap = Object.fromEntries(
+              (accountsData || []).map(account => [account.user_id, account.display_name || ""])
+            );
+          }
+        }
+
+        const merged = (data || []).map(item => ({
+          ...item,
+          display_name: accountsMap[item.user_id] || ""
+        }));
+
+        renderApplications(merged);
+        renderDebug("loaded count: " + merged.length);
+      }
+
+      await loadApplications();
+    });
+  </script>
+</body>
+</html>

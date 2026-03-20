@@ -207,7 +207,7 @@
     const backLink = document.getElementById("back-link");
     const loginLink = document.getElementById("login-link");
     const form = document.getElementById("signup-form");
-    const submitButton = form.querySelector('button[type="submit"]');
+    const submitButton = document.getElementById("signup-button");
 
     backLink.href = redirect;
     loginLink.href = "login.html?redirect=" + encodeURIComponent(redirect);
@@ -271,9 +271,9 @@
               display_name: username,
               name: username,
               username: username,
-              birthdate,
-              gender,
-              country
+              birthdate: birthdate,
+              gender: gender,
+              country: country
             }
           }
         });
@@ -282,12 +282,7 @@
           if (String(error.message || "").includes("already registered")) {
             alert("このメールアドレスはすでに使用されています。");
           } else {
-            alert(
-              "登録に失敗しました\n\n" +
-              "message: " + (error.message || "") + "\n" +
-              "status: " + (error.status || "") + "\n" +
-              "code: " + (error.code || "")
-          );
+            alert("登録に失敗しました: " + error.message);
           }
           return;
         }
@@ -295,10 +290,7 @@
         alert("登録が完了しました。\n確認メールを開いて認証したあと、ログインしてください。");
         window.location.href = "login.html?redirect=" + encodeURIComponent(redirect);
       } catch (err) {
-        alert(
-          "予期しないエラーが発生しました\n\n" +
-            String(err)
-        );
+        alert("予期しないエラーが発生しました。");
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = "登録する";

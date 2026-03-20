@@ -124,7 +124,7 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
       if (sessionStorage.getItem("admin_logged_in") !== "1") {
         window.location.href = "admin-login.html";
         return;
@@ -134,6 +134,7 @@
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
 
       const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminId = sessionStorage.getItem("admin_id");
       const adminRole = sessionStorage.getItem("admin_role") || "";
       const adminStatus = sessionStorage.getItem("admin_status") || "";
 
@@ -161,6 +162,37 @@
         sessionStorage.removeItem("admin_permissions");
       }
 
+      async function writeAccessLog() {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            target_type: adminRole === "sub_admin" ? "sub_admin" : null,
+            target_id: adminRole === "sub_admin" ? adminId : null,
+            action_type: "admin_home_view",
+            action_label: "管理者メニュー閲覧",
+            action_detail: `page: admin-home.html / role: ${adminRole}`
+          })
+        });
+
+        const rawText = await response.text();
+
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          "\n\naccess status: " + response.status +
+          "\naccess response:\n" + rawText;
+
+        return response.ok;
+      }
+
       async function writeLogoutLog() {
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
           method: "POST",
@@ -172,7 +204,7 @@
           body: JSON.stringify({
             admin_username: adminUsername,
             target_type: adminRole === "sub_admin" ? "sub_admin" : null,
-              target_id: adminRole === "sub_admin" ? sessionStorage.getItem("admin_id") : null,
+            target_id: adminRole === "sub_admin" ? adminId : null,
             action_type: "admin_logout",
             action_label: "管理者ログアウト",
             action_detail: `role: ${adminRole}`
@@ -235,6 +267,17 @@
         "admin_role: " + adminRole + "\n" +
         "admin_status: " + adminStatus + "\n" +
         "admin_permissions: " + JSON.stringify(adminPermissions, null, 2);
+
+      try {
+        await writeAccessLog();
+      } catch (error) {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          "\n\naccess fetch error:\n" + String(error);
+      }
 
       document.getElementById("admin-logout").addEventListener("click", async function (e) {
         e.preventDefault();

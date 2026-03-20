@@ -280,7 +280,12 @@
           if (String(error.message || "").includes("already registered")) {
             alert("このメールアドレスはすでに使用されています。");
           } else {
-            alert("登録に失敗しました: " + error.message);
+            alert(
+              "登録に失敗しました\n\n" +
+              "message: " + (error.message || "") + "\n" +
+              "status: " + (error.status || "") + "\n" +
+              "code: " + (error.code || "")
+          );
           }
           return;
         }
@@ -288,7 +293,10 @@
         alert("登録されました");
         window.location.href = "login.html?redirect=" + encodeURIComponent(redirect);
       } catch (err) {
-        alert("予期しないエラーが発生しました。");
+        alert(
+          "予期しないエラーが発生しました\n\n" +
+            String(err)
+        );
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = "登録する";

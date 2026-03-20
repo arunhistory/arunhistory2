@@ -589,6 +589,8 @@
         
         const okDelete = window.confirm("この準管理者を削除しますか？");
         if (!okDelete) return;
+        
+        renderDebug("delete start\nsubadmin_id=" + currentSubAdmin?.id + "\ntargetId=" + targetId);
 
         const response = await fetch(deleteEndpoint, {
           method: "POST",

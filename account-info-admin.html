@@ -98,14 +98,22 @@
       gap: 14px;
     }
 
-    .sort-buttons {
+    .sort-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
       margin-top: 12px;
     }
 
-    .sort-buttons button {
+    .sort-row-half {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .sort-grid button,
+    .sort-row-half button {
       margin-top: 0;
     }
 
@@ -116,6 +124,16 @@
 
     .account-item:last-child {
       border-bottom: none;
+    }
+
+    .account-link {
+      display: block;
+      color: #111;
+      text-decoration: none;
+    }
+
+    .account-link:hover {
+      text-decoration: underline;
     }
 
     .account-title {
@@ -133,6 +151,28 @@
     .center-link {
       text-align: center;
       margin-top: 16px;
+    }
+
+    .show-all-link {
+      text-align: center;
+      margin-top: 18px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .show-all-link button {
+      background: none;
+      border: none;
+      color: #111;
+      padding: 0;
+      margin: 0;
+      font-weight: bold;
+      font-size: 1.15rem;
+    }
+
+    .show-all-link button:hover {
+      text-decoration: underline;
+      background: none;
     }
 
     details {
@@ -156,7 +196,8 @@
 
     @media (max-width: 700px) {
       .filter-grid,
-      .sort-buttons {
+      .sort-grid,
+      .sort-row-half {
         grid-template-columns: 1fr;
       }
     }
@@ -183,7 +224,7 @@
         </div>
 
         <div class="field">
-          <label class="label" for="filter-gender">性別</label>
+          <label class="label" for="filter-gender">性別【選択式】</label>
           <select id="filter-gender">
             <option value="">指定なし</option>
             <option value="男性">男性</option>
@@ -194,7 +235,7 @@
         </div>
 
         <div class="field">
-          <label class="label" for="filter-novel-support">小説応援</label>
+          <label class="label" for="filter-novel-support">小説応援【選択式】</label>
           <select id="filter-novel-support">
             <option value="">指定なし</option>
             <option value="なし">なし</option>
@@ -206,7 +247,7 @@
         </div>
 
         <div class="field">
-          <label class="label" for="filter-license">音楽ライセンス</label>
+          <label class="label" for="filter-license">音楽ライセンス【選択式】</label>
           <select id="filter-license">
             <option value="">指定なし</option>
             <option value="無し">無し</option>
@@ -223,21 +264,25 @@
 
       <button type="button" id="filter-button">絞り込む</button>
 
-      <div class="sort-buttons">
+      <div class="sort-grid">
         <button type="button" id="sort-email-button">メールアドレス順</button>
         <button type="button" id="sort-name-button">ユーザー名順</button>
-        <button type="button" id="sort-created-button">登録順</button>
-        <button type="button" id="sort-direction-button">▲</button>
       </div>
 
-      <button type="button" id="recent-button">最近登録の20件を表示</button>
-      <button type="button" id="all-button">━全てを表示━</button>
+      <div class="sort-row-half">
+        <button type="button" id="sort-created-button">登録順</button>
+        <button type="button" id="sort-direction-button">▼</button>
+      </div>
     </div>
 
     <div class="box">
       <h2>一覧</h2>
       <div id="account-list">
         <p>読み込み中...</p>
+      </div>
+
+      <div class="show-all-link">
+        <button type="button" id="all-button">━━全てを表示━━</button>
       </div>
 
       <p class="center-link">
@@ -377,18 +422,6 @@
         showAll: false
       };
 
-      function getGenderValue(raw) {
-        return raw || "";
-      }
-
-      function getNovelSupportValue(raw) {
-        return raw || "";
-      }
-
-      function getLicenseValue(raw) {
-        return raw || "";
-      }
-
       function renderAccounts(items) {
         accountList.innerHTML = "";
 
@@ -400,6 +433,10 @@
         items.forEach((item) => {
           const row = document.createElement("div");
           row.className = "account-item";
+
+          const link = document.createElement("a");
+          link.className = "account-link";
+          link.href = "user-detail.html?id=" + encodeURIComponent(item.user_id);
 
           const title = document.createElement("div");
           title.className = "account-title";
@@ -416,8 +453,9 @@
             "国: " + (item.country || "") + "\n" +
             "登録日時: " + (item.created_at ? new Date(item.created_at).toLocaleString("ja-JP") : "");
 
-          row.appendChild(title);
-          row.appendChild(meta);
+          link.appendChild(title);
+          link.appendChild(meta);
+          row.appendChild(link);
           accountList.appendChild(row);
         });
       }
@@ -505,15 +543,7 @@
 
       document.getElementById("sort-direction-button").addEventListener("click", async (e) => {
         state.sortAsc = !state.sortAsc;
-        e.target.textContent = state.sortAsc ? "▼" : "▲";
-        await loadAccounts();
-      });
-
-      document.getElementById("recent-button").addEventListener("click", async () => {
-        state.sortKey = "created_at";
-        state.sortAsc = false;
-        state.showAll = false;
-        document.getElementById("sort-direction-button").textContent = "▲";
+        e.target.textContent = state.sortAsc ? "▲" : "▼";
         await loadAccounts();
       });
 

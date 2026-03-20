@@ -223,8 +223,8 @@
 
     <div class="box">
       <h2>操作</h2>
-      <button type="button" class="danger-text-button" id="stop-button">停止</button>
-      <button type="button" class="danger-text-button" id="resume-button">利用再開</button>
+      <button type="button" class="danger-text-button" id="stop-button" style="display:none;">停止</button>
+      <button type="button" class="danger-text-button" id="resume-button" style="display:none;">利用再開</button>
       <button type="button" class="danger-text-button" id="delete-button">削除</button>
     </div>
 
@@ -240,11 +240,32 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
 
-      const updateEndpoint = `${supabaseUrl}/functions/v1/admin-update-subadmin-v2`;
-      const deleteEndpoint = `${supabaseUrl}/functions/v1/admin-delete-subadmin`;
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+
+      let adminPermissions = [];
+      try {
+        adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+        if (!Array.isArray(adminPermissions)) {
+          adminPermissions = [];
+        }
+      } catch {
+        adminPermissions = [];
+      }
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+      const params = new URLSearchParams(window.location.search);
+      const targetIdRaw = params.get("id");
+      const targetId = targetIdRaw ? Number(targetIdRaw) : null;
+
+      adminUserLink.textContent = adminUsername + "さん";
 
       function clearAdminSession() {
         sessionStorage.removeItem("admin_logged_in");
@@ -252,33 +273,6 @@
         sessionStorage.removeItem("admin_role");
         sessionStorage.removeItem("admin_status");
         sessionStorage.removeItem("admin_permissions");
-      }
-
-      function parsePermissions(value) {
-        try {
-          const parsed = JSON.parse(value || "[]");
-          return Array.isArray(parsed) ? parsed : [];
-        } catch {
-          return [];
-        }
-      }
-
-      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
-      const adminRole = sessionStorage.getItem("admin_role") || "";
-      const adminStatus = sessionStorage.getItem("admin_status") || "";
-      const adminPermissions = parsePermissions(sessionStorage.getItem("admin_permissions"));
-      const adminUserLink = document.getElementById("admin-user-link");
-      const debugBox = document.getElementById("debug-box");
-
-      const params = new URLSearchParams(window.location.search);
-      const targetIdRaw = params.get("id");
-      const targetId = targetIdRaw ? Number(targetIdRaw) : null;
-
-      adminUserLink.textContent = adminUsername + "さん";
-
-      if (sessionStorage.getItem("admin_logged_in") !== "1") {
-        window.location.href = "admin-login.html";
-        return;
       }
 
       if (adminStatus !== "active") {
@@ -305,7 +299,12 @@
         return;
       }
 
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+      const updateEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin-v2";
+      const deleteEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin";
 
       const permissionLabels = {
         account_management: "アカウント管理",
@@ -330,9 +329,9 @@
       }
 
       function statusLabel(value) {
-        if (value === "active") return "有効";
-        if (value === "stopped") return "停止";
-        if (value === "suspended") return "停止";
+        if (value === "active") return "利用中";
+        if (value === "stopped") return "停止中";
+        if (value === "suspended") return "停止中";
         return value || "";
       }
 
@@ -434,11 +433,14 @@
         document.getElementById("permissions-value").textContent = permissionText(data.permissions);
         renderPermissionEditor(data.permissions || []);
 
-        document.getElementById("stop-button").style.display =
-          (data.status === "active") ? "block" : "none";
+        document.getElementById("stop-button").style.display = "none";
+        document.getElementById("resume-button").style.display = "none";
 
-        document.getElementById("resume-button").style.display =
-          (data.status === "stopped" || data.status === "suspended") ? "block" : "none";
+        if (data.status === "active") {
+          document.getElementById("stop-button").style.display = "block";
+        } else if (data.status === "stopped" || data.status === "suspended") {
+          document.getElementById("resume-button").style.display = "block";
+        }
 
         return true;
       }
@@ -526,8 +528,7 @@
         return { response, result };
       }
 
-      const okMe = await loadMe();
-      if (!okMe) return;
+      await loadMe();
 
       const okSub = await loadSubAdmin();
       if (!okSub) return;

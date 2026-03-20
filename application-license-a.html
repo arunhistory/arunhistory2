@@ -416,8 +416,8 @@
             created_at
           `)
           .eq("requested_license", "license_a")
+          .eq("status", "pending")
           .order("created_at", { ascending: false });
-
         if (error) {
           applicationList.innerHTML = "<p>読み込みに失敗しました。</p>";
           renderDebug("applications error:\n" + error.message);

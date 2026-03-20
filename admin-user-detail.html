@@ -585,52 +585,66 @@
       });
 
       document.getElementById("delete-button").addEventListener("click", async () => {
-        alert("delete click ok");
-        
         const okDelete = window.confirm("この準管理者を削除しますか？");
         if (!okDelete) return;
-        
+
         renderDebug("delete start\nsubadmin_id=" + currentSubAdmin?.id + "\ntargetId=" + targetId);
 
-        const response = await fetch(deleteEndpoint, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`
-          },
-          body: JSON.stringify({
+        try {
+          const payload = {
             admin_username: adminUsername,
             subadmin_id: currentSubAdmin.id
-          })
-        });
+          };
 
-        const result = await parseResponseSafe(response);
-
-        renderDebug(
-          "delete payload:\n" + JSON.stringify({
-            admin_username: adminUsername,
-            subadmin_id: currentSubAdmin.id
-          }, null, 2) +
-          "\n\nstatus: " + response.status +
-          "\nresponse:\n" + (
-            typeof result === "string"
-              ? result
-              : JSON.stringify(result, null, 2)
-          )
-        );
-
-        if (!response.ok || (typeof result === "object" && result?.ok === false)) {
-          alert(
-            (typeof result === "object" && result?.error)
-              ? result.error
-              : "削除に失敗しました。"
+          renderDebug(
+            "delete fetch start\n\npayload:\n" +
+            JSON.stringify(payload, null, 2) +
+            "\n\nendpoint:\n" + deleteEndpoint
           );
-          return;
-        }
 
-        alert("削除しました。");
-        window.location.href = "admin-management.html";
+          const response = await fetch(deleteEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`
+            },
+            body: JSON.stringify(payload)
+          });
+
+          renderDebug("delete fetched\nstatus=" + response.status);
+
+          const result = await parseResponseSafe(response);
+
+          renderDebug(
+            "delete payload:\n" + JSON.stringify(payload, null, 2) +
+            "\n\nstatus: " + response.status +
+            "\nresponse:\n" + (
+              typeof result === "string"
+                ? result
+                : JSON.stringify(result, null, 2)
+            )
+          );
+
+          if (!response.ok || (typeof result === "object" && result?.ok === false)) {
+            alert(
+              (typeof result === "object" && result?.error)
+                ? result.error
+                : "削除に失敗しました。"
+            );
+            return;
+          }
+
+          alert("削除しました。");
+          window.location.href = "admin-management.html";
+        } catch (error) {
+          renderDebug(
+            "delete exception\n\n" +
+            String(error) +
+            "\n\nstack:\n" + (error && error.stack ? error.stack : "none")
+          );
+          alert("削除中にエラーが発生しました。");
+        }
       });
     });
   </script>

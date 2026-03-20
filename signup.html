@@ -200,125 +200,104 @@
   </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      const params = new URLSearchParams(window.location.search);
-      const redirect = params.get("redirect") || "index.html";
+  document.addEventListener("DOMContentLoaded", async () => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get("redirect") || "index.html";
 
-      const backLink = document.getElementById("back-link");
-      const loginLink = document.getElementById("login-link");
-      const form = document.getElementById("signup-form");
-      const submitButton = document.getElementById("signup-button");
+    const backLink = document.getElementById("back-link");
+    const loginLink = document.getElementById("login-link");
+    const form = document.getElementById("signup-form");
+    const submitButton = form.querySelector('button[type="submit"]');
 
-      backLink.href = redirect;
-      loginLink.href = "login.html?redirect=" + encodeURIComponent(redirect);
+    backLink.href = redirect;
+    loginLink.href = "login.html?redirect=" + encodeURIComponent(redirect);
 
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("ページの読み込みに失敗しました。");
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      alert("ページの読み込みに失敗しました。");
+      return;
+    }
+
+    const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+    const supabaseKey = "ここにanon key";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    if (sessionStorage.getItem("admin_logged_in") !== "1") {
+      const { data: maintenanceSetting, error: maintenanceError } = await supabase
+        .from("site_settings")
+        .select("setting_value")
+        .eq("setting_key", "maintenance_mode")
+        .maybeSingle();
+
+      if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+        window.location.href = "maintenance.html";
+        return;
+      }
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
+      if (!turnstileResponse) {
+        alert("bot対策の確認を完了してください。");
         return;
       }
 
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "YOUR_ANON_KEY";
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      const agreeNovel = document.getElementById("agree-novel").checked;
+      const agreeMusic = document.getElementById("agree-music").checked;
+      const agreePrivacy = document.getElementById("agree-privacy").checked;
 
-      if (sessionStorage.getItem("admin_logged_in") !== "1") {
-        const { data: maintenanceSetting, error: maintenanceError } = await supabase
-          .from("site_settings")
-          .select("setting_value")
-          .eq("setting_key", "maintenance_mode")
-          .maybeSingle();
-
-        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
-          window.location.href = "maintenance.html";
-          return;
-        }
+      if (!agreeNovel || !agreeMusic || !agreePrivacy) {
+        alert("利用規約およびプライバシーポリシーへの同意が必要です。");
+        return;
       }
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+      submitButton.disabled = true;
+      submitButton.textContent = "登録中...";
 
-        const turnstileResponse = document.querySelector('[name="cf-turnstile-response"]')?.value;
-        if (!turnstileResponse) {
-          alert("bot対策の確認を完了してください。");
-          return;
-        }
+      try {
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const username = document.getElementById("username").value.trim();
+        const birthdate = document.getElementById("birthdate").value;
+        const gender = document.getElementById("gender").value;
+        const country = document.getElementById("country").value.trim();
 
-        const agreeNovel = document.getElementById("agree-novel").checked;
-        const agreeMusic = document.getElementById("agree-music").checked;
-        const agreePrivacy = document.getElementById("agree-privacy").checked;
-
-        if (!agreeNovel || !agreeMusic || !agreePrivacy) {
-          alert("利用規約およびプライバシーポリシーへの同意が必要です。");
-          return;
-        }
-
-        submitButton.disabled = true;
-        submitButton.textContent = "登録中...";
-
-        try {
-          const email = document.getElementById("email").value.trim();
-          const password = document.getElementById("password").value;
-          const username = document.getElementById("username").value.trim();
-          const birthdate = document.getElementById("birthdate").value;
-          const gender = document.getElementById("gender").value;
-          const country = document.getElementById("country").value.trim();
-
-          const { data: existingAccount, error: existingAccountError } = await supabase
-            .from("accounts")
-            .select("email")
-            .eq("email", email)
-            .maybeSingle();
-
-          if (existingAccountError) {
-            alert("登録前確認に失敗しました。時間をおいて再度お試しください。");
-            submitButton.disabled = false;
-            submitButton.textContent = "登録する";
-            if (window.turnstile) window.turnstile.reset();
-            return;
-          }
-
-          if (existingAccount) {
-            alert("このメールアドレスはすでに使用されています。");
-            submitButton.disabled = false;
-            submitButton.textContent = "登録する";
-            if (window.turnstile) window.turnstile.reset();
-            return;
-          }
-
-          const { error } = await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                display_name: username,
-                birthdate,
-                gender,
-                country
-              }
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              display_name: username,
+              birthdate,
+              gender,
+              country
             }
-          });
+          }
+        });
 
-          if (error) {
+        if (error) {
+          if (String(error.message || "").includes("already registered")) {
+            alert("このメールアドレスはすでに使用されています。");
+          } else {
             alert("登録に失敗しました: " + error.message);
-            submitButton.disabled = false;
-            submitButton.textContent = "登録する";
-            if (window.turnstile) window.turnstile.reset();
-            return;
           }
-
-          alert("登録されました");
-          window.location.href = "login.html?redirect=" + encodeURIComponent(redirect);
-        } catch (err) {
-          alert("予期しないエラーが発生しました。");
-        } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = "登録する";
-          if (window.turnstile) {
-            window.turnstile.reset();
-          }
+          return;
         }
-      });
+
+        alert("登録されました");
+        window.location.href = "login.html?redirect=" + encodeURIComponent(redirect);
+      } catch (err) {
+        alert("予期しないエラーが発生しました。");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "登録する";
+        if (window.turnstile) {
+          window.turnstile.reset();
+        }
+      }
     });
-  </script>
+  });
+</script>
 </body>
 </html>

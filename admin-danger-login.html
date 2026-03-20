@@ -33,7 +33,6 @@
     }
 
     a:hover {
-      color: #111;
       text-decoration: underline;
     }
 
@@ -237,7 +236,7 @@
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
 
-      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = null, logTargetId = null) {
+      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = "user", logTargetId = userId) {
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
           method: "POST",
           headers: {
@@ -247,8 +246,8 @@
           },
           body: JSON.stringify({
             admin_username: adminUsername,
-            target_type: logTargetType !== null ? logTargetType : (adminRole === "sub_admin" ? "sub_admin" : null),
-            target_id: logTargetId !== null ? logTargetId : (adminRole === "sub_admin" ? adminId : null),
+            target_type: logTargetType,
+            target_id: logTargetId,
             action_type: actionType,
             action_label: actionLabel,
             action_detail: actionDetail
@@ -274,9 +273,7 @@
           await writePageLog(
             "admin_forbidden_page_access",
             "権限外ページアクセス",
-            "page: admin-danger-login.html / reason: user_danger_control権限なし",
-            "user",
-            userId
+            "page: admin-danger-login.html / reason: user_danger_control権限なし"
           );
         } catch (error) {
           renderDebug("拒否ログ保存失敗: " + String(error));
@@ -291,9 +288,7 @@
         await writePageLog(
           "admin_danger_login_view",
           "危険操作再認証画面閲覧",
-          `page: admin-danger-login.html / user_id: ${userId} / role: ${adminRole}`,
-          "user",
-          userId
+          `page: admin-danger-login.html / user_id: ${userId} / role: ${adminRole}`
         );
       } catch (error) {
         renderDebug("閲覧ログ保存失敗: " + String(error));
@@ -353,9 +348,7 @@
               await writePageLog(
                 "admin_danger_login_failed",
                 "危険操作再認証失敗",
-                `user_id: ${userId} / login_username: ${loginUsername}`,
-                "user",
-                userId
+                `user_id: ${userId} / login_username: ${loginUsername}`
               );
             } catch (error) {
               renderDebug("再認証失敗ログ保存失敗: " + String(error));
@@ -383,9 +376,7 @@
               await writePageLog(
                 "admin_danger_login_failed",
                 "危険操作再認証失敗",
-                `user_id: ${userId} / login_username: ${loginUsername} / reason: 権限不足または停止中`,
-                "user",
-                userId
+                `user_id: ${userId} / login_username: ${loginUsername} / reason: 権限不足または停止中`
               );
             } catch (error) {
               renderDebug("再認証失敗ログ保存失敗: " + String(error));
@@ -407,9 +398,7 @@
             await writePageLog(
               "admin_danger_login_success",
               "危険操作再認証成功",
-              `user_id: ${userId} / verified_by: ${result.admin.username}`,
-              "user",
-              userId
+              `user_id: ${userId} / verified_by: ${result.admin.username}`
             );
           } catch (error) {
             renderDebug("再認証成功ログ保存失敗: " + String(error));

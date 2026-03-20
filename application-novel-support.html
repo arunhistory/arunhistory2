@@ -147,180 +147,182 @@
     </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      const form = document.getElementById("novel-support-form");
-      const submitButton = document.getElementById("submit-button");
-      const screenshotInput = document.getElementById("support-screenshot");
-      const previewImage = document.getElementById("preview-image");
-      const previewEmpty = document.getElementById("preview-empty");
+  document.addEventListener("DOMContentLoaded", async () => {
+    const form = document.getElementById("novel-support-form");
+    const submitButton = document.getElementById("submit-button");
+    const screenshotInput = document.getElementById("support-screenshot");
+    const previewImage = document.getElementById("preview-image");
+    const previewEmpty = document.getElementById("preview-empty");
 
-      function showPreview(file) {
-        if (!file) {
-          previewImage.style.display = "none";
-          previewImage.removeAttribute("src");
-          previewEmpty.style.display = "block";
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onload = () => {
-          previewImage.src = reader.result;
-          previewImage.style.display = "block";
-          previewEmpty.style.display = "none";
-        };
-        reader.readAsDataURL(file);
-      }
-
-      screenshotInput.addEventListener("change", () => {
-        const file = screenshotInput.files && screenshotInput.files[0] ? screenshotInput.files[0] : null;
-        showPreview(file);
-      });
-
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("ページの読み込みに失敗しました。");
+    function showPreview(file) {
+      if (!file) {
+        previewImage.style.display = "none";
+        previewImage.removeAttribute("src");
+        previewEmpty.style.display = "block";
         return;
       }
 
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      const reader = new FileReader();
+      reader.onload = () => {
+        previewImage.src = reader.result;
+        previewImage.style.display = "block";
+        previewEmpty.style.display = "none";
+      };
+      reader.readAsDataURL(file);
+    }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    screenshotInput.addEventListener("change", () => {
+      const file = screenshotInput.files && screenshotInput.files[0] ? screenshotInput.files[0] : null;
+      showPreview(file);
+    });
 
-      if (!session) {
-        window.location.href = "login.html?redirect=" + encodeURIComponent("application-novel-support.html");
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      alert("ページの読み込みに失敗しました。");
+      return;
+    }
+
+    const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+    const supabaseKey = "YOUR_ANON_KEY";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      window.location.href = "login.html?redirect=" + encodeURIComponent("application-novel-support.html");
+      return;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const noteName = document.getElementById("note-name").value.trim();
+      const file = screenshotInput.files && screenshotInput.files[0] ? screenshotInput.files[0] : null;
+
+      if (!noteName || !file) {
+        alert("必要項目を入力してください。");
         return;
       }
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+      submitButton.disabled = true;
+      submitButton.textContent = "送信中...";
 
-        const noteName = document.getElementById("note-name").value.trim();
-        const file = screenshotInput.files && screenshotInput.files[0] ? screenshotInput.files[0] : null;
+      try {
+        const userId = session.user.id;
+        const fileExt = (file.name.split(".").pop() || "png").toLowerCase();
+        const filePath = `${userId}/${Date.now()}-support.${fileExt}`;
 
-        if (!noteName || !file) {
-          alert("必要項目を入力してください。");
-          return;
-        }
+        alert("1. Storageアップロード開始");
 
-        submitButton.disabled = true;
-        submitButton.textContent = "送信中...";
+        const { error: uploadError } = await supabase
+          .storage
+          .from("novel-support-screenshots")
+          .upload(filePath, file, { upsert: false });
 
-        try {
-          const userId = session.user.id;
-          const fileExt = (file.name.split(".").pop() || "png").toLowerCase();
-          const filePath = `${userId}/${Date.now()}-support.${fileExt}`;
-
-          const { error: uploadError } = await supabase
-            .storage
-            .from("novel-support-screenshots")
-            .upload(filePath, file, { upsert: false });
-
-          if (uploadError) {
-            alert("画像のアップロードに失敗しました。");
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v2`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": "Bearer " + session.access_token
-            },
-            body: JSON.stringify({
-              note_name: noteName,
-              screenshot_url: filePath
-            })
-          });
-
-          const submitRawText = await submitResponse.text();
-          let submitResult = null;
-
-          try {
-            submitResult = submitRawText ? JSON.parse(submitRawText) : {};
-          } catch (_) {
-            alert("申請の送信に失敗しました。");
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          if (!submitResponse.ok || !submitResult || !submitResult.ok) {
-            alert(submitResult?.error || "申請の送信に失敗しました。");
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          const applicationId = submitResult.application_id;
-
-          if (!applicationId) {
-            alert("申請は送信されましたが、分類処理に進めませんでした。");
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          const classifyResponse = await fetch(`${supabaseUrl}/functions/v1/classify-novel-support-screenshot`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": "Bearer " + supabaseKey
-            },
-            body: JSON.stringify({
-              application_id: applicationId
-            })
-          });
-
-          const classifyRawText = await classifyResponse.text();
-          let classifyResult = null;
-
-          try {
-            classifyResult = classifyRawText ? JSON.parse(classifyRawText) : {};
-          } catch (_) {
-            alert("申請は送信されましたが、分類処理に失敗しました。");
-            form.reset();
-            showPreview(null);
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          if (!classifyResponse.ok || !classifyResult || !classifyResult.ok) {
-            alert(classifyResult?.error || "申請は送信されましたが、分類処理に失敗しました。");
-            form.reset();
-            showPreview(null);
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          if (classifyResult.classified === false && classifyResult.status === "cancelled") {
-            alert("申請が取り消されました。再度、申請お願いします。");
-            form.reset();
-            showPreview(null);
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          alert("小説応援申請を送信しました。");
-          form.reset();
-          showPreview(null);
-        } catch (error) {
-          alert("送信に失敗しました。");
-        } finally {
+        if (uploadError) {
+          alert("Storageアップロード失敗: " + uploadError.message);
           submitButton.disabled = false;
           submitButton.textContent = "送信";
+          return;
         }
-      });
+
+        alert("2. Storageアップロード成功");
+
+        const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v2`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + session.access_token
+          },
+          body: JSON.stringify({
+            note_name: noteName,
+            screenshot_url: filePath
+          })
+        });
+
+        const submitRawText = await submitResponse.text();
+        let submitResult = null;
+
+        try {
+          submitResult = submitRawText ? JSON.parse(submitRawText) : {};
+        } catch (_) {
+          alert("3. 申請保存レスポンス解析失敗");
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
+
+        if (!submitResponse.ok || !submitResult || !submitResult.ok) {
+          alert("3. 申請保存失敗: " + (submitResult?.error || "不明"));
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
+
+        alert("3. 申請保存成功");
+
+        const applicationId = submitResult.application_id;
+
+        if (!applicationId) {
+          alert("application_id が返っていません");
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
+
+        const classifyResponse = await fetch(`${supabaseUrl}/functions/v1/classify-novel-support-screenshot`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            application_id: applicationId
+          })
+        });
+
+        const classifyRawText = await classifyResponse.text();
+        let classifyResult = null;
+
+        try {
+          classifyResult = classifyRawText ? JSON.parse(classifyRawText) : {};
+        } catch (_) {
+          alert("4. 分類レスポンス解析失敗");
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
+
+        if (!classifyResponse.ok || !classifyResult || !classifyResult.ok) {
+          alert("4. 分類失敗: " + (classifyResult?.error || "不明"));
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
+
+        if (classifyResult.classified === false && classifyResult.status === "cancelled") {
+          alert("申請が取り消されました。再度、申請お願いします。");
+          form.reset();
+          showPreview(null);
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
+
+        alert("小説応援申請を送信しました。");
+        form.reset();
+        showPreview(null);
+      } catch (error) {
+        alert("送信失敗: " + String(error));
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "送信";
+      }
     });
-  </script>
+  });
+</script>
 </body>
 </html>

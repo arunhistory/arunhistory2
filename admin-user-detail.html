@@ -546,7 +546,7 @@
         const { response, result } = await callUpdateSubadmin({
           admin_username: adminUsername,
           subadmin_id: currentSubAdmin.id,
-          new_password: newPassword.trim()
+          password: newPassword.trim()
         });
 
         if (!response.ok || (typeof result === "object" && result?.ok === false)) {

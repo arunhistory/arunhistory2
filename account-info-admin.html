@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>アカウント情報</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -351,6 +350,7 @@
 
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+      const listEndpoint = `${supabaseUrl}/functions/v1/admin-list-accounts`;
 
       async function writePageLog(actionType, actionLabel, actionDetail) {
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
@@ -410,13 +410,6 @@
         renderDebug("閲覧ログ保存失敗: " + String(error));
       }
 
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
-        return;
-      }
-
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
       const state = {
         sortKey: "created_at",
         sortAsc: false,
@@ -461,64 +454,64 @@
         });
       }
 
+      async function parseResponseSafe(response) {
+        const rawText = await response.text();
+        try {
+          return rawText ? JSON.parse(rawText) : {};
+        } catch {
+          return rawText;
+        }
+      }
+
       async function loadAccounts() {
         accountList.innerHTML = "<p>読み込み中...</p>";
 
-        const filterEmail = document.getElementById("filter-email").value.trim();
-        const filterName = document.getElementById("filter-name").value.trim();
-        const filterGender = document.getElementById("filter-gender").value;
-        const filterNovelSupport = document.getElementById("filter-novel-support").value;
-        const filterLicense = document.getElementById("filter-license").value;
-        const filterCountry = document.getElementById("filter-country").value.trim();
+        const payload = {
+          admin_username: adminUsername,
+          filter_email: document.getElementById("filter-email").value.trim(),
+          filter_name: document.getElementById("filter-name").value.trim(),
+          filter_gender: document.getElementById("filter-gender").value,
+          filter_novel_support: document.getElementById("filter-novel-support").value,
+          filter_license: document.getElementById("filter-license").value,
+          filter_country: document.getElementById("filter-country").value.trim(),
+          sort_key: state.sortKey,
+          sort_asc: state.sortAsc,
+          show_all: state.showAll
+        };
 
-        let query = supabase
-          .from("accounts")
-          .select("user_id, email, display_name, gender, country, created_at, license_status, novel_support_status")
-          .order(state.sortKey, { ascending: state.sortAsc });
+        try {
+          const response = await fetch(listEndpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify(payload)
+          });
 
-        if (filterEmail !== "") {
-          query = query.ilike("email", "%" + filterEmail + "%");
-        }
+          const result = await parseResponseSafe(response);
 
-        if (filterName !== "") {
-          query = query.ilike("display_name", "%" + filterName + "%");
-        }
+          renderDebug(
+            "request payload:\n" + JSON.stringify(payload, null, 2) +
+            "\n\nstatus: " + response.status +
+            "\nresponse:\n" + (
+              typeof result === "string"
+                ? result
+                : JSON.stringify(result, null, 2)
+            )
+          );
 
-        if (filterGender !== "") {
-          query = query.eq("gender", filterGender);
-        }
+          if (!response.ok || typeof result !== "object" || !result?.ok) {
+            accountList.innerHTML = "<p>読み込みに失敗しました。</p>";
+            return;
+          }
 
-        if (filterNovelSupport !== "") {
-          query = query.eq("novel_support_status", filterNovelSupport);
-        }
-
-        if (filterLicense !== "") {
-          query = query.eq("license_status", filterLicense);
-        }
-
-        if (filterCountry !== "") {
-          query = query.ilike("country", "%" + filterCountry + "%");
-        }
-
-        if (!state.showAll) {
-          query = query.limit(20);
-        }
-
-        const { data, error } = await query;
-
-        if (error) {
+          renderAccounts(result.accounts || []);
+        } catch (error) {
           accountList.innerHTML = "<p>読み込みに失敗しました。</p>";
-          renderDebug("一覧取得エラー: " + error.message);
-          return;
+          renderDebug("fetch error: " + String(error));
         }
-
-        renderAccounts(data || []);
-        renderDebug(
-          "取得件数: " + (data || []).length + "\n" +
-          "sortKey: " + state.sortKey + "\n" +
-          "sortAsc: " + state.sortAsc + "\n" +
-          "showAll: " + state.showAll
-        );
       }
 
       document.getElementById("filter-button").addEventListener("click", async () => {
@@ -528,22 +521,26 @@
 
       document.getElementById("sort-email-button").addEventListener("click", async () => {
         state.sortKey = "email";
+        state.showAll = false;
         await loadAccounts();
       });
 
       document.getElementById("sort-name-button").addEventListener("click", async () => {
         state.sortKey = "display_name";
+        state.showAll = false;
         await loadAccounts();
       });
 
       document.getElementById("sort-created-button").addEventListener("click", async () => {
         state.sortKey = "created_at";
+        state.showAll = false;
         await loadAccounts();
       });
 
       document.getElementById("sort-direction-button").addEventListener("click", async (e) => {
         state.sortAsc = !state.sortAsc;
         e.target.textContent = state.sortAsc ? "▲" : "▼";
+        state.showAll = false;
         await loadAccounts();
       });
 

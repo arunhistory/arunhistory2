@@ -104,7 +104,7 @@
         <a href="admin-management.html">管理者の管理</a>
       </p>
 
-      <p>
+      <p id="maintenance-control-wrap" class="hidden">
         <a href="maintenance-control.html">メンテナンス管理</a>
       </p>
 
@@ -130,23 +130,70 @@
         return;
       }
 
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+
       const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
       const adminRole = sessionStorage.getItem("admin_role") || "";
       const adminStatus = sessionStorage.getItem("admin_status") || "";
-      const adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+
+      let adminPermissions = [];
+      try {
+        adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+        if (!Array.isArray(adminPermissions)) {
+          adminPermissions = [];
+        }
+      } catch {
+        adminPermissions = [];
+      }
 
       const adminUserLink = document.getElementById("admin-user-link");
       const debugBox = document.getElementById("debug-box");
 
       adminUserLink.textContent = adminUsername + "さん";
 
-      if (adminStatus !== "active") {
-        alert("この管理者アカウントは停止中です。");
+      function clearAdminSession() {
         sessionStorage.removeItem("admin_logged_in");
         sessionStorage.removeItem("admin_username");
         sessionStorage.removeItem("admin_role");
         sessionStorage.removeItem("admin_status");
         sessionStorage.removeItem("admin_permissions");
+      }
+
+      async function writeLogoutLog() {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            target_type: null,
+            target_id: null,
+            action_type: "admin_logout",
+            action_label: "管理者ログアウト",
+            action_detail: `role: ${adminRole}`
+          })
+        });
+
+        const rawText = await response.text();
+
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          "\n\nlogout status: " + response.status +
+          "\nlogout response:\n" + rawText;
+
+        return response.ok;
+      }
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        clearAdminSession();
         window.location.href = "admin-login.html";
         return;
       }
@@ -163,6 +210,7 @@
         show("novel-management-wrap");
         show("notice-management-wrap");
         show("admin-management-wrap");
+        show("maintenance-control-wrap");
       } else if (adminRole === "sub_admin") {
         if (adminPermissions.includes("database_management")) {
           show("database-link-wrap");
@@ -187,13 +235,21 @@
         "admin_status: " + adminStatus + "\n" +
         "admin_permissions: " + JSON.stringify(adminPermissions, null, 2);
 
-      document.getElementById("admin-logout").addEventListener("click", function (e) {
+      document.getElementById("admin-logout").addEventListener("click", async function (e) {
         e.preventDefault();
-        sessionStorage.removeItem("admin_logged_in");
-        sessionStorage.removeItem("admin_username");
-        sessionStorage.removeItem("admin_role");
-        sessionStorage.removeItem("admin_status");
-        sessionStorage.removeItem("admin_permissions");
+
+        try {
+          await writeLogoutLog();
+        } catch (error) {
+          debugBox.textContent =
+            "admin_username: " + adminUsername + "\n" +
+            "admin_role: " + adminRole + "\n" +
+            "admin_status: " + adminStatus + "\n" +
+            "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+            "\n\nlogout fetch error:\n" + String(error);
+        }
+
+        clearAdminSession();
         window.location.href = "index.html";
       });
     });

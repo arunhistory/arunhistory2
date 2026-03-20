@@ -243,23 +243,31 @@
         });
 
         const submitRawText = await submitResponse.text();
-        let submitResult = null;
+let submitResult = null;
 
-        try {
-          submitResult = submitRawText ? JSON.parse(submitRawText) : {};
-        } catch (_) {
-          alert("3. 申請保存レスポンス解析失敗");
-          submitButton.disabled = false;
-          submitButton.textContent = "送信";
-          return;
-        }
+try {
+  submitResult = submitRawText ? JSON.parse(submitRawText) : {};
+} catch (_) {
+  alert(
+    "3. 申請保存レスポンス解析失敗\n\n" +
+    "status=" + submitResponse.status + "\n\n" +
+    submitRawText
+  );
+  submitButton.disabled = false;
+  submitButton.textContent = "送信";
+  return;
+}
 
-        if (!submitResponse.ok || !submitResult || !submitResult.ok) {
-          alert("3. 申請保存失敗: " + (submitResult?.error || "不明"));
-          submitButton.disabled = false;
-          submitButton.textContent = "送信";
-          return;
-        }
+if (!submitResponse.ok || !submitResult || !submitResult.ok) {
+  alert(
+    "3. 申請保存失敗\n\n" +
+    "status=" + submitResponse.status + "\n\n" +
+    submitRawText
+  );
+  submitButton.disabled = false;
+  submitButton.textContent = "送信";
+  return;
+}
 
         alert("3. 申請保存成功");
 

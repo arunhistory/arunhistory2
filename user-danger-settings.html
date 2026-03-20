@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>危険操作設定</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -131,6 +130,32 @@
       margin-bottom: 8px;
     }
 
+    .restriction-box {
+      margin-top: 10px;
+      margin-bottom: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+
+    .restriction-box label {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-weight: normal;
+      line-height: 1.8;
+      margin-bottom: 10px;
+    }
+
+    .restriction-box input[type="checkbox"] {
+      width: auto;
+      min-width: auto;
+      max-width: none;
+      display: inline-block;
+      margin-top: 5px;
+      padding: 0;
+    }
+
     details {
       margin-top: 20px;
       background: rgba(255,255,255,0.65);
@@ -173,13 +198,25 @@
           <label for="danger-action">申請</label>
           <select id="danger-action" name="danger-action" required>
             <option value="">選択してください</option>
-            <option value="BAN">BAN</option>
-            <option value="利用停止">利用停止</option>
-            <option value="一部利用停止">一部利用停止</option>
-            <option value="利用再開">利用再開</option>
-            <option value="削除">削除</option>
+            <option value="partial_suspended">一部利用停止</option>
+            <option value="suspended">利用停止</option>
+            <option value="active">利用再開</option>
+            <option value="banned">BAN</option>
+            <option value="delete">削除</option>
           </select>
         </p>
+
+        <div class="restriction-box" id="restriction-box" style="display:none;">
+          <label>
+            <input type="checkbox" id="restriction-novel" value="novel_blocked">
+            <span>小説利用停止</span>
+          </label>
+
+          <label>
+            <input type="checkbox" id="restriction-music" value="music_blocked">
+            <span>音楽利用停止</span>
+          </label>
+        </div>
 
         <p>
           <label for="danger-reason">理由</label>
@@ -237,6 +274,8 @@
       const adminUserLink = document.getElementById("admin-user-link");
       const debugBox = document.getElementById("debug-box");
       const submitButton = document.getElementById("danger-submit-button");
+      const restrictionBox = document.getElementById("restriction-box");
+      const actionSelect = document.getElementById("danger-action");
 
       adminUserLink.textContent = adminUsername + "さん";
 
@@ -263,6 +302,21 @@
           (extra ? "\n\n" + extra : "");
       }
 
+      function getSelectedRestrictions() {
+        return Array.from(document.querySelectorAll(".restriction-box input[type='checkbox']:checked"))
+          .map((input) => input.value);
+      }
+
+      function updateRestrictionVisibility() {
+        if (actionSelect.value === "partial_suspended") {
+          restrictionBox.style.display = "block";
+        } else {
+          restrictionBox.style.display = "none";
+          document.getElementById("restriction-novel").checked = false;
+          document.getElementById("restriction-music").checked = false;
+        }
+      }
+
       if (adminStatus !== "active") {
         alert("この管理者アカウントは停止中です。");
         clearAdminSession();
@@ -279,7 +333,7 @@
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
 
-      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = null, logTargetId = null) {
+      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = "user", logTargetId = userId) {
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
           method: "POST",
           headers: {
@@ -289,8 +343,8 @@
           },
           body: JSON.stringify({
             admin_username: adminUsername,
-            target_type: logTargetType !== null ? logTargetType : (adminRole === "sub_admin" ? "sub_admin" : null),
-            target_id: logTargetId !== null ? logTargetId : (adminRole === "sub_admin" ? adminId : null),
+            target_type: logTargetType,
+            target_id: logTargetId,
             action_type: actionType,
             action_label: actionLabel,
             action_detail: actionDetail
@@ -316,9 +370,7 @@
           await writePageLog(
             "admin_forbidden_page_access",
             "権限外ページアクセス",
-            "page: user-danger-settings.html / reason: user_danger_control権限なし",
-            "user",
-            userId
+            "page: user-danger-settings.html / reason: user_danger_control権限なし"
           );
         } catch (error) {
           renderDebug("拒否ログ保存失敗: " + String(error));
@@ -343,9 +395,7 @@
         await writePageLog(
           "user_danger_settings_view",
           "危険操作設定閲覧",
-          `page: user-danger-settings.html / user_id: ${userId} / role: ${adminRole}`,
-          "user",
-          userId
+          `page: user-danger-settings.html / user_id: ${userId} / role: ${adminRole}`
         );
       } catch (error) {
         renderDebug("閲覧ログ保存失敗: " + String(error));
@@ -355,14 +405,23 @@
       document.getElementById("danger-at").value = new Date(dangerVerifiedAt).toLocaleString("ja-JP");
       document.getElementById("back-link").href = "user-detail.html?id=" + encodeURIComponent(userId);
 
+      actionSelect.addEventListener("change", updateRestrictionVisibility);
+      updateRestrictionVisibility();
+
       document.getElementById("danger-settings-form").addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const action = document.getElementById("danger-action").value;
+        const action = actionSelect.value;
         const reason = document.getElementById("danger-reason").value.trim();
+        const restrictions = getSelectedRestrictions();
 
         if (!action || reason === "") {
           alert("申請と理由を入力してください。");
+          return;
+        }
+
+        if (action === "partial_suspended" && restrictions.length === 0) {
+          alert("一部利用停止の対象を選択してください。");
           return;
         }
 
@@ -378,9 +437,7 @@
           await writePageLog(
             "user_danger_settings_submit",
             "危険操作設定入力",
-            `page: user-danger-settings.html / user_id: ${userId} / action: ${action} / reason: ${reason}`,
-            "user",
-            userId
+            `page: user-danger-settings.html / user_id: ${userId} / action: ${action} / restrictions: ${JSON.stringify(restrictions)} / reason: ${reason}`
           );
         } catch (error) {
           renderDebug("入力ログ保存失敗: " + String(error));
@@ -389,6 +446,7 @@
         sessionStorage.setItem("danger_action_target_user_id", userId);
         sessionStorage.setItem("danger_action_type", action);
         sessionStorage.setItem("danger_action_reason", reason);
+        sessionStorage.setItem("danger_action_restrictions", JSON.stringify(restrictions));
 
         window.location.href = "user-danger-confirm.html?id=" + encodeURIComponent(userId);
       });

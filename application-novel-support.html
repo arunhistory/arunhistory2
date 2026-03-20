@@ -309,8 +309,7 @@
           }
 
           alert("申請受け付けました");
-          form.reset();
-          showPreview(null);
+          window.location.href = "application-status.html";
         } catch (error) {
           alert("申請の送信に失敗しました。");
         } finally {

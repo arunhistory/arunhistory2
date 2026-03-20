@@ -126,87 +126,94 @@
     </div>
 
   <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("ページの読み込みに失敗しました。");
+  document.addEventListener("DOMContentLoaded", async () => {
+    if (!window.supabase || typeof window.supabase.createClient !== "function") {
+      alert("ページの読み込みに失敗しました。");
+      return;
+    }
+
+    const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    const form = document.getElementById("music-license-form");
+    const submitButton = document.getElementById("submit-button");
+
+    const {
+      data: { session },
+      error: sessionError
+    } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      alert("ログイン情報の取得に失敗しました。");
+      return;
+    }
+
+    if (!session) {
+      window.location.href = "login.html?redirect=" + encodeURIComponent("application-music-license.html");
+      return;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const requestedLicense = document.getElementById("requested-license").value;
+      const noteAccountName = document.getElementById("note-account-name").value.trim();
+      const licenseUserName = document.getElementById("license-user-name").value.trim();
+
+      if (!requestedLicense || !noteAccountName || !licenseUserName) {
+        alert("必要項目を入力してください。");
         return;
       }
 
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+      submitButton.disabled = true;
+      submitButton.textContent = "送信中...";
 
-      const form = document.getElementById("music-license-form");
-      const submitButton = document.getElementById("submit-button");
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/submit-music-license-application-v2`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            access_token: session.access_token,
+            requested_license: requestedLicense,
+            note_account_name: noteAccountName,
+            license_user_name: licenseUserName
+          })
+        });
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+        const rawText = await response.text();
+        let result = null;
 
-      if (!session) {
-        window.location.href = "login.html?redirect=" + encodeURIComponent("application-music-license.html");
-        return;
-      }
-
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-
-        const requestedLicense = document.getElementById("requested-license").value;
-        const noteAccountName = document.getElementById("note-account-name").value.trim();
-        const licenseUserName = document.getElementById("license-user-name").value.trim();
-
-        if (!requestedLicense || !noteAccountName || !licenseUserName) {
-          alert("必要項目を入力してください。");
+        try {
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (_) {
+          alert("送信に失敗しました。");
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
           return;
         }
 
-        submitButton.disabled = true;
-        submitButton.textContent = "送信中...";
-
-        try {
-          const response = await fetch(`${supabaseUrl}/functions/v1/submit-music-license-application`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": "Bearer " + session.access_token
-            },
-            body: JSON.stringify({
-              requested_license: requestedLicense,
-              note_account_name: noteAccountName,
-              license_user_name: licenseUserName
-            })
-          });
-
-          const rawText = await response.text();
-          let result = null;
-
-          try {
-            result = rawText ? JSON.parse(rawText) : {};
-          } catch (_) {
-            alert("送信に失敗しました。");
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          if (!response.ok || !result || !result.ok) {
-            alert(result?.error || "送信に失敗しました。");
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
-
-          alert("音楽ライセンス申請を送信しました。");
-          form.reset();
-        } catch (error) {
-          alert("送信に失敗しました。");
-        } finally {
+        if (!response.ok || !result || !result.ok) {
+          alert(result?.error || "送信に失敗しました。");
           submitButton.disabled = false;
           submitButton.textContent = "送信";
+          return;
         }
-      });
+
+        alert("申請受け付けました");
+        form.reset();
+      } catch (error) {
+        alert("送信に失敗しました。");
+      } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = "送信";
+      }
     });
-  </script>
+  });
+</script>
 </body>
 </html>

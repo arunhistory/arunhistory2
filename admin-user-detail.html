@@ -172,11 +172,6 @@
       margin: 12px 0 0 0;
       font-size: 14px;
     }
-    
-    .center-link {
-      text-align: center;
-      margin-top: 16px;
-    }
   </style>
 </head>
 <body>
@@ -232,8 +227,8 @@
       <button type="button" class="danger-text-button" id="resume-button">利用再開</button>
       <button type="button" class="danger-text-button" id="delete-button">削除</button>
     </div>
-    
-      <p class="center-link">
+
+    <p class="center-link">
       <a href="admin-management.html">戻る</a>
     </p>
 
@@ -245,30 +240,50 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      if (sessionStorage.getItem("admin_logged_in") !== "1") {
-        window.location.href = "admin-login.html";
-        return;
-      }
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
 
-      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
-      const adminRole = sessionStorage.getItem("admin_role") || "";
-      const adminStatus = sessionStorage.getItem("admin_status") || "";
-      const adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+      const updateEndpoint = `${supabaseUrl}/functions/v1/admin-update-subadmin-v2`;
+      const deleteEndpoint = `${supabaseUrl}/functions/v1/admin-delete-subadmin`;
 
-      const adminUserLink = document.getElementById("admin-user-link");
-      const debugBox = document.getElementById("debug-box");
-      const params = new URLSearchParams(window.location.search);
-      const targetId = params.get("id");
-
-      adminUserLink.textContent = adminUsername + "さん";
-
-      if (adminStatus !== "active") {
-        alert("この管理者アカウントは停止中です。");
+      function clearAdminSession() {
         sessionStorage.removeItem("admin_logged_in");
         sessionStorage.removeItem("admin_username");
         sessionStorage.removeItem("admin_role");
         sessionStorage.removeItem("admin_status");
         sessionStorage.removeItem("admin_permissions");
+      }
+
+      function parsePermissions(value) {
+        try {
+          const parsed = JSON.parse(value || "[]");
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+      const adminPermissions = parsePermissions(sessionStorage.getItem("admin_permissions"));
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+
+      const params = new URLSearchParams(window.location.search);
+      const targetIdRaw = params.get("id");
+      const targetId = targetIdRaw ? Number(targetIdRaw) : null;
+
+      adminUserLink.textContent = adminUsername + "さん";
+
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        clearAdminSession();
         window.location.href = "admin-login.html";
         return;
       }
@@ -279,7 +294,7 @@
         return;
       }
 
-      if (!targetId) {
+      if (!targetId || Number.isNaN(targetId)) {
         alert("対象IDがありません。");
         window.location.href = "admin-management.html";
         return;
@@ -290,12 +305,7 @@
         return;
       }
 
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
-
-      const updateEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin-v2";
-      const deleteEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin";
 
       const permissionLabels = {
         account_management: "アカウント管理",
@@ -307,6 +317,7 @@
       };
 
       let currentSubAdmin = null;
+      let currentAdminMe = null;
 
       function renderDebug(extra = "") {
         debugBox.textContent =
@@ -321,11 +332,12 @@
       function statusLabel(value) {
         if (value === "active") return "有効";
         if (value === "stopped") return "停止";
+        if (value === "suspended") return "停止";
         return value || "";
       }
 
       function permissionText(values) {
-        if (!values || values.length === 0) return "なし";
+        if (!Array.isArray(values) || values.length === 0) return "なし";
         return values.map((value) => permissionLabels[value] || value).join(" / ");
       }
 
@@ -338,7 +350,7 @@
           const input = document.createElement("input");
           input.type = "checkbox";
           input.value = key;
-          input.checked = (values || []).includes(key);
+          input.checked = Array.isArray(values) && values.includes(key);
 
           label.appendChild(input);
           label.append(" " + permissionLabels[key]);
@@ -386,6 +398,22 @@
         });
       }
 
+      async function loadMe() {
+        const { data, error } = await supabase
+          .from("admin_accounts")
+          .select("id, username, role, status")
+          .eq("username", adminUsername)
+          .maybeSingle();
+
+        if (error || !data) {
+          renderDebug("管理者自身の取得に失敗: " + (error?.message || "unknown"));
+          return false;
+        }
+
+        currentAdminMe = data;
+        return true;
+      }
+
       async function loadSubAdmin() {
         const { data, error } = await supabase
           .from("admin_accounts")
@@ -406,8 +434,11 @@
         document.getElementById("permissions-value").textContent = permissionText(data.permissions);
         renderPermissionEditor(data.permissions || []);
 
-        document.getElementById("stop-button").style.display = data.status === "active" ? "block" : "none";
-        document.getElementById("resume-button").style.display = data.status === "stopped" ? "block" : "none";
+        document.getElementById("stop-button").style.display =
+          (data.status === "active") ? "block" : "none";
+
+        document.getElementById("resume-button").style.display =
+          (data.status === "stopped" || data.status === "suspended") ? "block" : "none";
 
         return true;
       }
@@ -417,7 +448,7 @@
           .from("admin_action_logs")
           .select("id, action_type, action_label, action_detail, created_at")
           .eq("target_type", "sub_admin")
-          .eq("target_id", String(targetId))
+          .eq("target_id", targetId)
           .order("created_at", { ascending: false })
           .limit(limitValue);
 
@@ -432,26 +463,41 @@
       }
 
       async function writeAdminActionLog(actionType, actionLabel, actionDetail) {
-        const { data: me } = await supabase
-          .from("admin_accounts")
-          .select("id, username, role")
-          .eq("username", adminUsername)
-          .maybeSingle();
+        if (!currentAdminMe) {
+          const ok = await loadMe();
+          if (!ok) return;
+        }
 
-        if (!me) return;
+        const payload = {
+          admin_account_id: currentAdminMe.id,
+          admin_username: currentAdminMe.username,
+          admin_role: currentAdminMe.role,
+          target_type: "sub_admin",
+          target_id: targetId,
+          action_type: actionType,
+          action_label: actionLabel,
+          action_detail: actionDetail
+        };
 
-        await supabase.from("admin_action_logs").insert([
-          {
-            admin_account_id: me.id,
-            admin_username: me.username,
-            admin_role: me.role,
-            target_type: "sub_admin",
-            target_id: String(targetId),
-            action_type: actionType,
-            action_label: actionLabel,
-            action_detail: actionDetail
-          }
-        ]);
+        const { error } = await supabase
+          .from("admin_action_logs")
+          .insert([payload]);
+
+        if (error) {
+          renderDebug(
+            "ログ保存エラー: " + error.message + "\n" +
+            "log payload:\n" + JSON.stringify(payload, null, 2)
+          );
+        }
+      }
+
+      async function parseResponseSafe(response) {
+        const rawText = await response.text();
+        try {
+          return rawText ? JSON.parse(rawText) : {};
+        } catch {
+          return rawText;
+        }
       }
 
       async function callUpdateSubadmin(payload) {
@@ -459,33 +505,55 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": supabaseKey
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`
           },
           body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        const result = await parseResponseSafe(response);
+
+        renderDebug(
+          "update payload:\n" + JSON.stringify(payload, null, 2) +
+          "\n\nstatus: " + response.status +
+          "\nresponse:\n" + (
+            typeof result === "string"
+              ? result
+              : JSON.stringify(result, null, 2)
+          )
+        );
+
         return { response, result };
       }
 
-      const ok = await loadSubAdmin();
-      if (!ok) return;
+      const okMe = await loadMe();
+      if (!okMe) return;
+
+      const okSub = await loadSubAdmin();
+      if (!okSub) return;
+
       await loadLogs(20);
 
       document.getElementById("change-password-button").addEventListener("click", async () => {
         const newPassword = window.prompt("新しいパスワードを入力してください");
         if (newPassword === null) return;
-        if (!newPassword) return;
+        if (!newPassword.trim()) {
+          alert("新しいパスワードを入力してください。");
+          return;
+        }
 
         const { response, result } = await callUpdateSubadmin({
           admin_username: adminUsername,
           subadmin_id: currentSubAdmin.id,
-          password: newPassword
+          new_password: newPassword.trim()
         });
 
-        if (!response.ok || !result?.ok) {
-          alert(result?.error || "パスワード変更に失敗しました。");
-          renderDebug("パスワード変更エラー: " + (result?.error || response.status));
+        if (!response.ok || (typeof result === "object" && result?.ok === false)) {
+          alert(
+            (typeof result === "object" && result?.error)
+              ? result.error
+              : "パスワード変更に失敗しました。"
+          );
           return;
         }
 
@@ -508,9 +576,12 @@
           permissions: nextPermissions
         });
 
-        if (!response.ok || !result?.ok) {
-          alert(result?.error || "権限変更に失敗しました。");
-          renderDebug("権限変更エラー: " + (result?.error || response.status));
+        if (!response.ok || (typeof result === "object" && result?.ok === false)) {
+          alert(
+            (typeof result === "object" && result?.error)
+              ? result.error
+              : "権限変更に失敗しました。"
+          );
           return;
         }
 
@@ -536,9 +607,12 @@
           status: "stopped"
         });
 
-        if (!response.ok || !result?.ok) {
-          alert(result?.error || "停止に失敗しました。");
-          renderDebug("停止エラー: " + (result?.error || response.status));
+        if (!response.ok || (typeof result === "object" && result?.ok === false)) {
+          alert(
+            (typeof result === "object" && result?.error)
+              ? result.error
+              : "停止に失敗しました。"
+          );
           return;
         }
 
@@ -560,9 +634,12 @@
           status: "active"
         });
 
-        if (!response.ok || !result?.ok) {
-          alert(result?.error || "利用再開に失敗しました。");
-          renderDebug("利用再開エラー: " + (result?.error || response.status));
+        if (!response.ok || (typeof result === "object" && result?.ok === false)) {
+          alert(
+            (typeof result === "object" && result?.error)
+              ? result.error
+              : "利用再開に失敗しました。"
+          );
           return;
         }
 
@@ -587,7 +664,8 @@
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "apikey": supabaseKey
+            "apikey": supabaseKey,
+            "Authorization": `Bearer ${supabaseKey}`
           },
           body: JSON.stringify({
             admin_username: adminUsername,
@@ -595,10 +673,27 @@
           })
         });
 
-        const result = await response.json();
-        if (!response.ok || !result?.ok) {
-          alert(result?.error || "削除に失敗しました。");
-          renderDebug("削除エラー: " + (result?.error || response.status));
+        const result = await parseResponseSafe(response);
+
+        renderDebug(
+          "delete payload:\n" + JSON.stringify({
+            admin_username: adminUsername,
+            subadmin_id: currentSubAdmin.id
+          }, null, 2) +
+          "\n\nstatus: " + response.status +
+          "\nresponse:\n" + (
+            typeof result === "string"
+              ? result
+              : JSON.stringify(result, null, 2)
+          )
+        );
+
+        if (!response.ok || (typeof result === "object" && result?.ok === false)) {
+          alert(
+            (typeof result === "object" && result?.error)
+              ? result.error
+              : "削除に失敗しました。"
+          );
           return;
         }
 

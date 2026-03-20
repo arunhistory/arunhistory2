@@ -182,7 +182,7 @@
     }
 
     const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-    const supabaseKey = "YOUR_ANON_KEY";
+    const supabaseKey = "ここに anon key";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const {
@@ -213,52 +213,55 @@
         const fileExt = (file.name.split(".").pop() || "png").toLowerCase();
         const filePath = `${userId}/${Date.now()}-support.${fileExt}`;
 
-        alert("1. Storageアップロード開始");
-
-        const { data: uploadData, error: uploadError } = await supabase
+        const { error: uploadError } = await supabase
           .storage
           .from("novel-support-screenshots")
           .upload(filePath, file, { upsert: false });
 
         if (uploadError) {
-          alert("Storageアップロード失敗: " + uploadError.message);
+          alert("画像のアップロードに失敗しました。");
           submitButton.disabled = false;
           submitButton.textContent = "送信";
           return;
         }
 
-        alert("2. Storageアップロード成功\n" + JSON.stringify(uploadData));
+        const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v3`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            access_token: session.access_token,
+            note_name: noteName,
+            screenshot_url: filePath
+          })
+        });
 
-        const { data: submitResult, error: submitError } = await supabase.functions.invoke(
-          "submit-novel-support-application-v2",
-          {
-            body: {
-              note_name: noteName,
-              screenshot_url: filePath
-            }
-          }
-        );
+        const submitRawText = await submitResponse.text();
+        let submitResult = null;
 
-        if (submitError) {
-          alert("3. 申請保存失敗\n\n" + submitError.message);
+        try {
+          submitResult = submitRawText ? JSON.parse(submitRawText) : {};
+        } catch (_) {
+          alert("申請の送信に失敗しました。");
           submitButton.disabled = false;
           submitButton.textContent = "送信";
           return;
         }
 
-        if (!submitResult || !submitResult.ok) {
-          alert("3. 申請保存失敗\n\n" + (submitResult?.error || "不明"));
+        if (!submitResponse.ok || !submitResult || !submitResult.ok) {
+          alert(submitResult?.error || "申請の送信に失敗しました。");
           submitButton.disabled = false;
           submitButton.textContent = "送信";
           return;
         }
-
-        alert("3. 申請保存成功");
 
         const applicationId = submitResult.application_id;
 
         if (!applicationId) {
-          alert("application_id が返っていません");
+          alert("申請は送信されましたが、分類処理に進めませんでした。");
           submitButton.disabled = false;
           submitButton.textContent = "送信";
           return;
@@ -282,14 +285,18 @@
         try {
           classifyResult = classifyRawText ? JSON.parse(classifyRawText) : {};
         } catch (_) {
-          alert("4. 分類レスポンス解析失敗");
+          alert("申請は送信されましたが、分類処理に失敗しました。");
+          form.reset();
+          showPreview(null);
           submitButton.disabled = false;
           submitButton.textContent = "送信";
           return;
         }
 
         if (!classifyResponse.ok || !classifyResult || !classifyResult.ok) {
-          alert("4. 分類失敗: " + (classifyResult?.error || "不明"));
+          alert(classifyResult?.error || "申請は送信されましたが、分類処理に失敗しました。");
+          form.reset();
+          showPreview(null);
           submitButton.disabled = false;
           submitButton.textContent = "送信";
           return;
@@ -308,7 +315,7 @@
         form.reset();
         showPreview(null);
       } catch (error) {
-        alert("送信失敗: " + String(error));
+        alert("送信に失敗しました。");
       } finally {
         submitButton.disabled = false;
         submitButton.textContent = "送信";

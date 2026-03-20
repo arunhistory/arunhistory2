@@ -246,6 +246,7 @@
       }
 
       const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminId = sessionStorage.getItem("admin_id");
       const adminRole = sessionStorage.getItem("admin_role") || "";
       const adminStatus = sessionStorage.getItem("admin_status") || "";
 
@@ -276,16 +277,21 @@
         sessionStorage.removeItem("admin_permissions");
       }
 
+      function renderDebug(extra = "") {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_id: " + (adminId || "") + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "target_id: " + targetId + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
+      }
+
       if (adminStatus !== "active") {
         alert("この管理者アカウントは停止中です。");
         clearAdminSession();
         window.location.href = "admin-login.html";
-        return;
-      }
-
-      if (adminRole !== "admin") {
-        alert("このページは管理者のみ利用できます。");
-        window.location.href = "admin-home.html";
         return;
       }
 
@@ -307,6 +313,60 @@
       const updateEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-update-subadmin-v2";
       const deleteEndpoint = "https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/admin-delete-subadmin-v2-";
 
+      async function writePageLog(actionType, actionLabel, actionDetail) {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            target_type: adminRole === "sub_admin" ? "sub_admin" : null,
+            target_id: adminRole === "sub_admin" ? adminId : null,
+            action_type: actionType,
+            action_label: actionLabel,
+            action_detail: actionDetail
+          })
+        });
+
+        const rawText = await response.text();
+
+        renderDebug(
+          "log status: " + response.status +
+          "\nlog response:\n" + rawText
+        );
+
+        return response.ok;
+      }
+
+      if (adminRole !== "admin") {
+        try {
+          await writePageLog(
+            "admin_forbidden_page_access",
+            "権限外ページアクセス",
+            "page: admin-user-detail.html / reason: admin以外は不可"
+          );
+        } catch (error) {
+          renderDebug("拒否ログ保存失敗: " + String(error));
+        }
+
+        alert("このページは管理者のみ利用できます。");
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      try {
+        await writePageLog(
+          "admin_user_detail_view",
+          "準管理者詳細閲覧",
+          `page: admin-user-detail.html / target_id: ${targetId} / role: admin`
+        );
+      } catch (error) {
+        renderDebug("閲覧ログ保存失敗: " + String(error));
+      }
+
       const permissionLabels = {
         account_management: "アカウント管理",
         user_danger_control: "ユーザー削除・停止",
@@ -317,16 +377,6 @@
       };
 
       let currentSubAdmin = null;
-
-      function renderDebug(extra = "") {
-        debugBox.textContent =
-          "admin_username: " + adminUsername + "\n" +
-          "admin_role: " + adminRole + "\n" +
-          "admin_status: " + adminStatus + "\n" +
-          "target_id: " + targetId + "\n" +
-          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
-          (extra ? "\n\n" + extra : "");
-      }
 
       function statusLabel(value) {
         if (value === "active") return "利用中";

@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>申請画像確認</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      box-sizing: border-box;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 2.2rem;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button,
+    a.button-link {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none;
+      color: #111;
+      background: #c7d9f2;
+      display: inline-block;
+    }
+
+    button:hover,
+    a.button-link:hover {
+      background: #aec6e8;
+      text-decoration: none;
+    }
+
+    .image-wrap {
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: #fff;
+      padding: 12px;
+      height: 70vh;
+      min-height: 420px;
+      position: relative;
+      touch-action: none;
+      user-select: none;
+      cursor: grab;
+    }
+
+    .image-wrap.dragging {
+      cursor: grabbing;
+    }
+
+    #support-image {
+      max-width: none;
+      max-height: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: top left;
+      will-change: transform;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .message {
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 700px) {
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .image-wrap {
+        height: 60vh;
+        min-height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>申請画像確認</h1>
+
+    <div class="box">
+      <div class="controls">
+        <button type="button" id="zoom-in-button">拡大</button>
+        <button type="button" id="zoom-out-button">縮小</button>
+        <button type="button" id="reset-button">元に戻す</button>
+        <a id="back-link" class="button-link" href="application-novel-observer.html">戻る</a>
+      </div>
+
+      <div id="message-box" class="message">読み込み中...</div>
+
+      <div id="image-wrap" class="image-wrap" style="display:none;">
+        <img id="support-image" alt="申請画像">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const params = new URLSearchParams(window.location.search);
+      const screenshotPath = params.get("screenshot_path") || "";
+      const back = params.get("back") || "application-novel-observer.html";
+
+      const backLink = document.getElementById("back-link");
+      const messageBox = document.getElementById("message-box");
+      const imageWrap = document.getElementById("image-wrap");
+      const supportImage = document.getElementById("support-image");
+      const zoomInButton = document.getElementById("zoom-in-button");
+      const zoomOutButton = document.getElementById("zoom-out-button");
+      const resetButton = document.getElementById("reset-button");
+
+      backLink.href = back;
+
+      if (!screenshotPath) {
+        messageBox.textContent = "画像パスが見つかりません。";
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+
+      let scale = 1;
+      let offsetX = 0;
+      let offsetY = 0;
+      let dragging = false;
+      let startX = 0;
+      let startY = 0;
+      let dragStartOffsetX = 0;
+      let dragStartOffsetY = 0;
+      let imageLoaded = false;
+      let naturalWidth = 0;
+      let naturalHeight = 0;
+
+      function clampOffsets() {
+        if (!imageLoaded) return;
+
+        const wrapWidth = imageWrap.clientWidth;
+        const wrapHeight = imageWrap.clientHeight;
+        const scaledWidth = naturalWidth * scale;
+        const scaledHeight = naturalHeight * scale;
+
+        const minX = Math.min(0, wrapWidth - scaledWidth);
+        const minY = Math.min(0, wrapHeight - scaledHeight);
+        const maxX = 0;
+        const maxY = 0;
+
+        if (scaledWidth <= wrapWidth) {
+          offsetX = (wrapWidth - scaledWidth) / 2;
+        } else {
+          offsetX = Math.min(maxX, Math.max(minX, offsetX));
+        }
+
+        if (scaledHeight <= wrapHeight) {
+          offsetY = (wrapHeight - scaledHeight) / 2;
+        } else {
+          offsetY = Math.min(maxY, Math.max(minY, offsetY));
+        }
+      }
+
+      function applyTransform() {
+        clampOffsets();
+        supportImage.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+      }
+
+      function resetView() {
+        scale = 1;
+        offsetX = 0;
+        offsetY = 0;
+        applyTransform();
+      }
+
+      function zoomBy(amount) {
+        const nextScale = Math.min(5, Math.max(0.4, scale + amount));
+        scale = nextScale;
+        applyTransform();
+      }
+
+      function pointerDown(clientX, clientY) {
+        dragging = true;
+        imageWrap.classList.add("dragging");
+        startX = clientX;
+        startY = clientY;
+        dragStartOffsetX = offsetX;
+        dragStartOffsetY = offsetY;
+      }
+
+      function pointerMove(clientX, clientY) {
+        if (!dragging) return;
+
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+
+        offsetX = dragStartOffsetX + dx;
+        offsetY = dragStartOffsetY + dy;
+        applyTransform();
+      }
+
+      function pointerUp() {
+        dragging = false;
+        imageWrap.classList.remove("dragging");
+      }
+
+      zoomInButton.addEventListener("click", () => {
+        zoomBy(0.2);
+      });
+
+      zoomOutButton.addEventListener("click", () => {
+        zoomBy(-0.2);
+      });
+
+      resetButton.addEventListener("click", () => {
+        resetView();
+      });
+
+      imageWrap.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        pointerDown(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        pointerMove(e.clientX, e.clientY);
+      });
+
+      window.addEventListener("mouseup", () => {
+        pointerUp();
+      });
+
+      imageWrap.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        pointerDown(touch.clientX, touch.clientY);
+      }, { passive: true });
+
+      window.addEventListener("touchmove", (e) => {
+        if (!dragging || e.touches.length !== 1) return;
+        const touch = e.touches[0];
+        pointerMove(touch.clientX, touch.clientY);
+      }, { passive: true });
+
+      window.addEventListener("touchend", () => {
+        pointerUp();
+      });
+
+      window.addEventListener("resize", () => {
+        if (imageLoaded) applyTransform();
+      });
+
+      try {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-get-novel-support-image-url`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            screenshot_path: screenshotPath
+          })
+        });
+
+        const rawText = await response.text();
+        let result = null;
+
+        try {
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (_) {
+          messageBox.textContent = "画像の取得に失敗しました。";
+          return;
+        }
+
+        if (!response.ok || !result || !result.ok || !result.signed_url) {
+          messageBox.textContent = result?.error || "画像の取得に失敗しました。";
+          return;
+        }
+
+        supportImage.src = result.signed_url;
+        supportImage.onload = () => {
+          naturalWidth = supportImage.naturalWidth;
+          naturalHeight = supportImage.naturalHeight;
+          imageLoaded = true;
+          messageBox.style.display = "none";
+          imageWrap.style.display = "block";
+          resetView();
+        };
+        supportImage.onerror = () => {
+          messageBox.textContent = "画像の表示に失敗しました。";
+        };
+      } catch (error) {
+        messageBox.textContent = "画像の取得に失敗しました。";
+      }
+    });
+  </script>
+</body>
+</html>

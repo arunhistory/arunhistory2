@@ -182,12 +182,18 @@
     }
 
     const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-    const supabaseKey = "ここに anon key";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
     const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
     const {
       data: { session },
+      error: sessionError
     } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      alert("ログイン情報の取得に失敗しました。");
+      return;
+    }
 
     if (!session) {
       window.location.href = "login.html?redirect=" + encodeURIComponent("application-novel-support.html");

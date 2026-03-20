@@ -215,59 +215,43 @@
 
         alert("1. Storageアップロード開始");
 
-       const { data: uploadData, error: uploadError } = await supabase
-            .storage
-            .from("novel-support-screenshots")
-            .upload(filePath, file, { upsert: false });
+        const { data: uploadData, error: uploadError } = await supabase
+          .storage
+          .from("novel-support-screenshots")
+          .upload(filePath, file, { upsert: false });
 
-          if (uploadError) {
-            alert("Storageアップロード失敗: " + uploadError.message);
-            submitButton.disabled = false;
-            submitButton.textContent = "送信";
-            return;
-          }
+        if (uploadError) {
+          alert("Storageアップロード失敗: " + uploadError.message);
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
 
         alert("2. Storageアップロード成功\n" + JSON.stringify(uploadData));
 
-        const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v2`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
-            "Authorization": "Bearer " + session.access_token
-          },
-          body: JSON.stringify({
-            note_name: noteName,
-            screenshot_url: filePath
-          })
-        });
+        const { data: submitResult, error: submitError } = await supabase.functions.invoke(
+          "submit-novel-support-application-v2",
+          {
+            body: {
+              note_name: noteName,
+              screenshot_url: filePath
+            }
+          }
+        );
 
-        const submitRawText = await submitResponse.text();
-let submitResult = null;
+        if (submitError) {
+          alert("3. 申請保存失敗\n\n" + submitError.message);
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
 
-try {
-  submitResult = submitRawText ? JSON.parse(submitRawText) : {};
-} catch (_) {
-  alert(
-    "3. 申請保存レスポンス解析失敗\n\n" +
-    "status=" + submitResponse.status + "\n\n" +
-    submitRawText
-  );
-  submitButton.disabled = false;
-  submitButton.textContent = "送信";
-  return;
-}
-
-if (!submitResponse.ok || !submitResult || !submitResult.ok) {
-  alert(
-    "3. 申請保存失敗\n\n" +
-    "status=" + submitResponse.status + "\n\n" +
-    submitRawText
-  );
-  submitButton.disabled = false;
-  submitButton.textContent = "送信";
-  return;
-}
+        if (!submitResult || !submitResult.ok) {
+          alert("3. 申請保存失敗\n\n" + (submitResult?.error || "不明"));
+          submitButton.disabled = false;
+          submitButton.textContent = "送信";
+          return;
+        }
 
         alert("3. 申請保存成功");
 

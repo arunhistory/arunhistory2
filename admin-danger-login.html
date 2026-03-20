@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>危険操作用管理者ログイン</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2.3rem;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    a {
+      color: #111;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: #111;
+      text-decoration: underline;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .box p {
+      margin: 12px 0;
+      line-height: 1.8;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    input,
+    button {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    input {
+      display: block;
+      padding: 10px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: #fff;
+      color: #111;
+    }
+
+    button {
+      padding: 12px;
+      border: none;
+      background-color: #4f8f5b;
+      color: #111;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background-color: #6aa676;
+    }
+
+    .warning-box {
+      background: rgba(255,255,255,0.75);
+      border: 2px solid rgba(120,0,0,0.45);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .warning-title {
+      font-weight: bold;
+      color: #b00000;
+      margin-bottom: 8px;
+    }
+
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p style="text-align: left; margin-top: 0;">
+      <a id="admin-user-link" href="#">管理者さん</a>
+    </p>
+
+    <h1>危険操作用管理者ログイン</h1>
+
+    <div class="warning-box">
+      <p class="warning-title">警告</p>
+      <p>
+        この先は危険操作用の画面です。<br>
+        実行者アカウントと認証時刻を記録したうえで進みます。
+      </p>
+    </div>
+
+    <div class="box">
+      <form id="danger-login-form">
+        <p>
+          <label for="danger-admin-id">ユーザー名</label>
+          <input type="text" id="danger-admin-id" name="danger-admin-id" required>
+        </p>
+
+        <p>
+          <label for="danger-admin-password">パスワード</label>
+          <input type="password" id="danger-admin-password" name="danger-admin-password" required>
+        </p>
+
+        <p>
+          <button type="submit" id="danger-login-button">認証して進む</button>
+        </p>
+      </form>
+
+      <p class="center-link">
+        <a id="back-link" href="account-info-admin.html">戻る</a>
+      </p>
+    </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const adminId = sessionStorage.getItem("admin_id");
+      const adminRole = sessionStorage.getItem("admin_role") || "";
+      const adminStatus = sessionStorage.getItem("admin_status") || "";
+
+      let adminPermissions = [];
+      try {
+        adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+        if (!Array.isArray(adminPermissions)) {
+          adminPermissions = [];
+        }
+      } catch {
+        adminPermissions = [];
+      }
+
+      const adminUserLink = document.getElementById("admin-user-link");
+      const debugBox = document.getElementById("debug-box");
+      const form = document.getElementById("danger-login-form");
+      const submitButton = document.getElementById("danger-login-button");
+
+      adminUserLink.textContent = adminUsername + "さん";
+
+      const params = new URLSearchParams(window.location.search);
+      const userId = params.get("id");
+
+      function clearAdminSession() {
+        sessionStorage.removeItem("admin_logged_in");
+        sessionStorage.removeItem("admin_username");
+        sessionStorage.removeItem("admin_id");
+        sessionStorage.removeItem("admin_role");
+        sessionStorage.removeItem("admin_status");
+        sessionStorage.removeItem("admin_permissions");
+      }
+
+      function renderDebug(extra = "") {
+        debugBox.textContent =
+          "admin_username: " + adminUsername + "\n" +
+          "admin_id: " + (adminId || "") + "\n" +
+          "admin_role: " + adminRole + "\n" +
+          "admin_status: " + adminStatus + "\n" +
+          "user_id: " + (userId || "") + "\n" +
+          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
+      }
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        clearAdminSession();
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      if (!userId) {
+        alert("対象ユーザーが指定されていません。");
+        window.location.href = "account-info-admin.html";
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+
+      async function writePageLog(actionType, actionLabel, actionDetail, logTargetType = null, logTargetId = null) {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            target_type: logTargetType !== null ? logTargetType : (adminRole === "sub_admin" ? "sub_admin" : null),
+            target_id: logTargetId !== null ? logTargetId : (adminRole === "sub_admin" ? adminId : null),
+            action_type: actionType,
+            action_label: actionLabel,
+            action_detail: actionDetail
+          })
+        });
+
+        const rawText = await response.text();
+
+        renderDebug(
+          "log status: " + response.status +
+          "\nlog response:\n" + rawText
+        );
+
+        return response.ok;
+      }
+
+      const canUseDangerLogin =
+        adminRole === "admin" ||
+        (adminRole === "sub_admin" && adminPermissions.includes("user_danger_control"));
+
+      if (!canUseDangerLogin) {
+        try {
+          await writePageLog(
+            "admin_forbidden_page_access",
+            "権限外ページアクセス",
+            "page: admin-danger-login.html / reason: user_danger_control権限なし",
+            "user",
+            userId
+          );
+        } catch (error) {
+          renderDebug("拒否ログ保存失敗: " + String(error));
+        }
+
+        alert("この機能を使う権限がありません。");
+        window.location.href = "admin-home.html";
+        return;
+      }
+
+      try {
+        await writePageLog(
+          "admin_danger_login_view",
+          "危険操作再認証画面閲覧",
+          `page: admin-danger-login.html / user_id: ${userId} / role: ${adminRole}`,
+          "user",
+          userId
+        );
+      } catch (error) {
+        renderDebug("閲覧ログ保存失敗: " + String(error));
+      }
+
+      document.getElementById("back-link").href =
+        "user-detail.html?id=" + encodeURIComponent(userId);
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const loginUsername = document.getElementById("danger-admin-id").value.trim();
+        const loginPassword = document.getElementById("danger-admin-password").value;
+
+        if (!loginUsername || !loginPassword) {
+          alert("ユーザー名とパスワードを入力してください。");
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "認証中...";
+
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify({
+              username: loginUsername,
+              password: loginPassword
+            })
+          });
+
+          const rawText = await response.text();
+          let result = null;
+
+          try {
+            result = rawText ? JSON.parse(rawText) : {};
+          } catch (_) {
+            renderDebug("再認証レスポンス解析失敗\nstatus=" + response.status + "\n\n" + rawText);
+            alert("再認証に失敗しました。");
+            submitButton.disabled = false;
+            submitButton.textContent = "認証して進む";
+            return;
+          }
+
+          renderDebug(
+            "danger login status=" + response.status + "\n\n" +
+            JSON.stringify(result, null, 2)
+          );
+
+          if (!response.ok || !result || !result.ok) {
+            try {
+              await writePageLog(
+                "admin_danger_login_failed",
+                "危険操作再認証失敗",
+                `user_id: ${userId} / login_username: ${loginUsername}`,
+                "user",
+                userId
+              );
+            } catch (error) {
+              renderDebug("再認証失敗ログ保存失敗: " + String(error));
+            }
+
+            alert(result?.error || "ユーザー名orパスワードが間違ってます");
+            submitButton.disabled = false;
+            submitButton.textContent = "認証して進む";
+            return;
+          }
+
+          const authenticatedRole = result.admin?.role || "";
+          const authenticatedPermissions = Array.isArray(result.admin?.permissions) ? result.admin.permissions : [];
+          const authenticatedStatus = result.admin?.status || "";
+
+          const canProceedDanger =
+            authenticatedStatus === "active" &&
+            (
+              authenticatedRole === "admin" ||
+              (authenticatedRole === "sub_admin" && authenticatedPermissions.includes("user_danger_control"))
+            );
+
+          if (!canProceedDanger) {
+            try {
+              await writePageLog(
+                "admin_danger_login_failed",
+                "危険操作再認証失敗",
+                `user_id: ${userId} / login_username: ${loginUsername} / reason: 権限不足または停止中`,
+                "user",
+                userId
+              );
+            } catch (error) {
+              renderDebug("再認証失敗ログ保存失敗: " + String(error));
+            }
+
+            alert("このアカウントでは危険操作を行えません。");
+            submitButton.disabled = false;
+            submitButton.textContent = "認証して進む";
+            return;
+          }
+
+          const verifiedAt = new Date().toISOString();
+
+          sessionStorage.setItem("danger_verified_user_id", userId);
+          sessionStorage.setItem("danger_verified_by", result.admin.username);
+          sessionStorage.setItem("danger_verified_at", verifiedAt);
+
+          try {
+            await writePageLog(
+              "admin_danger_login_success",
+              "危険操作再認証成功",
+              `user_id: ${userId} / verified_by: ${result.admin.username}`,
+              "user",
+              userId
+            );
+          } catch (error) {
+            renderDebug("再認証成功ログ保存失敗: " + String(error));
+          }
+
+          window.location.href =
+            "user-danger-settings.html?id=" + encodeURIComponent(userId);
+        } catch (error) {
+          renderDebug("再認証エラー: " + String(error));
+          alert("再認証に失敗しました。");
+          submitButton.disabled = false;
+          submitButton.textContent = "認証して進む";
+        }
+      });
+
+      renderDebug("危険操作再認証画面表示成功");
+    });
+  </script>
+</body>
+</html>

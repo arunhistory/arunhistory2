@@ -88,36 +88,11 @@
       text-align: center;
       margin-top: 16px;
     }
-
-    details {
-      margin-top: 20px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 12px;
-    }
-
-    summary {
-      cursor: pointer;
-      font-weight: bold;
-      color: #f5f5f5;
-    }
-
-    pre {
-      white-space: pre-wrap;
-      word-break: break-word;
-      margin: 12px 0 0 0;
-      font-size: 14px;
-      color: #f5f5f5;
-    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>音楽ライセンス申請</h1>
-
-    <div class="box">
-      <p>現在の音楽ライセンス状況: <span id="current-license">読み込み中...</span></p>
-    </div>
 
     <div class="box">
       <form id="music-license-form">
@@ -146,30 +121,14 @@
       </form>
 
       <p class="center-link">
-        <a href="user-applications.html">戻る</a>
+        <a href="application-status.html">戻る</a>
       </p>
     </div>
 
-    <details>
-      <summary>通信結果</summary>
-      <pre id="debug-box">読み込み中...</pre>
-    </details>
-  </div>
-
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      const debugBox = document.getElementById("debug-box");
-      const currentLicense = document.getElementById("current-license");
-      const form = document.getElementById("music-license-form");
-      const submitButton = document.getElementById("submit-button");
-
-      function renderDebug(extra = "") {
-        debugBox.textContent = extra || "待機中";
-      }
-
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
-        alert("Supabase の読み込みに失敗しました。");
-        renderDebug("Supabase の読み込みに失敗しました。");
+        alert("ページの読み込みに失敗しました。");
         return;
       }
 
@@ -177,28 +136,16 @@
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
+      const form = document.getElementById("music-license-form");
+      const submitButton = document.getElementById("submit-button");
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
       if (!session) {
-        alert("ログインが必要です。");
         window.location.href = "login.html?redirect=" + encodeURIComponent("application-music-license.html");
         return;
-      }
-
-      const { data: account, error: accountError } = await supabase
-        .from("accounts")
-        .select("license_status")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (accountError) {
-        currentLicense.textContent = "取得失敗";
-        renderDebug("accounts取得失敗: " + accountError.message);
-      } else {
-        currentLicense.textContent = account?.license_status || "無し";
-        renderDebug("初期表示成功");
       }
 
       form.addEventListener("submit", async (e) => {
@@ -217,14 +164,12 @@
         submitButton.textContent = "送信中...";
 
         try {
-          const accessToken = session.access_token;
-
           const response = await fetch(`${supabaseUrl}/functions/v1/submit-music-license-application`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
               "apikey": supabaseKey,
-              "Authorization": "Bearer " + accessToken
+              "Authorization": "Bearer " + session.access_token
             },
             body: JSON.stringify({
               requested_license: requestedLicense,
@@ -239,17 +184,11 @@
           try {
             result = rawText ? JSON.parse(rawText) : {};
           } catch (_) {
-            renderDebug("レスポンス解析失敗\n\nstatus=" + response.status + "\n\n" + rawText);
             alert("送信に失敗しました。");
             submitButton.disabled = false;
             submitButton.textContent = "送信";
             return;
           }
-
-          renderDebug(
-            "status=" + response.status + "\n\n" +
-            JSON.stringify(result, null, 2)
-          );
 
           if (!response.ok || !result || !result.ok) {
             alert(result?.error || "送信に失敗しました。");
@@ -261,7 +200,6 @@
           alert("音楽ライセンス申請を送信しました。");
           form.reset();
         } catch (error) {
-          renderDebug("fetch error\n\n" + String(error));
           alert("送信に失敗しました。");
         } finally {
           submitButton.disabled = false;

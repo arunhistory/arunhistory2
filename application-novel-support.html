@@ -215,19 +215,19 @@
 
         alert("1. Storageアップロード開始");
 
-        const { error: uploadError } = await supabase
-          .storage
-          .from("novel-support-screenshots")
-          .upload(filePath, file, { upsert: false });
+       const { data: uploadData, error: uploadError } = await supabase
+            .storage
+            .from("novel-support-screenshots")
+            .upload(filePath, file, { upsert: false });
 
-        if (uploadError) {
-          alert("Storageアップロード失敗: " + uploadError.message);
-          submitButton.disabled = false;
-          submitButton.textContent = "送信";
-          return;
-        }
+          if (uploadError) {
+            alert("Storageアップロード失敗: " + uploadError.message);
+            submitButton.disabled = false;
+            submitButton.textContent = "送信";
+            return;
+          }
 
-        alert("2. Storageアップロード成功");
+        alert("2. Storageアップロード成功\n" + JSON.stringify(uploadData));
 
         const submitResponse = await fetch(`${supabaseUrl}/functions/v1/submit-novel-support-application-v2`, {
           method: "POST",

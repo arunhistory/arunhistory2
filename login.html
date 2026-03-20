@@ -118,8 +118,9 @@
       </form>
 
       <div class="sub-links">
-        <p>アカウントをお持ちでない方は <a id="signup-link" href="signup.html">新規登録はこちら</a></p>
-        <p><a id="back-link" href="index.html">前のページへ戻る</a></p>
+        <p><a id="signup-link" href="signup.html">新規登録はこちら</a></p>
+        <p><a id="forgot-link" href="forgot-password.html">パスワード忘れた方はこちら</a></p>
+        <p><a id="back-link" href="index.html">戻る</a></p>
       </div>
     </div>
   </div>
@@ -131,6 +132,7 @@
 
       const backLink = document.getElementById("back-link");
       const signupLink = document.getElementById("signup-link");
+      const forgotLink = document.getElementById("forgot-link");
       const form = document.getElementById("login-form");
       const submitButton = form.querySelector('button[type="submit"]');
       const title = document.querySelector("h1");
@@ -139,6 +141,7 @@
 
       backLink.href = redirect;
       signupLink.href = "signup.html?redirect=" + encodeURIComponent(redirect);
+      forgotLink.href = "forgot-password.html?redirect=" + encodeURIComponent(redirect);
 
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
         alert("Supabase の読み込みに失敗しました。");
@@ -241,13 +244,15 @@
               const { error: insertError } = await supabase.from("accounts").insert([
                 {
                   user_id: user.id,
-                  display_name: meta.username || "",
+                  display_name: meta.display_name || "",
                   email: user.email || "",
                   birthdate: meta.birthdate || null,
                   gender: meta.gender || null,
                   country: meta.country || null,
                   role: "user",
                   status: "active",
+                  license_status: "無し",
+                  novel_support_status: "なし",
                   created_at: new Date().toISOString()
                 }
               ]);

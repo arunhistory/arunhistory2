@@ -450,7 +450,7 @@
           .from("admin_action_logs")
           .select("id, action_type, action_label, action_detail, created_at")
           .eq("target_type", "sub_admin")
-          .eq("target_id", targetId)
+          .eq("target_id", String(targetId))
           .order("created_at", { ascending: false })
           .limit(limitValue);
 

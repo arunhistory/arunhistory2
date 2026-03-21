@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>申請画像確認</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      box-sizing: border-box;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      margin-bottom: 20px;
+      font-size: 2.2rem;
+      line-height: 1.4;
+    }
+
+    .box {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    button,
+    a.button-link {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      font-size: 16px;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      text-align: center;
+      text-decoration: none;
+      color: #111;
+      background: #c7d9f2;
+      display: inline-block;
+    }
+
+    button:hover,
+    a.button-link:hover {
+      background: #aec6e8;
+      text-decoration: none;
+    }
+
+    .viewer {
+      height: 70vh;
+      min-height: 420px;
+      overflow: auto;
+      border: 1px solid rgba(0,0,0,0.15);
+      background: #444;
+      display: none;
+      text-align: center;
+    }
+
+    .inner {
+      display: inline-block;
+      transform-origin: top center;
+    }
+
+    #support-image {
+      display: block;
+      max-width: 100%;
+      height: auto;
+      background: #fff;
+      border: 2px solid #222;
+      box-sizing: border-box;
+    }
+
+    .message {
+      text-align: center;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    details {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.65);
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+
+    @media (max-width: 700px) {
+      .controls {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .viewer {
+        height: 60vh;
+        min-height: 320px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>申請画像確認</h1>
+
+    <div class="box">
+      <div class="controls">
+        <button type="button" id="zoom-in-button">拡大</button>
+        <button type="button" id="zoom-out-button">縮小</button>
+        <button type="button" id="reset-button">元に戻す</button>
+        <a id="back-link" class="button-link" href="application-novel-observer.html">戻る</a>
+      </div>
+
+      <div id="message-box" class="message">読み込み中...</div>
+
+      <div id="viewer" class="viewer">
+        <div id="inner" class="inner">
+          <img id="support-image" alt="申請画像">
+        </div>
+      </div>
+    </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debug-box">読み込み中...</pre>
+    </details>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+      const params = new URLSearchParams(window.location.search);
+      const applicationId = params.get("application_id") || "";
+      const back = params.get("back") || "application-novel-observer.html";
+
+      const backLink = document.getElementById("back-link");
+      const messageBox = document.getElementById("message-box");
+      const viewer = document.getElementById("viewer");
+      const inner = document.getElementById("inner");
+      const supportImage = document.getElementById("support-image");
+      const zoomInButton = document.getElementById("zoom-in-button");
+      const zoomOutButton = document.getElementById("zoom-out-button");
+      const resetButton = document.getElementById("reset-button");
+      const debugBox = document.getElementById("debug-box");
+
+      backLink.href = back;
+
+      function renderDebug(text) {
+        debugBox.textContent = text || "待機中";
+      }
+
+      if (!applicationId) {
+        messageBox.textContent = "申請IDが見つかりません。";
+        renderDebug("application_id が空です。");
+        return;
+      }
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+
+      let scale = 1;
+
+      function applyScale() {
+        inner.style.transform = `scale(${scale})`;
+      }
+
+      zoomInButton.addEventListener("click", () => {
+        scale = Math.min(scale + 0.2, 5);
+        applyScale();
+      });
+
+      zoomOutButton.addEventListener("click", () => {
+        scale = Math.max(scale - 0.2, 0.4);
+        applyScale();
+      });
+
+      resetButton.addEventListener("click", () => {
+        scale = 1;
+        applyScale();
+      });
+
+      try {
+        renderDebug(
+          "step: start\n\n" +
+          "adminUsername: " + adminUsername + "\n" +
+          "applicationId: " + applicationId + "\n" +
+          "back: " + back
+        );
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-get-novel-support-image-url-v2`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: adminUsername,
+            application_id: Number(applicationId)
+          })
+        });
+
+        const rawText = await response.text();
+
+        renderDebug(
+          "step: function response\n\n" +
+          "status: " + response.status + "\n\n" +
+          rawText
+        );
+
+        let result = null;
+
+        try {
+          result = rawText ? JSON.parse(rawText) : {};
+        } catch (_) {
+          messageBox.textContent = "画像の取得に失敗しました。";
+          return;
+        }
+
+        if (!response.ok || !result || !result.ok || !result.signed_url) {
+          messageBox.textContent = result?.error || "画像の取得に失敗しました。";
+          renderDebug(JSON.stringify(result, null, 2));
+          return;
+        }
+
+        const imageUrl = result.signed_url + (result.signed_url.includes("?") ? "&" : "?") + "viewer_cache_bust=" + Date.now();
+
+        renderDebug(
+          "step: signed url ok\n\n" +
+          "storage_path: " + (result.storage_path || "") + "\n" +
+          "applicationId: " + applicationId + "\n\n" +
+          imageUrl
+        );
+
+        supportImage.onload = () => {
+          messageBox.style.display = "none";
+          viewer.style.display = "block";
+          scale = 1;
+          applyScale();
+
+          renderDebug(
+            "step: image loaded\n\n" +
+            "naturalWidth: " + supportImage.naturalWidth + "\n" +
+            "naturalHeight: " + supportImage.naturalHeight + "\n" +
+            "current src: " + supportImage.currentSrc + "\n" +
+            "applicationId: " + applicationId
+          );
+        };
+
+        supportImage.onerror = () => {
+          messageBox.textContent = "画像の表示に失敗しました。";
+          renderDebug(
+            "step: image onerror\n\n" +
+            "img src: " + supportImage.src + "\n" +
+            "applicationId: " + applicationId
+          );
+        };
+
+        supportImage.src = imageUrl;
+      } catch (error) {
+        messageBox.textContent = "画像の取得に失敗しました。";
+        renderDebug("step: catch\n\n" + String(error));
+      }
+    });
+  </script>
+</body>
+</html>

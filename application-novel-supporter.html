@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小説応援申請管理（支援者）</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Hiragino Sans", "Yu Gothic", sans-serif;
+      background: #f5f7fb;
+      color: #222;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid #e5e7eb;
+      padding: 16px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: 1100px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .back-link {
+      display: inline-block;
+      margin-bottom: 8px;
+      color: #2563eb;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      color: #111827;
+    }
+
+    main {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px 16px 40px;
+    }
+
+    .page-description {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+      color: #374151;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .toolbar-info {
+      font-size: 14px;
+      color: #4b5563;
+    }
+
+    .reload-button {
+      border: none;
+      background: #111827;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .reload-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .status-box {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      border: 1px solid transparent;
+    }
+
+    .status-box.show {
+      display: block;
+    }
+
+    .status-box.info {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      color: #1d4ed8;
+    }
+
+    .status-box.success {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+      color: #047857;
+    }
+
+    .status-box.error {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #dc2626;
+    }
+
+    .empty-box {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 32px 16px;
+      text-align: center;
+      font-size: 15px;
+      color: #6b7280;
+    }
+
+    .card-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .application-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 18px;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.04);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 18px;
+      color: #111827;
+      line-height: 1.4;
+    }
+
+    .type-badge {
+      display: inline-block;
+      background: #dbeafe;
+      color: #1d4ed8;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .info-item {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      padding: 12px;
+      min-width: 0;
+    }
+
+    .info-label {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 6px;
+    }
+
+    .info-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .action-button {
+      border: none;
+      border-radius: 10px;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .approve-button {
+      background: #16a34a;
+      color: #ffffff;
+    }
+
+    .reject-button {
+      background: #dc2626;
+      color: #ffffff;
+    }
+
+    .image-button {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .action-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .loading-box {
+      background: #ffffff;
+      border-radius: 14px;
+      padding: 18px 22px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #111827;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    @media (max-width: 700px) {
+      h1 {
+        font-size: 18px;
+      }
+
+      .info-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .action-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div>
+        <a href="user-applications.html" class="back-link">← 申請一覧へ戻る</a>
+        <h1>小説応援申請管理（支援者）</h1>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div class="page-description">
+      このページでは、小説応援申請のうち「支援者」と自動判定された pending 状態の申請を確認できます。<br>
+      承認すると最終支援区分は「支援者」として登録されます。
+    </div>
+
+    <div id="statusBox" class="status-box info"></div>
+
+    <div class="toolbar">
+      <div class="toolbar-info">
+        表示対象: <strong>detected_support_type = 支援者</strong> / <strong>status = pending</strong>
+      </div>
+      <button id="reloadButton" class="reload-button" type="button">再読み込み</button>
+    </div>
+
+    <div id="contentArea">
+      <div class="empty-box">読み込み中です...</div>
+    </div>
+  </main>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="loading-box">処理中です...</div>
+  </div>
+
+  <script>
+    const REQUIRED_PERMISSION = "account_management";
+    const TARGET_DETECTED_SUPPORT_TYPE = "支援者";
+    const FINAL_SUPPORT_TYPE = "支援者";
+
+    const statusBox = document.getElementById("statusBox");
+    const contentArea = document.getElementById("contentArea");
+    const reloadButton = document.getElementById("reloadButton");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+
+    let applications = [];
+    let isProcessing = false;
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "不明";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return new Intl.DateTimeFormat("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(date);
+    }
+
+    function showStatus(message, type = "info") {
+      statusBox.textContent = message;
+      statusBox.className = `status-box show ${type}`;
+    }
+
+    function hideStatus() {
+      statusBox.textContent = "";
+      statusBox.className = "status-box info";
+    }
+
+    function setLoading(show, message = "処理中です...") {
+      const loadingBox = loadingOverlay.querySelector(".loading-box");
+      loadingBox.textContent = message;
+      loadingOverlay.classList.toggle("show", show);
+    }
+
+    function setButtonsDisabled(disabled) {
+      document.querySelectorAll(".action-button, .reload-button").forEach((button) => {
+        button.disabled = disabled;
+      });
+    }
+
+    async function requireAdminAndPermission() {
+      const {
+        data: { user },
+        error: authError
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        window.location.href = "login.html";
+        return null;
+      }
+
+      const { data: account, error: accountError } = await supabase
+        .from("accounts")
+        .select("id, is_admin, permissions")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (accountError) {
+        throw new Error("アカウント情報の確認に失敗しました。");
+      }
+
+      if (!account) {
+        throw new Error("アカウント情報が見つかりません。");
+      }
+
+      const permissions = Array.isArray(account.permissions) ? account.permissions : [];
+      const hasPermission = account.is_admin === true || permissions.includes(REQUIRED_PERMISSION);
+
+      if (!hasPermission) {
+        throw new Error("このページを表示する権限がありません。");
+      }
+
+      return user;
+    }
+
+    async function fetchApplications() {
+      hideStatus();
+      reloadButton.disabled = true;
+
+      try {
+        await requireAdminAndPermission();
+
+        const { data, error } = await supabase
+          .from("novel_support_applications")
+          .select(`
+            id,
+            user_id,
+            note_account_name,
+            detected_support_type,
+            status,
+            created_at,
+            users:user_id (
+              id,
+              username
+            )
+          `)
+          .eq("status", "pending")
+          .eq("detected_support_type", TARGET_DETECTED_SUPPORT_TYPE)
+          .order("created_at", { ascending: true });
+
+        if (error) {
+          throw error;
+        }
+
+        applications = data || [];
+        renderApplications();
+      } catch (error) {
+        console.error(error);
+        contentArea.innerHTML = `
+          <div class="empty-box">
+            ${escapeHtml(error.message || "申請一覧の取得に失敗しました。")}
+          </div>
+        `;
+        showStatus(error.message || "申請一覧の取得に失敗しました。", "error");
+      } finally {
+        reloadButton.disabled = false;
+      }
+    }
+
+    function renderApplications() {
+      if (!applications.length) {
+        contentArea.innerHTML = `
+          <div class="empty-box">
+            現在、確認待ちの「支援者」申請はありません。
+          </div>
+        `;
+        return;
+      }
+
+      contentArea.innerHTML = `
+        <div class="card-list">
+          ${applications.map((app) => {
+            const username = app.users?.username || "不明";
+            const noteAccountName = app.note_account_name || "未入力";
+            const detectedSupportType = app.detected_support_type || "不明";
+            const status = app.status || "不明";
+            const createdAt = formatDateTime(app.created_at);
+
+            return `
+              <section class="application-card" id="application-card-${app.id}">
+                <div class="card-header">
+                  <h2 class="card-title">${escapeHtml(username)}</h2>
+                  <span class="type-badge">${escapeHtml(detectedSupportType)}</span>
+                </div>
+
+                <div class="info-grid">
+                  <div class="info-item">
+                    <div class="info-label">ユーザー名</div>
+                    <div class="info-value">${escapeHtml(username)}</div>
+                  </div>
+
+                  <div class="info-item">
+                    <div class="info-label">noteアカウント名</div>
+                    <div class="info-value">${escapeHtml(noteAccountName)}</div>
+                  </div>
+
+                  <div class="info-item">
+                    <div class="info-label">自動判定</div>
+                    <div class="info-value">${escapeHtml(detectedSupportType)}</div>
+                  </div>
+
+                  <div class="info-item">
+                    <div class="info-label">状態</div>
+                    <div class="info-value">${escapeHtml(status)}</div>
+                  </div>
+
+                  <div class="info-item">
+                    <div class="info-label">申請日時</div>
+                    <div class="info-value">${escapeHtml(createdAt)}</div>
+                  </div>
+                </div>
+
+                <div class="actions">
+                  <button
+                    type="button"
+                    class="action-button approve-button"
+                    onclick="approveApplication('${app.id}')"
+                  >
+                    承認
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-button reject-button"
+                    onclick="rejectApplication('${app.id}')"
+                  >
+                    却下
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-button image-button"
+                    onclick="openImageViewer('${app.id}')"
+                  >
+                    画像確認
+                  </button>
+                </div>
+              </section>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    function removeApplicationFromList(applicationId) {
+      applications = applications.filter((app) => app.id !== applicationId);
+      renderApplications();
+    }
+
+    function openImageViewer(applicationId) {
+      window.location.href = `novel-support-image-viewer.html?application_id=${encodeURIComponent(applicationId)}&back=application-novel-supporter.html`;
+    }
+
+    async function approveApplication(applicationId) {
+      if (isProcessing) return;
+
+      const confirmed = window.confirm("この申請を「支援者」として承認しますか？");
+      if (!confirmed) return;
+
+      isProcessing = true;
+      setButtonsDisabled(true);
+      setLoading(true, "承認処理中です...");
+
+      try {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+
+        const accessToken = session?.access_token;
+        if (!accessToken) {
+          throw new Error("ログイン情報が確認できません。再ログインしてください。");
+        }
+
+        const { data, error } = await supabase.functions.invoke("admin-review-novel-support-application", {
+          body: {
+            application_id: applicationId,
+            review_action: "approved",
+            final_support_type: FINAL_SUPPORT_TYPE
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || "承認処理に失敗しました。");
+        }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        removeApplicationFromList(applicationId);
+        showStatus("申請を承認しました。", "success");
+      } catch (error) {
+        console.error(error);
+        showStatus(error.message || "承認処理に失敗しました。", "error");
+      } finally {
+        isProcessing = false;
+        setButtonsDisabled(false);
+        setLoading(false);
+      }
+    }
+
+    async function rejectApplication(applicationId) {
+      if (isProcessing) return;
+
+      const reason = window.prompt("却下理由を入力してください。");
+      if (reason === null) return;
+
+      const trimmedReason = reason.trim();
+      if (!trimmedReason) {
+        showStatus("却下理由を入力してください。", "error");
+        return;
+      }
+
+      isProcessing = true;
+      setButtonsDisabled(true);
+      setLoading(true, "却下処理中です...");
+
+      try {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+
+        const accessToken = session?.access_token;
+        if (!accessToken) {
+          throw new Error("ログイン情報が確認できません。再ログインしてください。");
+        }
+
+        const { data, error } = await supabase.functions.invoke("admin-review-novel-support-application", {
+          body: {
+            application_id: applicationId,
+            review_action: "rejected",
+            reason: trimmedReason
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`
+          }
+        });
+
+        if (error) {
+          throw new Error(error.message || "却下処理に失敗しました。");
+        }
+
+        if (data?.error) {
+          throw new Error(data.error);
+        }
+
+        removeApplicationFromList(applicationId);
+        showStatus("申請を却下しました。", "success");
+      } catch (error) {
+        console.error(error);
+        showStatus(error.message || "却下処理に失敗しました。", "error");
+      } finally {
+        isProcessing = false;
+        setButtonsDisabled(false);
+        setLoading(false);
+      }
+    }
+
+    reloadButton.addEventListener("click", fetchApplications);
+
+    window.approveApplication = approveApplication;
+    window.rejectApplication = rejectApplication;
+    window.openImageViewer = openImageViewer;
+
+    fetchApplications();
+  </script>
+</body>
+</html>

@@ -449,56 +449,42 @@
         submitButton.textContent = "送信中...";
 
         try {
-          let query = supabase
-            .from("accounts")
-            .select("user_id, license_status, novel_support_status");
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-send-conditional-notice`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify({
+              admin_username: adminUsername,
+              target_license_status: targetLicenseStatus,
+              target_novel_support_status: targetNovelSupportStatus,
+              title: noticeTitle,
+              body: noticeBody
+            })
+          });
 
-          if (targetLicenseStatus !== "") {
-            query = query.eq("license_status", targetLicenseStatus);
-          }
+          const rawText = await response.text();
+          let result = null;
 
-          if (targetNovelSupportStatus !== "") {
-            query = query.eq("novel_support_status", targetNovelSupportStatus);
-          }
-
-          const { data: targetUsers, error: targetError } = await query;
-
-          if (targetError) {
-            alert("対象ユーザー取得に失敗しました: " + targetError.message);
-            renderDebug("対象ユーザー取得エラー: " + targetError.message);
+          try {
+            result = rawText ? JSON.parse(rawText) : {};
+          } catch (_) {
+            alert("送信に失敗しました。");
+            renderDebug("送信レスポンス解析失敗:\n" + rawText);
             return;
           }
 
-          if (!targetUsers || targetUsers.length === 0) {
-            alert("条件に一致するユーザーがいません。");
-            renderDebug("条件一致ユーザー: 0件");
-            return;
-          }
-
-          const rows = targetUsers.map((user) => ({
-            user_id: user.user_id,
-            title: noticeTitle || null,
-            body: noticeBody,
-            is_read: false,
-            notice_type: "condition",
-            sent_by_admin: adminUsername,
-            target_license_status: targetLicenseStatus || null,
-            target_novel_support_status: targetNovelSupportStatus || null
-          }));
-
-          const { error: insertError } = await supabase
-            .from("operator_notices")
-            .insert(rows);
-
-          if (insertError) {
-            alert("送信に失敗しました: " + insertError.message);
-            renderDebug("挿入エラー: " + insertError.message);
+          if (!response.ok || !result || !result.ok) {
+            alert(result?.error || "送信に失敗しました。");
+            renderDebug("送信失敗:\n" + rawText);
             return;
           }
 
           alert("送信しました。");
           noticeForm.reset();
-          renderDebug("送信成功: " + rows.length + "件");
+          renderDebug("送信成功: " + (result.sent_count || 0) + "件");
 
           if (adminRole === "admin") {
             await loadHistory();

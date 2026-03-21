@@ -173,7 +173,7 @@
 
       const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
       const params = new URLSearchParams(window.location.search);
-      const screenshotPath = params.get("screenshot_path") || "";
+      const applicationId = params.get("application_id") || "";
       const back = params.get("back") || "application-novel-observer.html";
 
       const backLink = document.getElementById("back-link");
@@ -191,9 +191,9 @@
         debugBox.textContent = text || "待機中";
       }
 
-      if (!screenshotPath) {
-        messageBox.textContent = "画像パスが見つかりません。";
-        renderDebug("screenshot_path が空です。");
+      if (!applicationId) {
+        messageBox.textContent = "申請IDが見つかりません。";
+        renderDebug("application_id が空です。");
         return;
       }
 
@@ -327,11 +327,11 @@
         renderDebug(
           "step: start\n\n" +
           "adminUsername: " + adminUsername + "\n" +
-          "screenshotPath: " + screenshotPath + "\n" +
+          "applicationId: " + applicationId + "\n" +
           "back: " + back
         );
 
-        const response = await fetch(`${supabaseUrl}/functions/v1/admin-get-novel-support-image-url`, {
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-get-novel-support-image-url-v2`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -340,7 +340,7 @@
           },
           body: JSON.stringify({
             admin_username: adminUsername,
-            screenshot_path: screenshotPath
+            application_id: Number(applicationId)
           })
         });
 
@@ -377,6 +377,7 @@
 
         renderDebug(
           "step: signed url ok\n\n" +
+          "storage_path: " + (result.storage_path || "") + "\n\n" +
           result.signed_url
         );
 

@@ -425,8 +425,8 @@
 
         imageButton.addEventListener("click", () => {
           window.location.href =
-            "novel-support-image-viewer.html?screenshot_path=" +
-            encodeURIComponent(item.screenshot_url) +
+            "novel-support-image-viewer.html?application_id=" +
+            encodeURIComponent(item.id) +
             "&back=" +
             encodeURIComponent("application-novel-observer.html");
         });

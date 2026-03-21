@@ -579,7 +579,7 @@
         scheduleSubmitButton.textContent = "予約中...";
 
         try {
-          const response = await fetch(`${supabaseUrl}/functions/v1/admin-create-scheduled-notice-v3`, {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-create-scheduled-notice-v4`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

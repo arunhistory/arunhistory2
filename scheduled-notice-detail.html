@@ -321,7 +321,7 @@
         detailBox.innerHTML = "<p>読み込み中...</p>";
 
         const { data, error } = await supabase
-          .from("scheduled_notices")
+          .from("scheduled_notices_v2")
           .select("id, title, body, scheduled_at, status, created_by_admin, created_at")
           .eq("id", Number(scheduledNoticeId))
           .maybeSingle();
@@ -391,7 +391,7 @@
         deleteButton.disabled = true;
 
         try {
-          const response = await fetch(`${supabaseUrl}/functions/v1/admin-update-scheduled-notice-datetime`, {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-update-scheduled-notice-datetime-v2`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -446,7 +446,7 @@
         deleteButton.disabled = true;
 
         try {
-          const response = await fetch(`${supabaseUrl}/functions/v1/admin-delete-scheduled-notice`, {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-delete-scheduled-notice-v2`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -100,6 +100,14 @@
       background-color: #6aa676;
     }
 
+    .sub-button {
+      background-color: #7e8fb3;
+    }
+
+    .sub-button:hover {
+      background-color: #98a8c8;
+    }
+
     .notice-item {
       padding: 14px 0;
       border-bottom: 1px solid rgba(0,0,0,0.12);
@@ -137,6 +145,12 @@
     .disabled-note {
       color: #444;
       font-size: 0.95rem;
+    }
+
+    .section-divider {
+      margin: 24px 0;
+      border-top: 1px solid rgba(0,0,0,0.15);
+      padding-top: 20px;
     }
 
     details {
@@ -212,8 +226,28 @@
         </p>
 
         <p>
-          <button type="submit">送信</button>
+          <button type="submit" id="send-now-button">送信</button>
         </p>
+
+        <div class="section-divider">
+          <p>
+            <label for="scheduled-date">予約日</label>
+            <input type="date" id="scheduled-date">
+          </p>
+
+          <p>
+            <label for="scheduled-time">予約時間</label>
+            <input type="time" id="scheduled-time">
+          </p>
+
+          <p>
+            <button type="button" id="schedule-submit-button" class="sub-button">予約投稿</button>
+          </p>
+
+          <p class="center-link">
+            <a href="scheduled-notices.html">予約投稿一覧</a>
+          </p>
+        </div>
       </form>
     </div>
 
@@ -260,7 +294,8 @@
       const noticeForm = document.getElementById("notice-form");
       const historyBox = document.getElementById("history-box");
       const historyList = document.getElementById("history-list");
-      const submitButton = noticeForm.querySelector('button[type="submit"]');
+      const submitButton = document.getElementById("send-now-button");
+      const scheduleSubmitButton = document.getElementById("schedule-submit-button");
       const debugBox = document.getElementById("debug-box");
 
       adminUserLink.textContent = adminUsername + "さん";
@@ -282,6 +317,24 @@
           "admin_status: " + adminStatus + "\n" +
           "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
           (extra ? "\n\n" + extra : "");
+      }
+
+      function getFormValues() {
+        return {
+          targetLicenseStatus: document.getElementById("target-license-status").value,
+          targetNovelSupportStatus: document.getElementById("target-novel-support-status").value,
+          noticeTitle: document.getElementById("notice-title").value.trim(),
+          noticeBody: document.getElementById("notice-body").value.trim(),
+          scheduledDate: document.getElementById("scheduled-date").value,
+          scheduledTime: document.getElementById("scheduled-time").value
+        };
+      }
+
+      function buildScheduledAt(dateValue, timeValue) {
+        if (!dateValue || !timeValue) {
+          return "";
+        }
+        return `${dateValue}T${timeValue}:00+09:00`;
       }
 
       if (adminStatus !== "active") {
@@ -435,10 +488,12 @@
       noticeForm.addEventListener("submit", async (e) => {
         e.preventDefault();
 
-        const targetLicenseStatus = document.getElementById("target-license-status").value;
-        const targetNovelSupportStatus = document.getElementById("target-novel-support-status").value;
-        const noticeTitle = document.getElementById("notice-title").value.trim();
-        const noticeBody = document.getElementById("notice-body").value.trim();
+        const {
+          targetLicenseStatus,
+          targetNovelSupportStatus,
+          noticeTitle,
+          noticeBody
+        } = getFormValues();
 
         if (!noticeBody) {
           alert("本文を入力してください。");
@@ -495,6 +550,81 @@
         } finally {
           submitButton.disabled = false;
           submitButton.textContent = "送信";
+        }
+      });
+
+      scheduleSubmitButton.addEventListener("click", async () => {
+        const {
+          targetLicenseStatus,
+          targetNovelSupportStatus,
+          noticeTitle,
+          noticeBody,
+          scheduledDate,
+          scheduledTime
+        } = getFormValues();
+
+        if (!noticeBody) {
+          alert("本文を入力してください。");
+          return;
+        }
+
+        if (!scheduledDate || !scheduledTime) {
+          alert("予約日と予約時間を入力してください。");
+          return;
+        }
+
+        const scheduledAt = buildScheduledAt(scheduledDate, scheduledTime);
+
+        scheduleSubmitButton.disabled = true;
+        scheduleSubmitButton.textContent = "予約中...";
+
+        try {
+          const response = await fetch(`${supabaseUrl}/functions/v1/admin-create-scheduled-notice`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            },
+            body: JSON.stringify({
+              admin_username: adminUsername,
+              target_license_status: targetLicenseStatus,
+              target_novel_support_status: targetNovelSupportStatus,
+              title: noticeTitle,
+              body: noticeBody,
+              scheduled_at: scheduledAt
+            })
+          });
+
+          const rawText = await response.text();
+          let result = null;
+
+          try {
+            result = rawText ? JSON.parse(rawText) : {};
+          } catch (_) {
+            alert("予約投稿に失敗しました。");
+            renderDebug("予約レスポンス解析失敗:\n" + rawText);
+            return;
+          }
+
+          if (!response.ok || !result || !result.ok) {
+            alert(result?.error || "予約投稿に失敗しました。");
+            renderDebug("予約失敗:\n" + rawText);
+            return;
+          }
+
+          alert("予約投稿を登録しました。");
+          renderDebug(
+            "予約成功:\n" +
+            "scheduled_notice_id: " + (result.scheduled_notice_id || "") + "\n" +
+            "scheduled_at: " + (result.scheduled_at || "")
+          );
+        } catch (err) {
+          alert("予期しないエラーが発生しました。");
+          renderDebug("予期しないエラー: " + String(err));
+        } finally {
+          scheduleSubmitButton.disabled = false;
+          scheduleSubmitButton.textContent = "予約投稿";
         }
       });
     });

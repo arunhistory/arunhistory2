@@ -50,13 +50,13 @@
       margin: 16px 0;
     }
 
-    .item {
+    .item-link {
       display: block;
-      border-bottom: 1px solid rgba(0,0,0,0.12);
       padding: 14px 0;
+      border-bottom: 1px solid rgba(0,0,0,0.12);
     }
 
-    .item:last-child {
+    .item-link:last-child {
       border-bottom: none;
     }
 
@@ -167,6 +167,47 @@
           (extra ? "\n\n" + extra : "");
       }
 
+      function formatDateTime(value) {
+        if (!value) return "";
+        return new Date(value).toLocaleString("ja-JP");
+      }
+
+      function renderItems(items) {
+        scheduledList.innerHTML = "";
+
+        if (!items || items.length === 0) {
+          scheduledList.innerHTML = "<p>予約投稿はありません。</p>";
+          return;
+        }
+
+        items.forEach((item) => {
+          const link = document.createElement("a");
+          link.className = "item-link";
+          link.href = "scheduled-notice-detail.html?id=" + encodeURIComponent(item.id);
+
+          const title = document.createElement("div");
+          title.className = "item-title";
+          title.textContent = item.title || "件名なし";
+
+          const meta = document.createElement("div");
+          meta.className = "item-meta";
+
+          const lines = [];
+          lines.push("予約ID: " + item.id);
+          lines.push("予約投稿日時: " + formatDateTime(item.scheduled_at));
+          lines.push("ライセンス条件: " + (item.target_license_status || "指定なし"));
+          lines.push("小説応援条件: " + (item.target_novel_support_status || "指定なし"));
+          lines.push("状態: " + (item.status || ""));
+          lines.push("作成者: " + (item.created_by_admin || ""));
+
+          meta.textContent = lines.join("\n");
+
+          link.appendChild(title);
+          link.appendChild(meta);
+          scheduledList.appendChild(link);
+        });
+      }
+
       if (adminStatus !== "active") {
         alert("この管理者アカウントは停止中です。");
         clearAdminSession();
@@ -193,59 +234,20 @@
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      function renderItems(items) {
-        scheduledList.innerHTML = "";
-
-        if (!items || items.length === 0) {
-          scheduledList.innerHTML = "<p>予約投稿はありません。</p>";
-          return;
-        }
-
-        items.forEach((item) => {
-          const link = document.createElement("a");
-          link.className = "item";
-          link.href = "scheduled-notice-detail.html?id=" + encodeURIComponent(item.id);
-
-          const title = document.createElement("div");
-          title.className = "item-title";
-          title.textContent = item.title || "件名なし";
-
-          const meta = document.createElement("div");
-          meta.className = "item-meta";
-
-          const parts = [];
-          parts.push("予約ID: " + item.id);
-
-          if (item.target_license_status) {
-            parts.push("ライセンス条件: " + item.target_license_status);
-          } else {
-            parts.push("ライセンス条件: 指定なし");
-          }
-
-          if (item.target_novel_support_status) {
-            parts.push("小説応援条件: " + item.target_novel_support_status);
-          } else {
-            parts.push("小説応援条件: 指定なし");
-          }
-
-          parts.push("予約日時: " + (item.scheduled_at ? new Date(item.scheduled_at).toLocaleString("ja-JP") : ""));
-          parts.push("作成者: " + (item.created_by_admin || ""));
-          parts.push("状態: " + (item.status || ""));
-
-          meta.textContent = parts.join("\n");
-
-          link.appendChild(title);
-          link.appendChild(meta);
-          scheduledList.appendChild(link);
-        });
-      }
-
       async function loadScheduledNotices() {
         scheduledList.innerHTML = "<p>読み込み中...</p>";
 
         const { data, error } = await supabase
           .from("scheduled_notices")
-          .select("id, title, target_license_status, target_novel_support_status, scheduled_at, created_by_admin, status")
+          .select(`
+            id,
+            title,
+            target_license_status,
+            target_novel_support_status,
+            scheduled_at,
+            status,
+            created_by_admin
+          `)
           .eq("status", "scheduled")
           .order("scheduled_at", { ascending: true });
 

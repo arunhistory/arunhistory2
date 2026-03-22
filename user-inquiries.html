@@ -701,10 +701,10 @@
         try {
           const info = getSessionInfo();
 
-          const result = await invokeFunction("admin-start-support-inquiry", {
-            admin_username: info.adminUsername,
-            inquiry_id: inquiryId
-          });
+          const result = await invokeFunction("admin-start-support-inquiry-v2", {
+  admin_username: info.adminUsername,
+  inquiry_id: inquiryId
+});
 
           showStatus(result?.message || "対応を開始しました。");
           await fetchInquiries();

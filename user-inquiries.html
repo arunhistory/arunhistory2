@@ -1,0 +1,434 @@
+<script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    if (sessionStorage.getItem("admin_logged_in") !== "1") {
+      window.location.href = "admin-login.html";
+      return;
+    }
+
+    const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
+    const adminId = sessionStorage.getItem("admin_id");
+    const adminRole = sessionStorage.getItem("admin_role") || "";
+    const adminStatus = sessionStorage.getItem("admin_status") || "";
+
+    let adminPermissions = [];
+    try {
+      adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+      if (!Array.isArray(adminPermissions)) {
+        adminPermissions = [];
+      }
+    } catch {
+      adminPermissions = [];
+    }
+
+    const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+    const supabaseKey = "YOUR_SUPABASE_ANON_KEY";
+
+    const adminUserLink = document.getElementById("admin-user-link");
+    const debugBox = document.getElementById("debug-box");
+    const statusBox = document.getElementById("statusBox");
+    const contentArea = document.getElementById("contentArea");
+    const reloadButton = document.getElementById("reloadButton");
+    const statusFilter = document.getElementById("statusFilter");
+    const loadingOverlay = document.getElementById("loadingOverlay");
+    const loadingMessage = document.getElementById("loadingMessage");
+
+    const summaryVisibleCount = document.getElementById("summaryVisibleCount");
+    const summaryOpenCount = document.getElementById("summaryOpenCount");
+    const summaryInProgressCount = document.getElementById("summaryInProgressCount");
+    const summaryMyCount = document.getElementById("summaryMyCount");
+
+    adminUserLink.textContent = adminUsername + "さん";
+
+    let inquiries = [];
+    let isProcessing = false;
+    let currentActorAdminAccountId = null;
+
+    function renderDebug(extra = "") {
+      debugBox.textContent =
+        "admin_username: " + adminUsername + "\n" +
+        "admin_id: " + (adminId || "") + "\n" +
+        "admin_role: " + adminRole + "\n" +
+        "admin_status: " + adminStatus + "\n" +
+        "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+        (extra ? "\n\n" + extra : "");
+    }
+
+    function showStatus(message, type = "info") {
+      statusBox.textContent = message;
+      statusBox.className = `status-box show ${type}`;
+    }
+
+    function hideStatus() {
+      statusBox.textContent = "";
+      statusBox.className = "status-box info";
+    }
+
+    function setLoading(show, message = "処理中です...") {
+      loadingMessage.textContent = message;
+      loadingOverlay.classList.toggle("show", show);
+    }
+
+    function setButtonsDisabled(disabled) {
+      document.querySelectorAll(".action-button, .reload-button, .filter-select").forEach((button) => {
+        button.disabled = disabled;
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "未設定";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+
+      return new Intl.DateTimeFormat("ja-JP", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      }).format(date);
+    }
+
+    async function writePageLog(actionType, actionLabel, actionDetail) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": "Bearer " + supabaseKey
+        },
+        body: JSON.stringify({
+          admin_username: adminUsername,
+          target_type: adminRole === "sub_admin" ? "sub_admin" : null,
+          target_id: adminRole === "sub_admin" ? adminId : null,
+          action_type: actionType,
+          action_label: actionLabel,
+          action_detail: actionDetail
+        })
+      });
+
+      const rawText = await response.text();
+
+      renderDebug(
+        "log status: " + response.status +
+        "\nlog response:\n" + rawText
+      );
+
+      return response.ok;
+    }
+
+    async function loadCurrentActorAdminAccountId() {
+      const response = await fetch(
+        `${supabaseUrl}/rest/v1/accounts?select=id,user_id&user_id=eq.${encodeURIComponent(adminId || "")}`,
+        {
+          method: "GET",
+          headers: {
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          }
+        }
+      );
+
+      const rawText = await response.text();
+      let data = [];
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = [];
+      }
+
+      renderDebug(
+        "accounts fetch status: " + response.status +
+        "\naccounts response:\n" + rawText
+      );
+
+      if (!response.ok) {
+        throw new Error("管理者アカウント情報の取得に失敗しました。");
+      }
+
+      currentActorAdminAccountId = Array.isArray(data) && data[0] ? data[0].id : null;
+      return currentActorAdminAccountId;
+    }
+
+    async function invokeFunction(functionName, body) {
+      const response = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": supabaseKey,
+          "Authorization": "Bearer " + supabaseKey
+        },
+        body: JSON.stringify(body)
+      });
+
+      const rawText = await response.text();
+      let data = null;
+
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        data = null;
+      }
+
+      renderDebug(
+        "function: " + functionName +
+        "\nstatus: " + response.status +
+        "\nresponse:\n" + rawText
+      );
+
+      if (!response.ok) {
+        throw new Error(data?.error || "Functionの呼び出しに失敗しました。");
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+
+      return data;
+    }
+
+    function updateSummary(counts) {
+      summaryVisibleCount.textContent = String(counts?.visible ?? 0);
+      summaryOpenCount.textContent = String(counts?.open ?? 0);
+      summaryInProgressCount.textContent = String(counts?.in_progress ?? 0);
+      summaryMyCount.textContent = String(counts?.mine ?? 0);
+    }
+
+    function getStatusBadge(status) {
+      if (status === "in_progress") {
+        return `<span class="badge badge-in-progress">対応中</span>`;
+      }
+      return `<span class="badge badge-open">未対応</span>`;
+    }
+
+    function renderInquiries() {
+      if (!inquiries.length) {
+        contentArea.innerHTML = `
+          <div class="empty-box">
+            表示できるお問い合わせはありません。
+          </div>
+        `;
+        return;
+      }
+
+      contentArea.innerHTML = `
+        <div class="card-list">
+          ${inquiries.map((inquiry) => {
+            const assigneeChips = Array.isArray(inquiry.assignees)
+              ? inquiry.assignees.map((assignee) => `
+                  <span class="assignee-chip">
+                    ${escapeHtml(assignee.admin_display_name || "不明")}
+                    ${assignee.is_primary ? "（主担当）" : ""}
+                  </span>
+                `).join("")
+              : "";
+
+            const canStart = inquiry.inquiry_status === "open";
+            const previewText = inquiry.latest_message_text || "メッセージはまだありません。";
+
+            return `
+              <section class="inquiry-card">
+                <div class="card-top">
+                  <div>
+                    <h2 class="card-title">${escapeHtml(inquiry.username || "不明")}</h2>
+                    <div class="badge-row">
+                      ${getStatusBadge(inquiry.inquiry_status)}
+                      ${inquiry.is_mine ? `<span class="badge badge-mine">自分が担当中</span>` : ""}
+                      ${inquiry.assigned_admin_username ? `<span class="badge badge-assigned">担当: ${escapeHtml(inquiry.assigned_admin_username)}</span>` : ""}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="meta-grid">
+                  <div class="meta-item">
+                    <div class="meta-label">ユーザー名</div>
+                    <div class="meta-value">${escapeHtml(inquiry.username || "不明")}</div>
+                  </div>
+
+                  <div class="meta-item">
+                    <div class="meta-label">状態</div>
+                    <div class="meta-value">${escapeHtml(inquiry.inquiry_status || "open")}</div>
+                  </div>
+
+                  <div class="meta-item">
+                    <div class="meta-label">最終メッセージ日時</div>
+                    <div class="meta-value">${escapeHtml(formatDateTime(inquiry.last_message_at || inquiry.created_at))}</div>
+                  </div>
+
+                  <div class="meta-item">
+                    <div class="meta-label">対応開始日時</div>
+                    <div class="meta-value">${escapeHtml(formatDateTime(inquiry.started_at))}</div>
+                  </div>
+                </div>
+
+                <div class="preview-box">
+                  <div class="preview-label">最新メッセージ</div>
+                  <div class="preview-text">${escapeHtml(previewText)}</div>
+                </div>
+
+                ${assigneeChips ? `
+                  <div class="preview-box">
+                    <div class="preview-label">現在の担当者</div>
+                    <div class="assignee-list">${assigneeChips}</div>
+                  </div>
+                ` : ""}
+
+                <div class="actions">
+                  <button
+                    type="button"
+                    class="action-button detail-button"
+                    onclick="openInquiryDetail(${Number(inquiry.inquiry_id)})"
+                  >
+                    詳細確認
+                  </button>
+
+                  <button
+                    type="button"
+                    class="action-button start-button"
+                    onclick="startSupportInquiry(${Number(inquiry.inquiry_id)})"
+                    ${canStart ? "" : "disabled"}
+                  >
+                    対応開始
+                  </button>
+                </div>
+              </section>
+            `;
+          }).join("")}
+        </div>
+      `;
+    }
+
+    async function fetchInquiries() {
+      hideStatus();
+      reloadButton.disabled = true;
+
+      try {
+        await loadCurrentActorAdminAccountId();
+
+        const result = await invokeFunction("admin-get-support-inquiries", {
+          filter: statusFilter.value,
+          limit: 100
+        });
+
+        inquiries = Array.isArray(result?.inquiries) ? result.inquiries : [];
+        updateSummary(result?.counts || {});
+        renderInquiries();
+      } catch (error) {
+        console.error(error);
+        contentArea.innerHTML = `
+          <div class="empty-box">
+            ${escapeHtml(error.message || "お問い合わせ一覧の取得に失敗しました。")}
+          </div>
+        `;
+        updateSummary({
+          visible: 0,
+          open: 0,
+          in_progress: 0,
+          mine: 0
+        });
+        showStatus(error.message || "お問い合わせ一覧の取得に失敗しました。", "error");
+      } finally {
+        reloadButton.disabled = false;
+      }
+    }
+
+    async function startSupportInquiry(inquiryId) {
+      if (isProcessing) return;
+
+      const confirmed = window.confirm("このお問い合わせの対応を開始しますか？");
+      if (!confirmed) return;
+
+      isProcessing = true;
+      setButtonsDisabled(true);
+      setLoading(true, "対応開始中です...");
+
+      try {
+        await loadCurrentActorAdminAccountId();
+
+        const result = await invokeFunction("admin-start-support-inquiry", {
+          inquiry_id: inquiryId,
+          actor_admin_account_id: currentActorAdminAccountId
+        });
+
+        showStatus(result?.message || "対応を開始しました。", "success");
+        await fetchInquiries();
+      } catch (error) {
+        console.error(error);
+        showStatus(error.message || "対応開始に失敗しました。", "error");
+      } finally {
+        isProcessing = false;
+        setButtonsDisabled(false);
+        setLoading(false);
+      }
+    }
+
+    function openInquiryDetail(inquiryId) {
+      window.location.href = `user-inquiry-detail.html?inquiry_id=${encodeURIComponent(inquiryId)}`;
+    }
+
+    const canUseUserInquiries =
+      adminRole === "admin" ||
+      adminPermissions.includes("お問い合わせ管理") ||
+      adminPermissions.includes("データベース管理");
+
+    if (adminStatus !== "active") {
+      alert("この管理者アカウントは停止中です。");
+      window.location.href = "admin-login.html";
+      return;
+    }
+
+    try {
+      await writePageLog(
+        "support_inquiries_page_access",
+        "お問い合わせページアクセス",
+        `page: user-inquiries.html / role: ${adminRole} / allowed: ${canUseUserInquiries}`
+      );
+    } catch (error) {
+      renderDebug("アクセスログ保存失敗: " + String(error));
+    }
+
+    if (!canUseUserInquiries) {
+      try {
+        await writePageLog(
+          "admin_forbidden_page_access",
+          "権限外ページアクセス",
+          "page: user-inquiries.html / reason: お問い合わせ権限なし"
+        );
+      } catch (error) {
+        renderDebug("拒否ログ保存失敗: " + String(error));
+      }
+
+      alert("この機能を使う権限がありません。");
+      window.location.href = "account-management.html";
+      return;
+    }
+
+    try {
+      await writePageLog(
+        "support_inquiries_view",
+        "お問い合わせ一覧閲覧",
+        `page: user-inquiries.html / role: ${adminRole}`
+      );
+    } catch (error) {
+      renderDebug("閲覧ログ保存失敗: " + String(error));
+    }
+
+    statusFilter.addEventListener("change", fetchInquiries);
+    reloadButton.addEventListener("click", fetchInquiries);
+
+    window.startSupportInquiry = startSupportInquiry;
+    window.openInquiryDetail = openInquiryDetail;
+
+    fetchInquiries();
+  });
+  </script>
+</body>
+</html>

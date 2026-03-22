@@ -365,8 +365,6 @@
       <button id="resolve-button" type="button" class="top-resolve-button">解決</button>
     </div>
 
-    <p id="username-line" class="username-line">ユーザーさん</p>
-
     <div id="status-box" class="status-box info"></div>
 
     <div id="chat-wrap" class="chat-wrap">
@@ -392,7 +390,6 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
-      const usernameLine = document.getElementById("username-line");
       const statusBox = document.getElementById("status-box");
       const chatWrap = document.getElementById("chat-wrap");
       const composerInfo = document.getElementById("composer-info");
@@ -556,8 +553,6 @@
           account?.display_name ||
           currentUser.user_metadata?.username ||
           "ユーザー";
-
-        usernameLine.textContent = currentDisplayName + "さん";
         return true;
       }
 

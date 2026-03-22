@@ -778,23 +778,25 @@
                   ` : ""}
 
                   <div class="actions">
-                    <button
-                      type="button"
-                      class="action-button detail-button"
-                      onclick="openInquiryDetail(${Number(inquiry.inquiry_id)})"
-                    >
-                      詳細確認
-                    </button>
+  ${currentAdminRole === "admin" ? `
+    <button
+      type="button"
+      class="action-button detail-button"
+      onclick="openInquiryDetail(${Number(inquiry.inquiry_id)})"
+    >
+      詳細確認
+    </button>
+  ` : ""}
 
-                    <button
-                      type="button"
-                      class="action-button start-button"
-                      onclick="startSupportInquiry(${Number(inquiry.inquiry_id)})"
-                      ${canStart ? "" : "disabled"}
-                    >
-                      対応開始
-                    </button>
-                  </div>
+  <button
+    type="button"
+    class="action-button start-button"
+    onclick="startSupportInquiry(${Number(inquiry.inquiry_id)})"
+    ${canStart ? "" : "disabled"}
+  >
+    対応開始
+  </button>
+</div>
                 </section>
               `;
             }).join("")}

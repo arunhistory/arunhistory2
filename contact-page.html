@@ -6,107 +6,370 @@
   <title>お問い合わせ</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
+    * {
+      box-sizing: border-box;
+    }
+
+    html, body {
       margin: 0;
-      padding: 24px;
+      height: 100%;
+    }
+
+    body {
       background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
       color: #f5f5f5;
-      min-height: 100vh;
       font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
     }
 
-    .container {
-      max-width: 700px;
+    .page {
+      max-width: 760px;
       margin: 0 auto;
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      padding: 12px 12px calc(12px + env(safe-area-inset-bottom));
     }
 
-    h1 {
+    .top-bar {
+      display: grid;
+      grid-template-columns: 80px 1fr 80px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-shrink: 0;
+    }
+
+    .back-link {
+      justify-self: start;
+      color: #f2d9e8;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    .back-link:hover {
+      color: #ffe7f3;
+    }
+
+    .title {
+      margin: 0;
       text-align: center;
-      margin-top: 0;
-      font-size: 2.5rem;
+      font-size: 1.5rem;
       line-height: 1.4;
     }
 
-    a {
+    .username-line {
+      margin: 0 0 10px 0;
+      font-size: 13px;
       color: #f2d9e8;
-      text-decoration: none;
+      text-align: left;
+      flex-shrink: 0;
     }
 
-    a:hover {
-      color: #ffe7f3;
-      text-decoration: none;
+    .status-box {
+      display: none;
+      margin-bottom: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      font-size: 14px;
+      line-height: 1.6;
+      border: 1px solid transparent;
+      flex-shrink: 0;
     }
 
-    .box {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 24px;
-    }
-
-    .box p {
-      margin: 0 0 16px 0;
-      line-height: 1.8;
-    }
-
-    textarea,
-    button {
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
+    .status-box.show {
       display: block;
-      box-sizing: border-box;
-      font-size: 16px;
+    }
+
+    .status-box.info {
+      background: rgba(59, 130, 246, 0.18);
+      border-color: rgba(147, 197, 253, 0.5);
+      color: #dbeafe;
+    }
+
+    .status-box.success {
+      background: rgba(16, 185, 129, 0.18);
+      border-color: rgba(110, 231, 183, 0.5);
+      color: #d1fae5;
+    }
+
+    .status-box.error {
+      background: rgba(239, 68, 68, 0.18);
+      border-color: rgba(252, 165, 165, 0.5);
+      color: #fee2e2;
+    }
+
+    .chat-wrap {
+      flex: 1;
+      min-height: 0;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 18px;
+      padding: 14px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .empty-chat {
+      margin: auto 0;
+      text-align: center;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.9;
+      padding: 20px 8px;
+    }
+
+    .system-divider {
+      align-self: center;
+      max-width: 90%;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      color: #e5e7eb;
+      font-size: 12px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .message-row {
+      display: flex;
+      width: 100%;
+    }
+
+    .message-row.user {
+      justify-content: flex-end;
+    }
+
+    .message-row.admin {
+      justify-content: flex-start;
+    }
+
+    .message-bubble {
+      max-width: 82%;
+      padding: 10px 12px;
+      border-radius: 16px;
+      line-height: 1.7;
+      word-break: break-word;
+      white-space: pre-wrap;
+      font-size: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+    }
+
+    .message-row.user .message-bubble {
+      background: #60a5fa;
+      color: #0f172a;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message-row.admin .message-bubble {
+      background: rgba(255,255,255,0.92);
+      color: #111827;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message-meta {
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: 0.82;
+      line-height: 1.4;
+    }
+
+    .message-row.user .message-meta {
+      text-align: right;
+      color: rgba(15, 23, 42, 0.8);
+    }
+
+    .message-row.admin .message-meta {
+      text-align: left;
+      color: #4b5563;
+    }
+
+    .composer {
+      margin-top: 12px;
+      flex-shrink: 0;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .composer-grid {
+      display: grid;
+      grid-template-columns: 92px 1fr 92px;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .composer-button {
+      width: 100%;
+      min-height: 52px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
       font-family: inherit;
     }
 
-    textarea {
-      min-height: 180px;
-      padding: 10px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.95);
-      color: #222;
-      resize: vertical;
+    .resolve-button {
+      background: #7c2d12;
+      color: #fff7ed;
     }
 
-    button {
-      padding: 12px;
-      border: none;
-      background-color: #7a5c61;
+    .resolve-button:hover {
+      background: #9a3412;
+    }
+
+    .send-button {
+      background: #7a5c61;
       color: #fff;
-      cursor: pointer;
     }
 
-    button:hover {
-      background-color: #9a747b;
+    .send-button:hover {
+      background: #9a747b;
+    }
+
+    .composer-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .composer-center {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .composer-info {
+      font-size: 12px;
+      color: #e5e7eb;
+      line-height: 1.5;
+      min-height: 18px;
+    }
+
+    .composer-textarea {
+      width: 100%;
+      min-height: 110px;
+      max-height: 240px;
+      resize: vertical;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.28);
+      border-radius: 14px;
+      background: rgba(255,255,255,0.96);
+      color: #1f2937;
+      font-size: 16px;
+      font-family: inherit;
+      line-height: 1.7;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .loading-box {
+      background: #fff;
+      color: #111827;
+      border-radius: 14px;
+      padding: 18px 22px;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 640px) {
+      .page {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+
+      .top-bar {
+        grid-template-columns: 72px 1fr 72px;
+      }
+
+      .title {
+        font-size: 1.35rem;
+      }
+
+      .composer-grid {
+        grid-template-columns: 82px 1fr 82px;
+        gap: 8px;
+      }
+
+      .composer-button {
+        min-height: 48px;
+        font-size: 14px;
+      }
+
+      .composer-textarea {
+        min-height: 96px;
+      }
+
+      .message-bubble {
+        max-width: 88%;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <p id="username-line" style="text-align: left; margin-top: 0;">ユーザーさん</p>
-
-    <h1>お問い合わせ</h1>
-
-    <div class="box">
-      <form id="contact-form">
-        <p>
-          <textarea id="inquiry-body" placeholder="本文を入力してください" required></textarea>
-        </p>
-
-        <p>
-          <button type="submit">送信</button>
-        </p>
-      </form>
-
-      <p><a href="mypage.html">戻る</a></p>
+  <div class="page">
+    <div class="top-bar">
+      <a href="mypage.html" class="back-link">← 戻る</a>
+      <h1 class="title">お問い合わせ</h1>
+      <div></div>
     </div>
+
+    <p id="username-line" class="username-line">ユーザーさん</p>
+
+    <div id="status-box" class="status-box info"></div>
+
+    <div id="chat-wrap" class="chat-wrap">
+      <div class="empty-chat">読み込み中です...</div>
+    </div>
+
+    <div class="composer">
+      <div class="composer-grid">
+        <button id="resolve-button" type="button" class="composer-button resolve-button">解決</button>
+
+        <div class="composer-center">
+          <div id="composer-info" class="composer-info">お問い合わせ内容を入力してください。</div>
+          <textarea
+            id="message-input"
+            class="composer-textarea"
+            placeholder="本文を入力してください"
+          ></textarea>
+        </div>
+
+        <button id="send-button" type="button" class="composer-button send-button">送信</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="loading-overlay" class="loading-overlay">
+    <div id="loading-message" class="loading-box">処理中です...</div>
   </div>
 
   <script>
     document.addEventListener("DOMContentLoaded", async () => {
       const usernameLine = document.getElementById("username-line");
-      const form = document.getElementById("contact-form");
-      const submitButton = form.querySelector('button[type="submit"]');
+      const statusBox = document.getElementById("status-box");
+      const chatWrap = document.getElementById("chat-wrap");
+      const composerInfo = document.getElementById("composer-info");
+      const messageInput = document.getElementById("message-input");
+      const sendButton = document.getElementById("send-button");
+      const resolveButton = document.getElementById("resolve-button");
+      const loadingOverlay = document.getElementById("loading-overlay");
+      const loadingMessage = document.getElementById("loading-message");
 
       if (!window.supabase || typeof window.supabase.createClient !== "function") {
         alert("Supabase の読み込みに失敗しました。");
@@ -117,74 +380,432 @@
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
       const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-      if (sessionStorage.getItem("admin_logged_in") !== "1") {
-        const { data: maintenanceSetting, error: maintenanceError } = await supabase
-          .from("site_settings")
-          .select("setting_value")
-          .eq("setting_key", "maintenance_mode")
-          .maybeSingle();
+      let currentUser = null;
+      let currentDisplayName = "ユーザー";
+      let inquiries = [];
+      let messages = [];
+      let activeInquiry = null;
+      let isSubmitting = false;
 
-        if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
-          window.location.href = "maintenance.html";
+      function showStatus(message, type = "info") {
+        statusBox.textContent = message;
+        statusBox.className = `status-box show ${type}`;
+      }
+
+      function hideStatus() {
+        statusBox.textContent = "";
+        statusBox.className = "status-box info";
+      }
+
+      function setLoading(show, message = "処理中です...") {
+        loadingMessage.textContent = message;
+        loadingOverlay.classList.toggle("show", show);
+      }
+
+      function setButtonsDisabled(disabled) {
+        sendButton.disabled = disabled;
+        resolveButton.disabled = disabled || !activeInquiry;
+        messageInput.disabled = disabled;
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+
+        return new Intl.DateTimeFormat("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(date);
+      }
+
+      function scrollToBottom() {
+        requestAnimationFrame(() => {
+          chatWrap.scrollTop = chatWrap.scrollHeight;
+        });
+      }
+
+      function getStatusLabel(status) {
+        if (status === "resolved") return "解決済み";
+        if (status === "in_progress") return "対応中";
+        return "受付中";
+      }
+
+      function updateComposerState() {
+        if (activeInquiry) {
+          composerInfo.textContent = `現在の状態: ${getStatusLabel(activeInquiry.status)} / そのまま追加送信できます。`;
+          resolveButton.disabled = false;
+        } else {
+          composerInfo.textContent = "新しいお問い合わせとして送信されます。";
+          resolveButton.disabled = true;
+        }
+      }
+
+      function renderChat() {
+        if (!inquiries.length) {
+          chatWrap.innerHTML = `
+            <div class="empty-chat">
+              まだお問い合わせはありません。<br>
+              下の入力欄から送信すると、ここに会話履歴が表示されます。
+            </div>
+          `;
+          updateComposerState();
           return;
         }
+
+        const inquiryMap = new Map();
+        inquiries.forEach((inquiry) => {
+          inquiryMap.set(inquiry.id, inquiry);
+        });
+
+        const timeline = [];
+
+        inquiries.forEach((inquiry) => {
+          timeline.push({
+            type: "system",
+            html: `
+              <div class="system-divider">
+                ${escapeHtml(formatDateTime(inquiry.created_at))} / ${escapeHtml(getStatusLabel(inquiry.status))}
+              </div>
+            `
+          });
+
+          messages
+            .filter((message) => message.inquiry_id === inquiry.id)
+            .forEach((message) => {
+              const isUser = message.sender_type === "user";
+              const senderName = message.sender_name || (isUser ? currentDisplayName : "運営");
+              const senderRole = message.sender_role || (isUser ? "user" : "admin");
+
+              timeline.push({
+                type: "message",
+                isUser,
+                html: `
+                  <div class="message-row ${isUser ? "user" : "admin"}">
+                    <div class="message-bubble">
+                      ${escapeHtml(message.message || "")}
+                      <div class="message-meta">
+                        ${escapeHtml(senderName)}
+                        ${!isUser && senderRole ? ` / ${escapeHtml(senderRole)}` : ""}
+                        <br>
+                        ${escapeHtml(formatDateTime(message.created_at))}
+                      </div>
+                    </div>
+                  </div>
+                `
+              });
+            });
+
+          if (inquiry.status === "resolved" && inquiry.resolved_at) {
+            timeline.push({
+              type: "system",
+              html: `
+                <div class="system-divider">
+                  このお問い合わせは ${escapeHtml(formatDateTime(inquiry.resolved_at))} に解決済みになりました。
+                </div>
+              `
+            });
+          }
+        });
+
+        chatWrap.innerHTML = timeline.map(item => item.html).join("");
+        updateComposerState();
+        scrollToBottom();
       }
 
-      const { data: userData } = await supabase.auth.getUser();
-      const user = userData?.user;
+      async function loadCurrentUser() {
+        if (sessionStorage.getItem("admin_logged_in") !== "1") {
+          const { data: maintenanceSetting, error: maintenanceError } = await supabase
+            .from("site_settings")
+            .select("setting_value")
+            .eq("setting_key", "maintenance_mode")
+            .maybeSingle();
 
-      if (!user) {
-        window.location.href = "login.html?redirect=contact-page.html";
-        return;
+          if (!maintenanceError && maintenanceSetting?.setting_value === "on") {
+            window.location.href = "maintenance.html";
+            return false;
+          }
+        }
+
+        const { data: userData } = await supabase.auth.getUser();
+        currentUser = userData?.user ?? null;
+
+        if (!currentUser) {
+          window.location.href = "login.html?redirect=contact-page.html";
+          return false;
+        }
+
+        const { data: account } = await supabase
+          .from("accounts")
+          .select("display_name")
+          .eq("user_id", currentUser.id)
+          .maybeSingle();
+
+        currentDisplayName =
+          account?.display_name ||
+          currentUser.user_metadata?.username ||
+          "ユーザー";
+
+        usernameLine.textContent = currentDisplayName + "さん";
+        return true;
       }
 
-      const { data: account } = await supabase
-        .from("accounts")
-        .select("display_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      async function loadConversation() {
+        hideStatus();
 
-      const displayName =
-        account?.display_name ||
-        user.user_metadata?.username ||
-        "ユーザー";
+        const { data: inquiryRows, error: inquiryError } = await supabase
+          .from("support_inquiries")
+          .select(`
+            id,
+            user_id,
+            user_name,
+            status,
+            started_at,
+            resolved_at,
+            assigned_admin_id,
+            assigned_admin_username,
+            assigned_admin_role,
+            created_at,
+            updated_at,
+            last_message_at,
+            first_user_message_at
+          `)
+          .eq("user_id", currentUser.id)
+          .order("created_at", { ascending: true });
 
-      usernameLine.textContent = displayName + "さん";
+        if (inquiryError) {
+          throw new Error("お問い合わせ履歴の取得に失敗しました。");
+        }
 
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
+        inquiries = Array.isArray(inquiryRows) ? inquiryRows : [];
+        activeInquiry = [...inquiries].reverse().find((row) => row.status !== "resolved") || null;
 
-        const body = document.getElementById("inquiry-body").value.trim();
-        if (!body) return;
+        if (!inquiries.length) {
+          messages = [];
+          renderChat();
+          return;
+        }
 
-        submitButton.disabled = true;
-        submitButton.textContent = "送信中...";
+        const inquiryIds = inquiries.map((row) => row.id);
+
+        const { data: messageRows, error: messageError } = await supabase
+          .from("support_inquiry_messages")
+          .select(`
+            id,
+            inquiry_id,
+            sender_type,
+            sender_user_id,
+            sender_admin_id,
+            sender_name,
+            sender_role,
+            message,
+            created_at
+          `)
+          .in("inquiry_id", inquiryIds)
+          .order("created_at", { ascending: true });
+
+        if (messageError) {
+          throw new Error("お問い合わせメッセージの取得に失敗しました。");
+        }
+
+        messages = Array.isArray(messageRows) ? messageRows : [];
+        renderChat();
+      }
+
+      async function createInquiryAndFirstMessage(bodyText) {
+        const nowIso = new Date().toISOString();
+
+        const { data: insertedInquiry, error: inquiryInsertError } = await supabase
+          .from("support_inquiries")
+          .insert({
+            user_id: currentUser.id,
+            user_name: currentDisplayName,
+            status: "open",
+            created_at: nowIso,
+            updated_at: nowIso,
+            last_message_at: nowIso,
+            first_user_message_at: nowIso
+          })
+          .select(`
+            id,
+            user_id,
+            user_name,
+            status,
+            started_at,
+            resolved_at,
+            assigned_admin_id,
+            assigned_admin_username,
+            assigned_admin_role,
+            created_at,
+            updated_at,
+            last_message_at,
+            first_user_message_at
+          `)
+          .single();
+
+        if (inquiryInsertError || !insertedInquiry) {
+          throw new Error("新しいお問い合わせの作成に失敗しました。");
+        }
+
+        const { error: messageInsertError } = await supabase
+          .from("support_inquiry_messages")
+          .insert({
+            inquiry_id: insertedInquiry.id,
+            sender_type: "user",
+            sender_user_id: currentUser.id,
+            sender_admin_id: null,
+            sender_name: currentDisplayName,
+            sender_role: "user",
+            message: bodyText,
+            created_at: nowIso
+          });
+
+        if (messageInsertError) {
+          throw new Error("お問い合わせ本文の送信に失敗しました。");
+        }
+      }
+
+      async function sendToActiveInquiry(inquiryId, bodyText) {
+        const nowIso = new Date().toISOString();
+
+        const { error: messageInsertError } = await supabase
+          .from("support_inquiry_messages")
+          .insert({
+            inquiry_id: inquiryId,
+            sender_type: "user",
+            sender_user_id: currentUser.id,
+            sender_admin_id: null,
+            sender_name: currentDisplayName,
+            sender_role: "user",
+            message: bodyText,
+            created_at: nowIso
+          });
+
+        if (messageInsertError) {
+          throw new Error("メッセージの送信に失敗しました。");
+        }
+
+        const { error: inquiryUpdateError } = await supabase
+          .from("support_inquiries")
+          .update({
+            last_message_at: nowIso,
+            updated_at: nowIso,
+            status: activeInquiry?.status === "resolved" ? "open" : activeInquiry?.status || "open"
+          })
+          .eq("id", inquiryId);
+
+        if (inquiryUpdateError) {
+          throw new Error("お問い合わせ状態の更新に失敗しました。");
+        }
+      }
+
+      async function handleSend() {
+        if (isSubmitting) return;
+
+        const bodyText = messageInput.value.trim();
+        if (!bodyText) {
+          showStatus("本文を入力してください。", "error");
+          return;
+        }
+
+        isSubmitting = true;
+        setButtonsDisabled(true);
+        setLoading(true, "送信中です...");
 
         try {
-          const { error } = await supabase
-            .from("inquiries")
-            .insert([
-              {
-                user_id: user.id,
-                body,
-                status: "未解決"
-              }
-            ]);
-
-          if (error) {
-            alert("送信に失敗しました: " + error.message);
-            return;
+          if (activeInquiry) {
+            await sendToActiveInquiry(activeInquiry.id, bodyText);
+          } else {
+            await createInquiryAndFirstMessage(bodyText);
           }
 
-          alert("送信しました。");
-          window.location.href = "mypage.html";
-        } catch (err) {
-          alert("予期しないエラーが発生しました。");
+          messageInput.value = "";
+          showStatus("送信しました。", "success");
+          await loadConversation();
+        } catch (error) {
+          console.error(error);
+          showStatus(error.message || "送信に失敗しました。", "error");
         } finally {
-          submitButton.disabled = false;
-          submitButton.textContent = "送信";
+          isSubmitting = false;
+          setButtonsDisabled(false);
+          setLoading(false);
+          messageInput.focus();
+        }
+      }
+
+      async function handleResolve() {
+        if (isSubmitting || !activeInquiry) return;
+
+        const confirmed = window.confirm("このお問い合わせを解決済みにしますか？");
+        if (!confirmed) return;
+
+        isSubmitting = true;
+        setButtonsDisabled(true);
+        setLoading(true, "解決処理中です...");
+
+        try {
+          const nowIso = new Date().toISOString();
+
+          const { error } = await supabase
+            .from("support_inquiries")
+            .update({
+              status: "resolved",
+              resolved_at: nowIso,
+              updated_at: nowIso
+            })
+            .eq("id", activeInquiry.id);
+
+          if (error) {
+            throw new Error("解決処理に失敗しました。");
+          }
+
+          showStatus("お問い合わせを解決済みにしました。", "success");
+          await loadConversation();
+        } catch (error) {
+          console.error(error);
+          showStatus(error.message || "解決処理に失敗しました。", "error");
+        } finally {
+          isSubmitting = false;
+          setButtonsDisabled(false);
+          setLoading(false);
+        }
+      }
+
+      sendButton.addEventListener("click", handleSend);
+
+      messageInput.addEventListener("keydown", async (event) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          await handleSend();
         }
       });
+
+      resolveButton.addEventListener("click", handleResolve);
+
+      const ok = await loadCurrentUser();
+      if (!ok) return;
+
+      try {
+        await loadConversation();
+      } catch (error) {
+        console.error(error);
+        chatWrap.innerHTML = `<div class="empty-chat">読み込みに失敗しました。</div>`;
+        showStatus(error.message || "読み込みに失敗しました。", "error");
+      }
+
+      messageInput.focus();
     });
   </script>
 </body>

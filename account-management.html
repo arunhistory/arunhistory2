@@ -182,8 +182,8 @@
 
       const canUseUserInquiries =
         adminRole === "admin" ||
-        adminPermissions.includes("お問い合わせ管理") ||
-        adminPermissions.includes("データベース管理");
+        adminPermissions.includes("support_inquiry_management") ||
+        adminPermissions.includes("database_management");
 
       if (userInquiriesItem && !canUseUserInquiries) {
         userInquiriesItem.style.display = "none";
@@ -209,7 +209,7 @@
         await writePageLog(
           "account_management_view",
           "アカウント管理閲覧",
-          `page: account-management.html / role: ${adminRole}`
+          `page: account-management.html / role: ${adminRole} / can_use_user_inquiries: ${canUseUserInquiries}`
         );
       } catch (error) {
         renderDebug("閲覧ログ保存失敗: " + String(error));

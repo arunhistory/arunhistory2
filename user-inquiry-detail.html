@@ -23,22 +23,21 @@
       margin: 0 auto;
     }
 
-    h1 {
+    h1, h2 {
       text-align: center;
       margin-top: 0;
-      margin-bottom: 20px;
-      font-size: 2.3rem;
-      line-height: 1.4;
       color: #111;
+      line-height: 1.4;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
     }
 
     h2 {
-      text-align: center;
-      margin-top: 0;
+      font-size: 1.8rem;
       margin-bottom: 16px;
-      font-size: 1.35rem;
-      line-height: 1.4;
-      color: #111;
     }
 
     a {
@@ -55,6 +54,16 @@
       border: 1px solid rgba(0,0,0,0.15);
       padding: 24px;
       margin-bottom: 20px;
+    }
+
+    .status-line {
+      margin-bottom: 16px;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.15);
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .summary-grid {
@@ -82,8 +91,9 @@
       line-height: 1.8;
     }
 
-    .status-line {
-      margin-bottom: 16px;
+    .notice-box {
+      display: none;
+      margin-bottom: 20px;
       padding: 12px;
       background: rgba(255,255,255,0.75);
       border: 1px solid rgba(0,0,0,0.15);
@@ -92,152 +102,237 @@
       word-break: break-word;
     }
 
-    .chat-box {
-      background: rgba(255,255,255,0.65);
-      border: 1px solid rgba(0,0,0,0.12);
-      padding: 14px;
-      min-height: 240px;
-      max-height: 60vh;
+    .chat-shell {
+      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      border: 1px solid rgba(255,255,255,0.18);
+      padding: 18px;
+      color: #f5f5f5;
+    }
+
+    .chat-header {
+      display: grid;
+      grid-template-columns: 80px 1fr 100px;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .chat-back {
+      color: #f2d9e8;
+      text-decoration: none;
+      font-weight: bold;
+      text-align: left;
+    }
+
+    .chat-back:hover {
+      color: #ffe7f3;
+    }
+
+    .chat-title {
+      text-align: center;
+      font-size: 2rem;
+      font-weight: bold;
+      color: #fff;
+      line-height: 1.3;
+    }
+
+    .chat-action {
+      text-align: right;
+    }
+
+    .top-start-button {
+      width: auto;
+      min-width: 88px;
+      padding: 12px 16px;
+      border: none;
+      background-color: #b7c9e6;
+      color: #111;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 15px;
+      font-family: inherit;
+    }
+
+    .top-start-button:hover {
+      background-color: #9eb7dd;
+    }
+
+    .top-start-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .chat-username {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+      color: #f5f5f5;
+    }
+
+    .chat-wrap {
+      min-height: 420px;
+      max-height: 65vh;
       overflow-y: auto;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 18px;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
     }
 
-    .chat-empty {
+    .empty-chat {
+      margin: auto 0;
       text-align: center;
-      color: #555;
-      padding: 30px 12px;
-      line-height: 1.8;
+      color: rgba(255,255,255,0.78);
+      line-height: 1.9;
+      padding: 20px 8px;
     }
 
-    .day-line {
-      text-align: center;
-      margin: 14px 0;
+    .inquiry-divider {
+      align-self: center;
+      max-width: 95%;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.14);
+      color: #e5e7eb;
       font-size: 12px;
-      color: #555;
+      line-height: 1.6;
+      text-align: center;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     .message-row {
       display: flex;
-      margin-bottom: 12px;
+      width: 100%;
+      align-items: flex-start;
     }
 
     .message-row.user {
       justify-content: flex-end;
     }
 
-    .message-row.admin,
-    .message-row.sub_admin {
+    .message-row.admin {
       justify-content: flex-start;
     }
 
     .message-bubble {
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      width: auto;
       max-width: 82%;
-      padding: 10px 12px;
-      border-radius: 14px;
-      line-height: 1.8;
-      white-space: pre-wrap;
+      min-width: 0;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.7;
       word-break: break-word;
-      border: 1px solid rgba(0,0,0,0.12);
+      white-space: pre-wrap;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+      height: auto;
+      min-height: 0;
+      align-self: flex-start;
+      flex: 0 0 auto;
     }
 
     .message-row.user .message-bubble {
-      background: #b7d7ff;
-      color: #111;
-    }
-
-    .message-row.sub_admin .message-bubble {
-      background: #cdeccf;
-      color: #111;
+      background: #60a5fa;
+      color: #0f172a;
+      border-bottom-right-radius: 4px;
+      align-items: flex-end;
     }
 
     .message-row.admin .message-bubble {
-      background: #f1c9c9;
-      color: #111;
+      background: rgba(255,255,255,0.92);
+      color: #111827;
+      border-bottom-left-radius: 4px;
+      align-items: flex-start;
+    }
+
+    .message-text {
+      display: block;
+      width: 100%;
+      margin: 0;
+      text-align: left;
     }
 
     .message-meta {
-      margin-top: 6px;
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: 0.82;
+      line-height: 1.4;
+    }
+
+    .message-row.user .message-meta {
+      text-align: right;
+      color: rgba(15, 23, 42, 0.8);
+    }
+
+    .message-row.admin .message-meta {
+      text-align: left;
+      color: #4b5563;
+    }
+
+    .composer {
+      margin-top: 12px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.20);
+      border-radius: 18px;
+      padding: 12px;
+    }
+
+    .composer-info {
       font-size: 12px;
-      color: #444;
-      line-height: 1.6;
+      color: #e5e7eb;
+      line-height: 1.5;
+      min-height: 18px;
+      margin-bottom: 8px;
     }
 
-    .notice-box {
-      margin-bottom: 16px;
-      padding: 12px;
-      background: rgba(255,255,255,0.75);
-      border: 1px solid rgba(0,0,0,0.15);
-      line-height: 1.8;
-      color: #111;
-      display: none;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .action-row {
+    .composer-row {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 16px;
+      grid-template-columns: 1fr 110px;
+      gap: 10px;
+      align-items: end;
     }
 
-    .single-action-row {
-      margin-top: 16px;
-    }
-
-    textarea {
+    .composer-textarea {
       width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      min-height: 160px;
-      padding: 10px;
-      border: 1px solid rgba(0,0,0,0.2);
-      background: #fff;
-      color: #111;
-      resize: vertical;
-      box-sizing: border-box;
-      font-size: 16px;
-      font-family: inherit;
-      line-height: 1.8;
-    }
-
-    button {
-      width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
+      min-height: 140px;
       padding: 12px;
+      border: 1px solid rgba(255,255,255,0.28);
+      background: rgba(255,255,255,0.96);
+      color: #1f2937;
+      resize: vertical;
       font-size: 16px;
       font-family: inherit;
-      border: none;
-      cursor: pointer;
-      font-weight: bold;
+      line-height: 1.7;
     }
 
-    .normal-button {
+    .send-button {
+      width: 100%;
+      min-height: 58px;
+      border: none;
       background-color: #4f8f5b;
       color: #111;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      font-family: inherit;
     }
 
-    .normal-button:hover {
+    .send-button:hover {
       background-color: #6aa676;
     }
 
-    .sub-button {
-      background-color: #b7c9e6;
-      color: #111;
-    }
-
-    .sub-button:hover {
-      background-color: #9eb7dd;
-    }
-
-    .danger-button {
-      background-color: #d9b3b3;
-      color: #111;
-    }
-
-    .danger-button:hover {
-      background-color: #c99393;
+    .send-button:disabled,
+    .composer-textarea:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
 
     .center-link {
@@ -265,13 +360,26 @@
     }
 
     @media (max-width: 700px) {
-      .summary-grid,
-      .action-row {
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-header {
+        grid-template-columns: 1fr;
+      }
+
+      .chat-title,
+      .chat-action,
+      .chat-back {
+        text-align: center;
+      }
+
+      .composer-row {
         grid-template-columns: 1fr;
       }
 
       .message-bubble {
-        max-width: 100%;
+        max-width: 90%;
       }
     }
   </style>
@@ -317,30 +425,31 @@
       </div>
     </div>
 
-    <div class="box">
-      <h2>お問い合わせ内容</h2>
-      <div id="chat-box" class="chat-box">
-        <div class="chat-empty">読み込み中...</div>
+    <div class="chat-shell">
+      <div class="chat-header">
+        <a class="chat-back" href="user-inquiries.html">← 戻る</a>
+        <div class="chat-title">お問い合わせ</div>
+        <div class="chat-action">
+          <button type="button" id="start-button" class="top-start-button">対応開始</button>
+        </div>
       </div>
 
-      <div class="action-row">
-        <button type="button" class="sub-button" id="start-button">対応開始</button>
-        <button type="button" class="danger-button" id="resolve-button">解決</button>
+      <p id="chat-username" class="chat-username">読み込み中...</p>
+
+      <div id="chat-wrap" class="chat-wrap">
+        <div class="empty-chat">読み込み中です...</div>
       </div>
-    </div>
 
-    <div class="box">
-      <h2>返信</h2>
-      <p style="margin-top:0; line-height:1.8;">
-        ここからユーザーへ返信します。
-      </p>
-
-      <p>
-        <textarea id="reply-body" placeholder="返信内容を入力してください"></textarea>
-      </p>
-
-      <div class="single-action-row">
-        <button type="button" class="normal-button" id="send-reply-button">返信を送信</button>
+      <div class="composer">
+        <div id="composer-info" class="composer-info">ここからユーザーへ返信します。</div>
+        <div class="composer-row">
+          <textarea
+            id="reply-body"
+            class="composer-textarea"
+            placeholder="返信内容を入力してください"
+          ></textarea>
+          <button type="button" id="send-reply-button" class="send-button">返信を送信</button>
+        </div>
       </div>
     </div>
 
@@ -369,9 +478,7 @@
       let adminPermissions = [];
       try {
         adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
-        if (!Array.isArray(adminPermissions)) {
-          adminPermissions = [];
-        }
+        if (!Array.isArray(adminPermissions)) adminPermissions = [];
       } catch {
         adminPermissions = [];
       }
@@ -388,11 +495,12 @@
       const inquiryStatusValue = document.getElementById("inquiry-status-value");
       const assigneeValue = document.getElementById("assignee-value");
       const createdAtValue = document.getElementById("created-at-value");
-      const chatBox = document.getElementById("chat-box");
+      const chatUsername = document.getElementById("chat-username");
+      const chatWrap = document.getElementById("chat-wrap");
       const startButton = document.getElementById("start-button");
-      const resolveButton = document.getElementById("resolve-button");
       const replyBody = document.getElementById("reply-body");
       const sendReplyButton = document.getElementById("send-reply-button");
+      const composerInfo = document.getElementById("composer-info");
 
       adminUserLink.textContent = adminUsername + "さん";
 
@@ -518,48 +626,64 @@
         );
       }
 
-      function renderMessages(messages, canViewMessages) {
-        chatBox.innerHTML = "";
+      function canUseDetailPage() {
+        return adminRole === "admin";
+      }
 
-        if (!canViewMessages) {
-          chatBox.innerHTML = `<div class="chat-empty">このお問い合わせは現在未担当のため、内容確認できません。</div>`;
+      function renderTimeline(historyItems) {
+        chatWrap.innerHTML = "";
+
+        if (!historyItems || historyItems.length === 0) {
+          chatWrap.innerHTML = `
+            <div class="empty-chat">
+              現在ありません
+            </div>
+          `;
           return;
         }
 
-        if (!messages || messages.length === 0) {
-          chatBox.innerHTML = `<div class="chat-empty">メッセージはありません。</div>`;
-          return;
-        }
+        const timeline = [];
 
-        messages.forEach((message) => {
-          const row = document.createElement("div");
-          const senderType = message.sender_type === "user"
-            ? "user"
-            : message.sender_role === "sub_admin"
-              ? "sub_admin"
-              : "admin";
+        historyItems.forEach((inquiry) => {
+          timeline.push(`
+            <div class="inquiry-divider">
+              ${escapeHtml(formatDateTime(inquiry.created_at))} / ${escapeHtml(
+                inquiry.status === "resolved" ? "解決済み" :
+                inquiry.status === "in_progress" ? "対応中" : "受付中"
+              )}
+            </div>
+          `);
 
-          row.className = "message-row " + senderType;
+          (inquiry.messages || []).forEach((message) => {
+            const isUser = message.sender_type === "user";
+            const senderName = message.sender_name || (isUser ? inquiry.user_name || "" : "運営");
+            const senderRole = message.sender_role || (isUser ? "user" : "admin");
 
-          const bubble = document.createElement("div");
-          bubble.className = "message-bubble";
+            timeline.push(`
+              <div class="message-row ${isUser ? "user" : "admin"}">
+                <div class="message-bubble">
+                  <span class="message-text">${escapeHtml(message.message || "")}</span>
+                  <div class="message-meta">
+                    ${escapeHtml(senderName)}${!isUser && senderRole ? ` / ${escapeHtml(senderRole)}` : ""}
+                    <br>
+                    ${escapeHtml(formatDateTime(message.created_at))}
+                  </div>
+                </div>
+              </div>
+            `);
+          });
 
-          const body = document.createElement("div");
-          body.textContent = message.message || "";
-
-          const meta = document.createElement("div");
-          meta.className = "message-meta";
-          meta.textContent =
-            (message.sender_name || "") +
-            (message.sender_role ? " / " + message.sender_role : "") +
-            "\n" +
-            formatDateTime(message.created_at || "");
-
-          bubble.appendChild(body);
-          bubble.appendChild(meta);
-          row.appendChild(bubble);
-          chatBox.appendChild(row);
+          if (inquiry.status === "resolved" && inquiry.resolved_at) {
+            timeline.push(`
+              <div class="inquiry-divider">
+                このお問い合わせは ${escapeHtml(formatDateTime(inquiry.resolved_at))} に解決済みになりました。
+              </div>
+            `);
+          }
         });
+
+        chatWrap.innerHTML = timeline.join("");
+        chatWrap.scrollTop = chatWrap.scrollHeight;
       }
 
       function renderDetail(detail) {
@@ -568,6 +692,7 @@
         usernameValue.textContent = detail.username || "";
         inquiryStatusValue.textContent = detail.inquiry_status || "";
         createdAtValue.textContent = formatDateTime(detail.created_at || "");
+        chatUsername.textContent = (detail.username || "ユーザー") + "さん";
 
         const assigneeNames = Array.isArray(detail.assignees)
           ? detail.assignees.map((item) => item.admin_display_name || item.admin_username || "").filter(Boolean)
@@ -578,14 +703,14 @@
         statusLine.textContent =
           "状態: " + (detail.inquiry_status || "") + "\n" +
           "対応開始日時: " + (detail.started_at ? formatDateTime(detail.started_at) : "未開始") + "\n" +
-          "閲覧可否: " + (detail.can_view_messages ? "可能" : "不可");
+          "閲覧範囲: このユーザーの過去のお問い合わせを含む";
 
-        renderMessages(detail.messages || [], detail.can_view_messages);
+        renderTimeline(detail.user_inquiry_history || []);
 
         startButton.disabled = detail.inquiry_status !== "open";
-        resolveButton.disabled = !detail.can_view_messages || detail.inquiry_status === "resolved";
-        sendReplyButton.disabled = !detail.can_view_messages || detail.inquiry_status === "resolved";
-        replyBody.disabled = !detail.can_view_messages || detail.inquiry_status === "resolved";
+        replyBody.disabled = false;
+        sendReplyButton.disabled = false;
+        composerInfo.textContent = "ここからユーザーへ返信します。";
       }
 
       async function loadDetail() {
@@ -627,6 +752,22 @@
         return;
       }
 
+      if (!canUseDetailPage()) {
+        try {
+          await writePageLog(
+            "admin_forbidden_page_access",
+            "権限外ページアクセス",
+            `page: user-inquiry-detail.html / inquiry_id: ${inquiryId} / reason: 詳細表示は管理者のみ`
+          );
+        } catch (error) {
+          renderDebug("拒否ログ保存失敗: " + String(error));
+        }
+
+        alert("詳細表示は管理者のみ利用できます。");
+        window.location.href = "user-inquiries.html";
+        return;
+      }
+
       try {
         await writePageLog(
           "support_inquiry_detail_view",
@@ -643,7 +784,7 @@
         renderDebug("detail load error:\n" + String(error));
         showNotice("読み込みに失敗しました。");
         statusLine.textContent = "読み込みに失敗しました。";
-        chatBox.innerHTML = `<div class="chat-empty">現在ありません。</div>`;
+        chatWrap.innerHTML = `<div class="empty-chat">現在ありません</div>`;
       }
 
       startButton.addEventListener("click", async () => {
@@ -663,26 +804,6 @@
         } catch (error) {
           renderDebug("start error:\n" + String(error));
           showNotice("対応開始に失敗しました。");
-        }
-      });
-
-      resolveButton.addEventListener("click", async () => {
-        if (!currentDetail) return;
-
-        const ok = window.confirm("このお問い合わせを解決済みにしますか？");
-        if (!ok) return;
-
-        try {
-          const result = await invokeFunction("admin-resolve-support-inquiry-v1", {
-            admin_username: adminUsername,
-            inquiry_id: inquiryId
-          });
-
-          showNotice(result?.message || "解決しました。");
-          await loadDetail();
-        } catch (error) {
-          renderDebug("resolve error:\n" + String(error));
-          showNotice("解決に失敗しました。");
         }
       });
 

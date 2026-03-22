@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ユーザーお問い合わせ</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -81,4 +80,858 @@
     }
 
     .summary-row {
-      display:
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .summary-card {
+      padding: 16px;
+    }
+
+    .summary-label {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .summary-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    .toolbar {
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
+      gap: 12px;
+      align-items: end;
+      margin-bottom: 16px;
+    }
+
+    .toolbar-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    .filter-select,
+    .reload-button {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      box-sizing: border-box;
+      font-size: 16px;
+      font-family: inherit;
+    }
+
+    .filter-select {
+      display: block;
+      padding: 10px;
+      border: 1px solid rgba(0,0,0,0.2);
+      background: #fff;
+      color: #111;
+    }
+
+    .reload-button {
+      padding: 12px;
+      border: none;
+      background-color: #4f8f5b;
+      color: #111;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 0;
+      min-width: 150px;
+    }
+
+    .reload-button:hover {
+      background-color: #6aa676;
+    }
+
+    .reload-button:disabled,
+    .filter-select:disabled,
+    .action-button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .empty-box {
+      padding: 28px 16px;
+      text-align: center;
+      color: #111;
+      line-height: 1.8;
+    }
+
+    .card-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 14px;
+    }
+
+    .inquiry-card {
+      padding: 18px;
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .card-title {
+      margin: 0;
+      font-size: 18px;
+      line-height: 1.4;
+      color: #111;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .badge-open {
+      background: #dbeafe;
+      color: #1d4ed8;
+    }
+
+    .badge-in-progress {
+      background: #fef3c7;
+      color: #b45309;
+    }
+
+    .badge-mine {
+      background: #dcfce7;
+      color: #15803d;
+    }
+
+    .badge-assigned {
+      background: #ede9fe;
+      color: #6d28d9;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .meta-item {
+      padding: 12px;
+    }
+
+    .meta-label {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .meta-value {
+      font-size: 14px;
+      font-weight: bold;
+      color: #111;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    .preview-box {
+      padding: 12px;
+      margin-bottom: 14px;
+    }
+
+    .preview-label {
+      font-size: 12px;
+      color: #555;
+      margin-bottom: 6px;
+    }
+
+    .preview-text {
+      font-size: 14px;
+      line-height: 1.7;
+      color: #333;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .assignee-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .assignee-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f3f4f6;
+      border: 1px solid #e5e7eb;
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #374151;
+      font-weight: bold;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .action-button {
+      border: none;
+      padding: 11px 16px;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .detail-button {
+      background: #2563eb;
+      color: #fff;
+    }
+
+    .start-button {
+      background: #4f8f5b;
+      color: #111;
+    }
+
+    .start-button:hover {
+      background: #6aa676;
+    }
+
+    details {
+      margin-top: 20px;
+      padding: 12px;
+    }
+
+    summary {
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 12px 0 0 0;
+      font-size: 14px;
+    }
+
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(17, 24, 39, 0.35);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 16px;
+    }
+
+    .loading-overlay.show {
+      display: flex;
+    }
+
+    .loading-box {
+      background: #fff;
+      padding: 18px 22px;
+      font-size: 14px;
+      font-weight: bold;
+      color: #111;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 700px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .summary-row,
+      .meta-grid,
+      .toolbar {
+        grid-template-columns: 1fr;
+      }
+
+      .reload-button,
+      .action-button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <p class="top-link">
+      <a id="admin-user-link" href="#">管理者さん</a>
+    </p>
+
+    <h1>ユーザーお問い合わせ</h1>
+
+    <div class="panel">
+      ユーザーから送られたお問い合わせを確認します。
+    </div>
+
+    <div id="statusBox" class="status-box"></div>
+
+    <div class="summary-row">
+      <div class="summary-card">
+        <div class="summary-label">表示件数</div>
+        <div id="summaryVisibleCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">未対応</div>
+        <div id="summaryOpenCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">対応中</div>
+        <div id="summaryInProgressCount" class="summary-value">0</div>
+      </div>
+      <div class="summary-card">
+        <div class="summary-label">自分が担当中</div>
+        <div id="summaryMyCount" class="summary-value">0</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="toolbar-group">
+        <label for="primaryFilter">絞込み</label>
+        <select id="primaryFilter" class="filter-select">
+          <option value="all">絞込みなし</option>
+          <option value="mine">自分の対応</option>
+          <option value="open">未対応</option>
+        </select>
+      </div>
+
+      <div class="toolbar-group hidden" id="assigneeFilterWrap">
+        <label for="assigneeFilter">担当者</label>
+        <select id="assigneeFilter" class="filter-select">
+          <option value="">絞込みなし</option>
+        </select>
+      </div>
+
+      <div class="toolbar-group">
+        <button id="reloadButton" class="reload-button" type="button">絞込み</button>
+      </div>
+    </div>
+
+    <div id="contentArea">
+      <div class="empty-box">読み込み中...</div>
+    </div>
+
+    <details>
+      <summary>通信結果</summary>
+      <pre id="debugBox">読み込み中...</pre>
+    </details>
+  </div>
+
+  <div id="loadingOverlay" class="loading-overlay">
+    <div id="loadingMessage" class="loading-box">処理中です...</div>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const debugBox = document.getElementById("debugBox");
+      const adminUserLink = document.getElementById("admin-user-link");
+      const statusBox = document.getElementById("statusBox");
+      const contentArea = document.getElementById("contentArea");
+      const reloadButton = document.getElementById("reloadButton");
+      const primaryFilter = document.getElementById("primaryFilter");
+      const assigneeFilter = document.getElementById("assigneeFilter");
+      const assigneeFilterWrap = document.getElementById("assigneeFilterWrap");
+      const loadingOverlay = document.getElementById("loadingOverlay");
+      const loadingMessage = document.getElementById("loadingMessage");
+
+      const summaryVisibleCount = document.getElementById("summaryVisibleCount");
+      const summaryOpenCount = document.getElementById("summaryOpenCount");
+      const summaryInProgressCount = document.getElementById("summaryInProgressCount");
+      const summaryMyCount = document.getElementById("summaryMyCount");
+
+      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
+      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+
+      let inquiries = [];
+      let isProcessing = false;
+      let currentAdminRole = "";
+
+      function getSessionInfo() {
+        let adminPermissions = [];
+        try {
+          adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
+          if (!Array.isArray(adminPermissions)) adminPermissions = [];
+        } catch {
+          adminPermissions = [];
+        }
+
+        return {
+          adminLoggedIn: sessionStorage.getItem("admin_logged_in"),
+          adminUsername: sessionStorage.getItem("admin_username") || "管理者",
+          adminId: sessionStorage.getItem("admin_id") || "",
+          adminRole: sessionStorage.getItem("admin_role") || "",
+          adminStatus: sessionStorage.getItem("admin_status") || "",
+          adminPermissions
+        };
+      }
+
+      function renderDebug(extra = "") {
+        const info = getSessionInfo();
+        debugBox.textContent =
+          "admin_username: " + info.adminUsername + "\n" +
+          "admin_id: " + info.adminId + "\n" +
+          "admin_role: " + info.adminRole + "\n" +
+          "admin_status: " + info.adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(info.adminPermissions, null, 2) +
+          (extra ? "\n\n" + extra : "");
+      }
+
+      function showStatus(message) {
+        if (!message) {
+          statusBox.textContent = "";
+          statusBox.className = "status-box";
+          return;
+        }
+        statusBox.textContent = message;
+        statusBox.className = "status-box show";
+      }
+
+      function setLoading(show, message = "処理中です...") {
+        loadingMessage.textContent = message;
+        loadingOverlay.classList.toggle("show", show);
+      }
+
+      function setButtonsDisabled(disabled) {
+        document.querySelectorAll(".action-button, .reload-button, .filter-select").forEach((button) => {
+          button.disabled = disabled;
+        });
+      }
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+
+      function formatDateTime(value) {
+        if (!value) return "未設定";
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) return String(value);
+        return new Intl.DateTimeFormat("ja-JP", {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(date);
+      }
+
+      async function writePageLog(actionType, actionLabel, actionDetail) {
+        const info = getSessionInfo();
+
+        const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify({
+            admin_username: info.adminUsername,
+            target_type: info.adminRole === "sub_admin" ? "sub_admin" : null,
+            target_id: info.adminRole === "sub_admin" ? info.adminId : null,
+            action_type: actionType,
+            action_label: actionLabel,
+            action_detail: actionDetail
+          })
+        });
+
+        const rawText = await response.text();
+        renderDebug(
+          "log status: " + response.status +
+          "\nlog response:\n" + rawText
+        );
+
+        return response.ok;
+      }
+
+      async function invokeFunction(functionName, body) {
+        const response = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": supabaseKey,
+            "Authorization": "Bearer " + supabaseKey
+          },
+          body: JSON.stringify(body)
+        });
+
+        const rawText = await response.text();
+        let data = null;
+
+        try {
+          data = rawText ? JSON.parse(rawText) : {};
+        } catch {
+          throw new Error("現在ありません");
+        }
+
+        renderDebug(
+          "function: " + functionName +
+          "\nstatus: " + response.status +
+          "\nresponse:\n" + JSON.stringify(data, null, 2)
+        );
+
+        if (!response.ok) {
+          throw new Error(data?.error || "現在ありません");
+        }
+
+        if (data?.error) {
+          throw new Error(data.error || "現在ありません");
+        }
+
+        return data;
+      }
+
+      async function fetchAllAdminAccounts() {
+        const response = await fetch(
+          `${supabaseUrl}/rest/v1/admin_accounts?select=id,username,role,status&role=in.(admin,sub_admin)&status=eq.active&order=created_at.asc`,
+          {
+            method: "GET",
+            headers: {
+              "apikey": supabaseKey,
+              "Authorization": "Bearer " + supabaseKey
+            }
+          }
+        );
+
+        const rawText = await response.text();
+        let data = [];
+
+        try {
+          data = rawText ? JSON.parse(rawText) : [];
+        } catch {
+          data = [];
+        }
+
+        renderDebug(
+          "admin_accounts status: " + response.status +
+          "\nadmin_accounts response:\n" + rawText
+        );
+
+        if (!response.ok) {
+          return [];
+        }
+
+        return Array.isArray(data) ? data : [];
+      }
+
+      function updateSummary(counts) {
+        summaryVisibleCount.textContent = String(counts?.visible ?? 0);
+        summaryOpenCount.textContent = String(counts?.open ?? 0);
+        summaryInProgressCount.textContent = String(counts?.in_progress ?? 0);
+        summaryMyCount.textContent = String(counts?.mine ?? 0);
+      }
+
+      function getStatusBadge(status) {
+        if (status === "in_progress") {
+          return `<span class="badge badge-in-progress">対応中</span>`;
+        }
+        return `<span class="badge badge-open">未対応</span>`;
+      }
+
+      async function loadAssigneeOptions() {
+        if (currentAdminRole !== "admin") return;
+
+        const admins = await fetchAllAdminAccounts();
+        const currentValue = assigneeFilter.value;
+
+        assigneeFilter.innerHTML = `<option value="">絞込みなし</option>`;
+
+        admins.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = item.username || "";
+          option.textContent = item.username || "";
+          assigneeFilter.appendChild(option);
+        });
+
+        const exists = Array.from(assigneeFilter.options).some((option) => option.value === currentValue);
+        assigneeFilter.value = exists ? currentValue : "";
+      }
+
+      function applySecondFilter(items) {
+        if (currentAdminRole !== "admin") return items;
+
+        const assigneeValue = assigneeFilter.value;
+        if (!assigneeValue) return items;
+
+        return (items || []).filter((item) => {
+          if (item.assigned_admin_username === assigneeValue) return true;
+
+          if (Array.isArray(item.assignees)) {
+            return item.assignees.some((assignee) => {
+              const name = assignee?.admin_display_name || assignee?.admin_username || "";
+              return name === assigneeValue;
+            });
+          }
+
+          return false;
+        });
+      }
+
+      function renderInquiries() {
+        const filteredInquiries = applySecondFilter(inquiries);
+
+        summaryVisibleCount.textContent = String(filteredInquiries.length);
+
+        if (!filteredInquiries.length) {
+          contentArea.innerHTML = `
+            <div class="empty-box">
+              現在ありません
+            </div>
+          `;
+          return;
+        }
+
+        contentArea.innerHTML = `
+          <div class="card-list">
+            ${filteredInquiries.map((inquiry) => {
+              const assigneeChips = Array.isArray(inquiry.assignees)
+                ? inquiry.assignees.map((assignee) => `
+                    <span class="assignee-chip">
+                      ${escapeHtml(assignee.admin_display_name || assignee.admin_username || "不明")}
+                      ${assignee.is_primary ? "（主担当）" : ""}
+                    </span>
+                  `).join("")
+                : "";
+
+              const canStart = inquiry.inquiry_status === "open";
+              const previewText = inquiry.latest_message_text || "メッセージはまだありません。";
+
+              return `
+                <section class="inquiry-card">
+                  <div class="card-top">
+                    <div>
+                      <h2 class="card-title">${escapeHtml(inquiry.username || "不明")}</h2>
+                      <div class="badge-row">
+                        ${getStatusBadge(inquiry.inquiry_status)}
+                        ${inquiry.is_mine ? `<span class="badge badge-mine">自分が担当中</span>` : ""}
+                        ${inquiry.assigned_admin_username ? `<span class="badge badge-assigned">担当: ${escapeHtml(inquiry.assigned_admin_username)}</span>` : ""}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="meta-grid">
+                    <div class="meta-item">
+                      <div class="meta-label">ユーザー名</div>
+                      <div class="meta-value">${escapeHtml(inquiry.username || "不明")}</div>
+                    </div>
+
+                    <div class="meta-item">
+                      <div class="meta-label">状態</div>
+                      <div class="meta-value">${escapeHtml(inquiry.inquiry_status || "open")}</div>
+                    </div>
+
+                    <div class="meta-item">
+                      <div class="meta-label">最終メッセージ日時</div>
+                      <div class="meta-value">${escapeHtml(formatDateTime(inquiry.last_message_at || inquiry.created_at))}</div>
+                    </div>
+
+                    <div class="meta-item">
+                      <div class="meta-label">対応開始日時</div>
+                      <div class="meta-value">${escapeHtml(formatDateTime(inquiry.started_at))}</div>
+                    </div>
+                  </div>
+
+                  <div class="preview-box">
+                    <div class="preview-label">最新メッセージ</div>
+                    <div class="preview-text">${escapeHtml(previewText)}</div>
+                  </div>
+
+                  ${assigneeChips ? `
+                    <div class="preview-box">
+                      <div class="preview-label">現在の担当者</div>
+                      <div class="assignee-list">${assigneeChips}</div>
+                    </div>
+                  ` : ""}
+
+                  <div class="actions">
+                    <button
+                      type="button"
+                      class="action-button detail-button"
+                      onclick="openInquiryDetail(${Number(inquiry.inquiry_id)})"
+                    >
+                      詳細確認
+                    </button>
+
+                    <button
+                      type="button"
+                      class="action-button start-button"
+                      onclick="startSupportInquiry(${Number(inquiry.inquiry_id)})"
+                      ${canStart ? "" : "disabled"}
+                    >
+                      対応開始
+                    </button>
+                  </div>
+                </section>
+              `;
+            }).join("")}
+          </div>
+        `;
+      }
+
+      async function fetchInquiries() {
+        showStatus("");
+        reloadButton.disabled = true;
+
+        try {
+          const result = await invokeFunction("admin-get-support-inquiries", {
+            filter: primaryFilter.value,
+            limit: 100
+          });
+
+          inquiries = Array.isArray(result?.inquiries) ? result.inquiries : [];
+          updateSummary(result?.counts || {});
+          renderInquiries();
+        } catch (error) {
+          console.error(error);
+          contentArea.innerHTML = `
+            <div class="empty-box">
+              現在ありません
+            </div>
+          `;
+          updateSummary({
+            visible: 0,
+            open: 0,
+            in_progress: 0,
+            mine: 0
+          });
+          renderDebug("fetch error:\n" + String(error));
+        } finally {
+          reloadButton.disabled = false;
+        }
+      }
+
+      async function startSupportInquiry(inquiryId) {
+        if (isProcessing) return;
+
+        const confirmed = window.confirm("このお問い合わせの対応を開始しますか？");
+        if (!confirmed) return;
+
+        isProcessing = true;
+        setButtonsDisabled(true);
+        setLoading(true, "対応開始中です...");
+
+        try {
+          const result = await invokeFunction("admin-start-support-inquiry", {
+            inquiry_id: inquiryId,
+            actor_admin_account_id: null
+          });
+
+          showStatus(result?.message || "対応を開始しました。");
+          await fetchInquiries();
+        } catch (error) {
+          console.error(error);
+          showStatus(error.message || "対応開始に失敗しました。");
+        } finally {
+          isProcessing = false;
+          setButtonsDisabled(false);
+          setLoading(false);
+        }
+      }
+
+      function openInquiryDetail(inquiryId) {
+        window.location.href = `user-inquiry-detail.html?inquiry_id=${encodeURIComponent(inquiryId)}`;
+      }
+
+      window.startSupportInquiry = startSupportInquiry;
+      window.openInquiryDetail = openInquiryDetail;
+
+      try {
+        const info = getSessionInfo();
+        currentAdminRole = info.adminRole;
+
+        adminUserLink.textContent = info.adminUsername + "さん";
+        renderDebug();
+
+        if (info.adminLoggedIn !== "1") {
+          window.location.href = "admin-login.html";
+          return;
+        }
+
+        if (info.adminStatus !== "active") {
+          alert("この管理者アカウントは停止中です。");
+          window.location.href = "admin-login.html";
+          return;
+        }
+
+        const canUseUserInquiries =
+          info.adminRole === "admin" ||
+          info.adminPermissions.includes("support_inquiry_management") ||
+          info.adminPermissions.includes("database_management");
+
+        if (!canUseUserInquiries) {
+          await writePageLog(
+            "admin_forbidden_page_access",
+            "権限外ページアクセス",
+            "page: user-inquiries.html / reason: お問い合わせ権限なし"
+          );
+
+          alert("この機能を使う権限がありません。");
+          window.location.href = "account-management.html";
+          return;
+        }
+
+        await writePageLog(
+          "support_inquiries_view",
+          "お問い合わせ一覧閲覧",
+          `page: user-inquiries.html / role: ${info.adminRole}`
+        );
+
+        if (info.adminRole === "admin") {
+          assigneeFilterWrap.classList.remove("hidden");
+          await loadAssigneeOptions();
+        } else {
+          assigneeFilterWrap.classList.add("hidden");
+        }
+
+        primaryFilter.addEventListener("change", fetchInquiries);
+        assigneeFilter.addEventListener("change", renderInquiries);
+        reloadButton.addEventListener("click", fetchInquiries);
+
+        await fetchInquiries();
+      } catch (error) {
+        console.error(error);
+        renderDebug("init error:\n" + String(error));
+        contentArea.innerHTML = `
+          <div class="empty-box">
+            現在ありません
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

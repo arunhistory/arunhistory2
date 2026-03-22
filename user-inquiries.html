@@ -46,9 +46,18 @@
       margin-bottom: 16px;
     }
 
+    .panel,
+    .summary-card,
+    .meta-item,
+    .preview-box,
+    .empty-box,
+    .inquiry-card,
+    details {
+      background: rgba(255,255,255,0.75);
+      border: 1px solid rgba(0,0,0,0.15);
+    }
+
     .panel {
-      background: rgba(255,255,255,0.82);
-      border: 1px solid rgba(0,0,0,0.14);
       padding: 20px;
       margin-bottom: 16px;
     }
@@ -60,30 +69,13 @@
       border-radius: 12px;
       font-size: 14px;
       line-height: 1.6;
-      border: 1px solid transparent;
-      background: rgba(255,255,255,0.88);
+      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.75);
+      color: #111;
     }
 
     .status-box.show {
       display: block;
-    }
-
-    .status-box.info {
-      border-color: #bfdbfe;
-      color: #1d4ed8;
-      background: #eff6ff;
-    }
-
-    .status-box.success {
-      border-color: #a7f3d0;
-      color: #047857;
-      background: #ecfdf5;
-    }
-
-    .status-box.error {
-      border-color: #fecaca;
-      color: #dc2626;
-      background: #fef2f2;
     }
 
     .summary-row {
@@ -94,8 +86,6 @@
     }
 
     .summary-card {
-      background: rgba(255,255,255,0.82);
-      border: 1px solid rgba(0,0,0,0.14);
       padding: 16px;
     }
 
@@ -112,27 +102,26 @@
     }
 
     .toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      display: grid;
+      grid-template-columns: 1fr 1fr auto;
       gap: 12px;
-      flex-wrap: wrap;
+      align-items: end;
       margin-bottom: 16px;
     }
 
-    .toolbar-left,
-    .toolbar-right {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      align-items: center;
+    .toolbar-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 14px;
+      font-weight: bold;
     }
 
     .filter-select,
     .reload-button {
+      width: 100%;
       padding: 10px 14px;
-      font-size: 14px;
-      font-weight: bold;
+      font-size: 16px;
+      font-family: inherit;
       border-radius: 10px;
     }
 
@@ -147,6 +136,8 @@
       background: #111;
       color: #fff;
       cursor: pointer;
+      font-weight: bold;
+      min-width: 150px;
     }
 
     .reload-button:disabled,
@@ -157,8 +148,6 @@
     }
 
     .empty-box {
-      background: rgba(255,255,255,0.82);
-      border: 1px solid rgba(0,0,0,0.14);
       padding: 28px 16px;
       text-align: center;
       color: #555;
@@ -171,8 +160,6 @@
     }
 
     .inquiry-card {
-      background: rgba(255,255,255,0.88);
-      border: 1px solid rgba(0,0,0,0.14);
       padding: 18px;
     }
 
@@ -236,8 +223,6 @@
     }
 
     .meta-item {
-      background: rgba(255,255,255,0.7);
-      border: 1px solid rgba(0,0,0,0.12);
       padding: 12px;
     }
 
@@ -256,8 +241,6 @@
     }
 
     .preview-box {
-      background: rgba(255,255,255,0.7);
-      border: 1px solid rgba(0,0,0,0.12);
       padding: 12px;
       margin-bottom: 14px;
     }
@@ -308,6 +291,7 @@
       font-size: 14px;
       font-weight: bold;
       cursor: pointer;
+      font-family: inherit;
     }
 
     .detail-button {
@@ -322,8 +306,6 @@
 
     details {
       margin-top: 20px;
-      background: rgba(255,255,255,0.65);
-      border: 1px solid rgba(0,0,0,0.12);
       padding: 12px;
     }
 
@@ -362,22 +344,21 @@
       color: #111;
     }
 
+    .hidden {
+      display: none !important;
+    }
+
     @media (max-width: 700px) {
       h1 {
         font-size: 1.8rem;
       }
 
       .summary-row,
-      .meta-grid {
+      .meta-grid,
+      .toolbar {
         grid-template-columns: 1fr;
       }
 
-      .toolbar-left,
-      .toolbar-right {
-        width: 100%;
-      }
-
-      .filter-select,
       .reload-button,
       .action-button {
         width: 100%;
@@ -397,7 +378,7 @@
       ユーザーから送られたお問い合わせを確認します。
     </div>
 
-    <div id="statusBox" class="status-box info"></div>
+    <div id="statusBox" class="status-box"></div>
 
     <div class="summary-row">
       <div class="summary-card">
@@ -419,16 +400,23 @@
     </div>
 
     <div class="toolbar">
-      <div class="toolbar-left">
-        <select id="statusFilter" class="filter-select">
-          <option value="all">すべて表示</option>
-          <option value="open">未対応のみ</option>
-          <option value="in_progress">対応中のみ</option>
-          <option value="mine">自分が担当中のみ</option>
+      <div class="toolbar-group">
+        <label for="primaryFilter">1段階目の絞込み</label>
+        <select id="primaryFilter" class="filter-select">
+          <option value="all">絞込みなし</option>
+          <option value="mine">自分の対応</option>
+          <option value="open">未対応</option>
         </select>
       </div>
 
-      <div class="toolbar-right">
+      <div class="toolbar-group hidden" id="assigneeFilterWrap">
+        <label for="assigneeFilter">2段階目の絞込み（管理者専用）</label>
+        <select id="assigneeFilter" class="filter-select">
+          <option value="">絞込みなし</option>
+        </select>
+      </div>
+
+      <div class="toolbar-group">
         <button id="reloadButton" class="reload-button" type="button">再読み込み</button>
       </div>
     </div>
@@ -454,7 +442,9 @@
       const statusBox = document.getElementById("statusBox");
       const contentArea = document.getElementById("contentArea");
       const reloadButton = document.getElementById("reloadButton");
-      const statusFilter = document.getElementById("statusFilter");
+      const primaryFilter = document.getElementById("primaryFilter");
+      const assigneeFilter = document.getElementById("assigneeFilter");
+      const assigneeFilterWrap = document.getElementById("assigneeFilterWrap");
       const loadingOverlay = document.getElementById("loadingOverlay");
       const loadingMessage = document.getElementById("loadingMessage");
 
@@ -468,12 +458,10 @@
 
       let inquiries = [];
       let isProcessing = false;
+      let currentAdminRole = "";
+      let currentAdminPermissions = [];
 
-      function renderDebug(extra = "") {
-        const adminUsername = sessionStorage.getItem("admin_username") || "";
-        const adminId = sessionStorage.getItem("admin_id") || "";
-        const adminRole = sessionStorage.getItem("admin_role") || "";
-        const adminStatus = sessionStorage.getItem("admin_status") || "";
+      function getSessionInfo() {
         let adminPermissions = [];
         try {
           adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
@@ -482,23 +470,35 @@
           adminPermissions = [];
         }
 
+        return {
+          adminLoggedIn: sessionStorage.getItem("admin_logged_in"),
+          adminUsername: sessionStorage.getItem("admin_username") || "管理者",
+          adminId: sessionStorage.getItem("admin_id") || "",
+          adminRole: sessionStorage.getItem("admin_role") || "",
+          adminStatus: sessionStorage.getItem("admin_status") || "",
+          adminPermissions
+        };
+      }
+
+      function renderDebug(extra = "") {
+        const info = getSessionInfo();
         debugBox.textContent =
-          "admin_username: " + adminUsername + "\n" +
-          "admin_id: " + adminId + "\n" +
-          "admin_role: " + adminRole + "\n" +
-          "admin_status: " + adminStatus + "\n" +
-          "admin_permissions: " + JSON.stringify(adminPermissions, null, 2) +
+          "admin_username: " + info.adminUsername + "\n" +
+          "admin_id: " + info.adminId + "\n" +
+          "admin_role: " + info.adminRole + "\n" +
+          "admin_status: " + info.adminStatus + "\n" +
+          "admin_permissions: " + JSON.stringify(info.adminPermissions, null, 2) +
           (extra ? "\n\n" + extra : "");
       }
 
-      function showStatus(message, type = "info") {
+      function showStatus(message) {
+        if (!message) {
+          statusBox.textContent = "";
+          statusBox.className = "status-box";
+          return;
+        }
         statusBox.textContent = message;
-        statusBox.className = `status-box show ${type}`;
-      }
-
-      function hideStatus() {
-        statusBox.textContent = "";
-        statusBox.className = "status-box info";
+        statusBox.className = "status-box show";
       }
 
       function setLoading(show, message = "処理中です...") {
@@ -535,9 +535,7 @@
       }
 
       async function writePageLog(actionType, actionLabel, actionDetail) {
-        const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
-        const adminId = sessionStorage.getItem("admin_id");
-        const adminRole = sessionStorage.getItem("admin_role") || "";
+        const info = getSessionInfo();
 
         const response = await fetch(`${supabaseUrl}/functions/v1/admin-write-log`, {
           method: "POST",
@@ -547,9 +545,9 @@
             "Authorization": "Bearer " + supabaseKey
           },
           body: JSON.stringify({
-            admin_username: adminUsername,
-            target_type: adminRole === "sub_admin" ? "sub_admin" : null,
-            target_id: adminRole === "sub_admin" ? adminId : null,
+            admin_username: info.adminUsername,
+            target_type: info.adminRole === "sub_admin" ? "sub_admin" : null,
+            target_id: info.adminRole === "sub_admin" ? info.adminId : null,
             action_type: actionType,
             action_label: actionLabel,
             action_detail: actionDetail
@@ -616,23 +614,83 @@
         return `<span class="badge badge-open">未対応</span>`;
       }
 
+      function renderAssigneeOptions(items) {
+        if (currentAdminRole !== "admin") return;
+
+        const map = new Map();
+        map.set("", "絞込みなし");
+
+        (items || []).forEach((item) => {
+          if (item.assigned_admin_username) {
+            map.set(item.assigned_admin_username, item.assigned_admin_username);
+          }
+          if (Array.isArray(item.assignees)) {
+            item.assignees.forEach((assignee) => {
+              const name = assignee?.admin_display_name || assignee?.admin_username || "";
+              if (name) {
+                map.set(name, name);
+              }
+            });
+          }
+        });
+
+        const currentValue = assigneeFilter.value;
+        assigneeFilter.innerHTML = "";
+
+        map.forEach((label, value) => {
+          const option = document.createElement("option");
+          option.value = value;
+          option.textContent = label;
+          assigneeFilter.appendChild(option);
+        });
+
+        if ([...map.keys()].includes(currentValue)) {
+          assigneeFilter.value = currentValue;
+        } else {
+          assigneeFilter.value = "";
+        }
+      }
+
+      function applySecondFilter(items) {
+        if (currentAdminRole !== "admin") return items;
+
+        const assigneeValue = assigneeFilter.value;
+        if (!assigneeValue) return items;
+
+        return (items || []).filter((item) => {
+          if (item.assigned_admin_username === assigneeValue) return true;
+          if (Array.isArray(item.assignees)) {
+            return item.assignees.some((assignee) => {
+              const name = assignee?.admin_display_name || assignee?.admin_username || "";
+              return name === assigneeValue;
+            });
+          }
+          return false;
+        });
+      }
+
       function renderInquiries() {
-        if (!inquiries.length) {
+        const filteredInquiries = applySecondFilter(inquiries);
+
+        if (!filteredInquiries.length) {
           contentArea.innerHTML = `
             <div class="empty-box">
               表示できるお問い合わせはありません。
             </div>
           `;
+          summaryVisibleCount.textContent = "0";
           return;
         }
 
+        summaryVisibleCount.textContent = String(filteredInquiries.length);
+
         contentArea.innerHTML = `
           <div class="card-list">
-            ${inquiries.map((inquiry) => {
+            ${filteredInquiries.map((inquiry) => {
               const assigneeChips = Array.isArray(inquiry.assignees)
                 ? inquiry.assignees.map((assignee) => `
                     <span class="assignee-chip">
-                      ${escapeHtml(assignee.admin_display_name || "不明")}
+                      ${escapeHtml(assignee.admin_display_name || assignee.admin_username || "不明")}
                       ${assignee.is_primary ? "（主担当）" : ""}
                     </span>
                   `).join("")
@@ -714,17 +772,18 @@
       }
 
       async function fetchInquiries() {
-        hideStatus();
+        showStatus("");
         reloadButton.disabled = true;
 
         try {
           const result = await invokeFunction("admin-get-support-inquiries", {
-            filter: statusFilter.value,
+            filter: primaryFilter.value,
             limit: 100
           });
 
           inquiries = Array.isArray(result?.inquiries) ? result.inquiries : [];
           updateSummary(result?.counts || {});
+          renderAssigneeOptions(inquiries);
           renderInquiries();
         } catch (error) {
           console.error(error);
@@ -739,7 +798,8 @@
             in_progress: 0,
             mine: 0
           });
-          showStatus(error.message || "お問い合わせ一覧の取得に失敗しました。", "error");
+          renderAssigneeOptions([]);
+          renderDebug("fetch error:\n" + String(error));
         } finally {
           reloadButton.disabled = false;
         }
@@ -761,11 +821,11 @@
             actor_admin_account_id: null
           });
 
-          showStatus(result?.message || "対応を開始しました。", "success");
+          showStatus(result?.message || "対応を開始しました。");
           await fetchInquiries();
         } catch (error) {
           console.error(error);
-          showStatus(error.message || "対応開始に失敗しました。", "error");
+          showStatus(error.message || "対応開始に失敗しました。");
         } finally {
           isProcessing = false;
           setButtonsDisabled(false);
@@ -781,43 +841,28 @@
       window.openInquiryDetail = openInquiryDetail;
 
       try {
-        const adminLoggedIn = sessionStorage.getItem("admin_logged_in");
-        const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
-        const adminRole = sessionStorage.getItem("admin_role") || "";
-        const adminStatus = sessionStorage.getItem("admin_status") || "";
+        const info = getSessionInfo();
+        currentAdminRole = info.adminRole;
+        currentAdminPermissions = info.adminPermissions;
 
-        let adminPermissions = [];
-        try {
-          adminPermissions = JSON.parse(sessionStorage.getItem("admin_permissions") || "[]");
-          if (!Array.isArray(adminPermissions)) adminPermissions = [];
-        } catch {
-          adminPermissions = [];
-        }
-
-        adminUserLink.textContent = adminUsername + "さん";
+        adminUserLink.textContent = info.adminUsername + "さん";
         renderDebug();
 
-        if (adminLoggedIn !== "1") {
+        if (info.adminLoggedIn !== "1") {
           window.location.href = "admin-login.html";
           return;
         }
 
-        if (adminStatus !== "active") {
+        if (info.adminStatus !== "active") {
           alert("この管理者アカウントは停止中です。");
           window.location.href = "admin-login.html";
           return;
         }
 
         const canUseUserInquiries =
-          adminRole === "admin" ||
-          adminPermissions.includes("support_inquiry_management") ||
-          adminPermissions.includes("database_management");
-
-        await writePageLog(
-          "support_inquiries_page_access",
-          "お問い合わせページアクセス",
-          `page: user-inquiries.html / role: ${adminRole} / allowed: ${canUseUserInquiries}`
-        );
+          info.adminRole === "admin" ||
+          info.adminPermissions.includes("support_inquiry_management") ||
+          info.adminPermissions.includes("database_management");
 
         if (!canUseUserInquiries) {
           await writePageLog(
@@ -834,10 +879,17 @@
         await writePageLog(
           "support_inquiries_view",
           "お問い合わせ一覧閲覧",
-          `page: user-inquiries.html / role: ${adminRole}`
+          `page: user-inquiries.html / role: ${info.adminRole}`
         );
 
-        statusFilter.addEventListener("change", fetchInquiries);
+        if (info.adminRole === "admin") {
+          assigneeFilterWrap.classList.remove("hidden");
+        } else {
+          assigneeFilterWrap.classList.add("hidden");
+        }
+
+        primaryFilter.addEventListener("change", fetchInquiries);
+        assigneeFilter.addEventListener("change", renderInquiries);
         reloadButton.addEventListener("click", fetchInquiries);
 
         await fetchInquiries();
@@ -850,7 +902,6 @@
             通信結果を確認してください。
           </div>
         `;
-        showStatus(error.message || String(error) || "初期化に失敗しました。", "error");
       }
     });
   </script>

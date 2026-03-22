@@ -807,11 +807,13 @@
         reloadButton.disabled = true;
 
         try {
-          const result = await invokeFunction("admin-get-support-inquiries", {
+          const info = getSessionInfo();
+
+          const result = await invokeFunction("admin-get-support-inquiries-v2", {
+            admin_username: info.adminUsername,
             filter: primaryFilter.value,
             limit: 100
           });
-
           inquiries = Array.isArray(result?.inquiries) ? result.inquiries : [];
           updateSummary(result?.counts || {});
           renderInquiries();

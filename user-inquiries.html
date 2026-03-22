@@ -46,6 +46,12 @@
       margin-bottom: 16px;
     }
 
+    .center-link {
+      text-align: center;
+      margin-top: 16px;
+      margin-bottom: 16px;
+    }
+
     .panel,
     .summary-card,
     .meta-item,
@@ -337,29 +343,6 @@
       font-size: 14px;
     }
 
-    .loading-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(17, 24, 39, 0.35);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 16px;
-    }
-
-    .loading-overlay.show {
-      display: flex;
-    }
-
-    .loading-box {
-      background: #fff;
-      padding: 18px 22px;
-      font-size: 14px;
-      font-weight: bold;
-      color: #111;
-    }
-
     .hidden {
       display: none !important;
     }
@@ -368,12 +351,6 @@
       h1 {
         font-size: 1.8rem;
       }
-      
-      .center-link {
-  text-align: center;
-  margin-top: 16px;
-  margin-bottom: 16px;
-}
 
       .summary-row,
       .meta-grid,
@@ -395,10 +372,10 @@
     </p>
 
     <h1>ユーザーお問い合わせ</h1>
-    
+
     <p class="center-link">
-  <a href="account-management.html">戻る</a>
-</p>
+      <a href="account-management.html">戻る</a>
+    </p>
 
     <div class="panel">
       ユーザーから送られたお問い合わせを確認します。
@@ -450,19 +427,15 @@
     <div id="contentArea">
       <div class="empty-box">読み込み中...</div>
     </div>
-    
+
     <p class="center-link">
-  <a href="account-management.html">戻る</a>
-</p>
+      <a href="account-management.html">戻る</a>
+    </p>
 
     <details>
       <summary>通信結果</summary>
       <pre id="debugBox">読み込み中...</pre>
     </details>
-  </div>
-
-  <div id="loadingOverlay" class="loading-overlay">
-    <div id="loadingMessage" class="loading-box">処理中です...</div>
   </div>
 
   <script>
@@ -475,8 +448,6 @@
       const primaryFilter = document.getElementById("primaryFilter");
       const assigneeFilter = document.getElementById("assigneeFilter");
       const assigneeFilterWrap = document.getElementById("assigneeFilterWrap");
-      const loadingOverlay = document.getElementById("loadingOverlay");
-      const loadingMessage = document.getElementById("loadingMessage");
 
       const summaryVisibleCount = document.getElementById("summaryVisibleCount");
       const summaryOpenCount = document.getElementById("summaryOpenCount");
@@ -528,17 +499,6 @@
         }
         statusBox.textContent = message;
         statusBox.className = "status-box show";
-      }
-
-      function setLoading(show, message = "処理中です...") {
-        loadingMessage.textContent = message;
-        loadingOverlay.classList.toggle("show", show);
-      }
-
-      function setButtonsDisabled(disabled) {
-        document.querySelectorAll(".action-button, .reload-button, .filter-select").forEach((button) => {
-          button.disabled = disabled;
-        });
       }
 
       function escapeHtml(value) {
@@ -609,7 +569,7 @@
         try {
           data = rawText ? JSON.parse(rawText) : {};
         } catch {
-          throw new Error("現在ありません");
+          throw new Error("読み込み失敗");
         }
 
         renderDebug(
@@ -619,11 +579,11 @@
         );
 
         if (!response.ok) {
-          throw new Error(data?.error || "現在ありません");
+          throw new Error(data?.error || "読み込み失敗");
         }
 
         if (data?.error) {
-          throw new Error(data.error || "現在ありません");
+          throw new Error(data.error || "読み込み失敗");
         }
 
         return data;
@@ -715,6 +675,48 @@
         });
       }
 
+      function openInquiryDetail(inquiryId) {
+        window.location.href =
+          "user-inquiry-detail.html?inquiry_id=" +
+          encodeURIComponent(inquiryId) +
+          "&mode=detail";
+      }
+
+      function openInquiryAttend(inquiryId) {
+        window.location.href =
+          "user-inquiry-detail.html?inquiry_id=" +
+          encodeURIComponent(inquiryId) +
+          "&mode=attend";
+      }
+
+      async function startSupportInquiry(inquiryId) {
+        if (isProcessing) return;
+
+        const confirmed = window.confirm("このお問い合わせの対応を開始しますか？");
+        if (!confirmed) return;
+
+        isProcessing = true;
+        reloadButton.disabled = true;
+
+        try {
+          const info = getSessionInfo();
+
+          const result = await invokeFunction("admin-start-support-inquiry", {
+            admin_username: info.adminUsername,
+            inquiry_id: inquiryId
+          });
+
+          showStatus(result?.message || "対応を開始しました。");
+          await fetchInquiries();
+        } catch (error) {
+          console.error(error);
+          showStatus(error.message || "読み込み失敗");
+        } finally {
+          isProcessing = false;
+          reloadButton.disabled = false;
+        }
+      }
+
       function renderInquiries() {
         const filteredInquiries = applySecondFilter(inquiries);
 
@@ -741,7 +743,50 @@
                   `).join("")
                 : "";
 
-              const canStart = inquiry.inquiry_status === "open";
+              const showDetailButton = currentAdminRole === "admin";
+              const showStartButton = inquiry.inquiry_status === "open";
+              const showAttendButton =
+                inquiry.inquiry_status === "in_progress" &&
+                inquiry.is_mine === true;
+
+              let actionButtonsHtml = "";
+
+              if (showDetailButton) {
+                actionButtonsHtml += `
+                  <button
+                    type="button"
+                    class="action-button detail-button"
+                    onclick="openInquiryDetail(${Number(inquiry.inquiry_id)})"
+                  >
+                    詳細表示
+                  </button>
+                `;
+              }
+
+              if (showStartButton) {
+                actionButtonsHtml += `
+                  <button
+                    type="button"
+                    class="action-button start-button"
+                    onclick="startSupportInquiry(${Number(inquiry.inquiry_id)})"
+                  >
+                    対応開始
+                  </button>
+                `;
+              }
+
+              if (showAttendButton) {
+                actionButtonsHtml += `
+                  <button
+                    type="button"
+                    class="action-button start-button"
+                    onclick="openInquiryAttend(${Number(inquiry.inquiry_id)})"
+                  >
+                    応対する
+                  </button>
+                `;
+              }
+
               const previewText = inquiry.latest_message_text || "メッセージはまだありません。";
 
               return `
@@ -792,25 +837,8 @@
                   ` : ""}
 
                   <div class="actions">
-  ${currentAdminRole === "admin" ? `
-    <button
-      type="button"
-      class="action-button detail-button"
-      onclick="openInquiryDetail(${Number(inquiry.inquiry_id)})"
-    >
-      詳細確認
-    </button>
-  ` : ""}
-
-  <button
-    type="button"
-    class="action-button start-button"
-    onclick="startSupportInquiry(${Number(inquiry.inquiry_id)})"
-    ${canStart ? "" : "disabled"}
-  >
-    対応開始
-  </button>
-</div>
+                    ${actionButtonsHtml}
+                  </div>
                 </section>
               `;
             }).join("")}
@@ -823,13 +851,14 @@
         reloadButton.disabled = true;
 
         try {
-           const info = getSessionInfo();
+          const info = getSessionInfo();
 
-            const result = await invokeFunction("admin-get-support-inquiries-v3", {
-              admin_username: info.adminUsername,
-              filter: primaryFilter.value,
-              limit: 100
-            });
+          const result = await invokeFunction("admin-get-support-inquiries-v3", {
+            admin_username: info.adminUsername,
+            filter: primaryFilter.value,
+            limit: 100
+          });
+
           inquiries = Array.isArray(result?.inquiries) ? result.inquiries : [];
           updateSummary(result?.counts || {});
           renderInquiries();
@@ -837,7 +866,7 @@
           console.error(error);
           contentArea.innerHTML = `
             <div class="empty-box">
-              現在ありません
+              読み込み失敗
             </div>
           `;
           updateSummary({
@@ -852,40 +881,9 @@
         }
       }
 
-      async function startSupportInquiry(inquiryId) {
-        if (isProcessing) return;
-
-        const confirmed = window.confirm("このお問い合わせの対応を開始しますか？");
-        if (!confirmed) return;
-
-        isProcessing = true;
-        setButtonsDisabled(true);
-        setLoading(true, "対応開始中です...");
-
-        try {
-          const result = await invokeFunction("admin-start-support-inquiry", {
-            inquiry_id: inquiryId,
-            actor_admin_account_id: null
-          });
-
-          showStatus(result?.message || "対応を開始しました。");
-          await fetchInquiries();
-        } catch (error) {
-          console.error(error);
-          showStatus(error.message || "対応開始に失敗しました。");
-        } finally {
-          isProcessing = false;
-          setButtonsDisabled(false);
-          setLoading(false);
-        }
-      }
-
-      function openInquiryDetail(inquiryId) {
-        window.location.href = `user-inquiry-detail.html?inquiry_id=${encodeURIComponent(inquiryId)}`;
-      }
-
-      window.startSupportInquiry = startSupportInquiry;
       window.openInquiryDetail = openInquiryDetail;
+      window.openInquiryAttend = openInquiryAttend;
+      window.startSupportInquiry = startSupportInquiry;
 
       try {
         const info = getSessionInfo();
@@ -945,7 +943,7 @@
         renderDebug("init error:\n" + String(error));
         contentArea.innerHTML = `
           <div class="empty-box">
-            現在ありません
+            読み込み失敗
           </div>
         `;
       }

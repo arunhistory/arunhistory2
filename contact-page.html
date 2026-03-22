@@ -159,71 +159,79 @@
       text-align: center;
     }
 
-.message-row {
-  display: flex;
-  width: 100%;
-  align-items: flex-start;
-}
+    .message-row {
+      display: flex;
+      width: 100%;
+      align-items: flex-start;
+    }
 
-.message-row.user {
-  justify-content: flex-end;
-}
+    .message-row.user {
+      justify-content: flex-end;
+    }
 
-.message-row.admin {
-  justify-content: flex-start;
-}
+    .message-row.admin {
+      justify-content: flex-start;
+    }
 
-.message-bubble {
-  display: inline-block;
-  width: auto;
-  max-width: 82%;
-  min-width: 0;
-  padding: 12px 14px;
-  border-radius: 16px;
-  line-height: 1.7;
-  word-break: break-word;
-  white-space: pre-wrap;
-  font-size: 15px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.16);
-  height: auto;
-  min-height: 0;
-  align-self: flex-start;
-}
+    .message-bubble {
+      display: inline-flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      width: auto;
+      max-width: 82%;
+      min-width: 0;
+      padding: 12px 14px;
+      border-radius: 16px;
+      line-height: 1.7;
+      word-break: break-word;
+      white-space: pre-wrap;
+      font-size: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.16);
+      height: auto;
+      min-height: 0;
+      align-self: flex-start;
+      flex: 0 0 auto;
+    }
 
-.message-row.user .message-bubble {
-  background: #60a5fa;
-  color: #0f172a;
-  border-bottom-right-radius: 4px;
-}
+    .message-row.user .message-bubble {
+      background: #60a5fa;
+      color: #0f172a;
+      border-bottom-right-radius: 4px;
+      align-items: flex-end;
+    }
 
-.message-row.admin .message-bubble {
-  background: rgba(255,255,255,0.92);
-  color: #111827;
-  border-bottom-left-radius: 4px;
-}
+    .message-row.admin .message-bubble {
+      background: rgba(255,255,255,0.92);
+      color: #111827;
+      border-bottom-left-radius: 4px;
+      align-items: flex-start;
+    }
 
-.message-text {
-  display: block;
-  margin: 0;
-}
+    .message-text {
+      display: block;
+      width: 100%;
+      margin: 0;
+      text-align: left;
+    }
 
-.message-meta {
-  display: block;
-  margin-top: 8px;
-  font-size: 11px;
-  opacity: 0.82;
-  line-height: 1.4;
-}
+    .message-meta {
+      display: block;
+      width: 100%;
+      margin-top: 8px;
+      font-size: 11px;
+      opacity: 0.82;
+      line-height: 1.4;
+    }
 
-.message-row.user .message-meta {
-  text-align: right;
-  color: rgba(15, 23, 42, 0.8);
-}
+    .message-row.user .message-meta {
+      text-align: right;
+      color: rgba(15, 23, 42, 0.8);
+    }
 
-.message-row.admin .message-meta {
-  text-align: left;
-  color: #4b5563;
-}
+    .message-row.admin .message-meta {
+      text-align: left;
+      color: #4b5563;
+    }
 
     .composer {
       margin-top: 12px;
@@ -502,17 +510,17 @@
               const senderRole = message.sender_role || (isUser ? "user" : "admin");
 
               timeline.push(`
-  <div class="message-row ${isUser ? "user" : "admin"}">
-    <div class="message-bubble">
-      <span class="message-text">${escapeHtml(message.message || "")}</span>
-      <div class="message-meta">
-        ${escapeHtml(senderName)}${!isUser && senderRole ? ` / ${escapeHtml(senderRole)}` : ""}
-        <br>
-        ${escapeHtml(formatDateTime(message.created_at))}
-      </div>
-    </div>
-  </div>
-`);
+                <div class="message-row ${isUser ? "user" : "admin"}">
+                  <div class="message-bubble">
+                    <span class="message-text">${escapeHtml(message.message || "")}</span>
+                    <div class="message-meta">
+                      ${escapeHtml(senderName)}${!isUser && senderRole ? ` / ${escapeHtml(senderRole)}` : ""}
+                      <br>
+                      ${escapeHtml(formatDateTime(message.created_at))}
+                    </div>
+                  </div>
+                </div>
+              `);
             });
 
           if (inquiry.status === "resolved" && inquiry.resolved_at) {

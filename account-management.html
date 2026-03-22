@@ -80,7 +80,7 @@
       <p><a href="user-applications.html">ユーザー申請</a></p>
       <p><a href="license-change.html">ライセンス変更</a></p>
       <p><a href="withdraw-requests.html">退会申請確認</a></p>
-      <p><a href="user-inquiries.html">ユーザーお問い合わせ</a></p>
+      <p id="user-inquiries-item"><a href="user-inquiries.html">ユーザーお問い合わせ</a></p>
       <p><a href="admin-home.html">戻る</a></p>
     </div>
 
@@ -114,6 +114,7 @@
 
       const adminUserLink = document.getElementById("admin-user-link");
       const debugBox = document.getElementById("debug-box");
+      const userInquiriesItem = document.getElementById("user-inquiries-item");
 
       adminUserLink.textContent = adminUsername + "さん";
 
@@ -178,6 +179,15 @@
         adminRole === "admin" ||
         (adminRole === "sub_admin" &&
           adminPermissions.includes("account_management"));
+
+      const canUseUserInquiries =
+        adminRole === "admin" ||
+        adminPermissions.includes("お問い合わせ管理") ||
+        adminPermissions.includes("データベース管理");
+
+      if (userInquiriesItem && !canUseUserInquiries) {
+        userInquiriesItem.style.display = "none";
+      }
 
       if (!canUseAccountManagement) {
         try {

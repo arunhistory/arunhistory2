@@ -32,7 +32,7 @@
 
     .top-bar {
       display: grid;
-      grid-template-columns: 80px 1fr 80px;
+      grid-template-columns: 88px 1fr 88px;
       align-items: center;
       gap: 8px;
       margin-bottom: 10px;
@@ -54,8 +54,31 @@
     .title {
       margin: 0;
       text-align: center;
-      font-size: 1.5rem;
+      font-size: 1.9rem;
       line-height: 1.4;
+    }
+
+    .top-resolve-button {
+      justify-self: end;
+      min-width: 78px;
+      min-height: 42px;
+      border: none;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: bold;
+      font-family: inherit;
+      cursor: pointer;
+      background: #7c2d12;
+      color: #fff7ed;
+    }
+
+    .top-resolve-button:hover {
+      background: #9a3412;
+    }
+
+    .top-resolve-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     .username-line {
@@ -194,65 +217,27 @@
       padding: 12px;
     }
 
-    .composer-grid {
-      display: grid;
-      grid-template-columns: 92px 1fr 92px;
-      gap: 10px;
-      align-items: end;
-    }
-
-    .composer-button {
-      width: 100%;
-      min-height: 52px;
-      border: none;
-      border-radius: 14px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      font-family: inherit;
-    }
-
-    .resolve-button {
-      background: #7c2d12;
-      color: #fff7ed;
-    }
-
-    .resolve-button:hover {
-      background: #9a3412;
-    }
-
-    .send-button {
-      background: #7a5c61;
-      color: #fff;
-    }
-
-    .send-button:hover {
-      background: #9a747b;
-    }
-
-    .composer-button:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .composer-center {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
     .composer-info {
       font-size: 12px;
       color: #e5e7eb;
       line-height: 1.5;
       min-height: 18px;
+      margin-bottom: 8px;
+    }
+
+    .composer-row {
+      display: grid;
+      grid-template-columns: 1fr 92px;
+      gap: 10px;
+      align-items: end;
     }
 
     .composer-textarea {
       width: 100%;
-      min-height: 110px;
-      max-height: 240px;
-      resize: vertical;
+      min-height: calc(1.7em * 3 + 24px);
+      max-height: calc(1.7em * 3 + 24px);
+      overflow-y: auto;
+      resize: none;
       padding: 12px;
       border: 1px solid rgba(255,255,255,0.28);
       border-radius: 14px;
@@ -261,6 +246,28 @@
       font-size: 16px;
       font-family: inherit;
       line-height: 1.7;
+    }
+
+    .send-button {
+      width: 100%;
+      min-height: 58px;
+      border: none;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      font-family: inherit;
+      background: #7a5c61;
+      color: #fff;
+    }
+
+    .send-button:hover {
+      background: #9a747b;
+    }
+
+    .send-button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
     }
 
     .loading-overlay {
@@ -298,21 +305,23 @@
       }
 
       .title {
-        font-size: 1.35rem;
+        font-size: 1.7rem;
       }
 
-      .composer-grid {
-        grid-template-columns: 82px 1fr 82px;
+      .top-resolve-button {
+        min-width: 68px;
+        min-height: 38px;
+        font-size: 13px;
+      }
+
+      .composer-row {
+        grid-template-columns: 1fr 82px;
         gap: 8px;
       }
 
-      .composer-button {
-        min-height: 48px;
+      .send-button {
+        min-height: 54px;
         font-size: 14px;
-      }
-
-      .composer-textarea {
-        min-height: 96px;
       }
 
       .message-bubble {
@@ -326,7 +335,7 @@
     <div class="top-bar">
       <a href="mypage.html" class="back-link">← 戻る</a>
       <h1 class="title">お問い合わせ</h1>
-      <div></div>
+      <button id="resolve-button" type="button" class="top-resolve-button">解決</button>
     </div>
 
     <p id="username-line" class="username-line">ユーザーさん</p>
@@ -338,19 +347,14 @@
     </div>
 
     <div class="composer">
-      <div class="composer-grid">
-        <button id="resolve-button" type="button" class="composer-button resolve-button">解決</button>
-
-        <div class="composer-center">
-          <div id="composer-info" class="composer-info">お問い合わせ内容を入力してください。</div>
-          <textarea
-            id="message-input"
-            class="composer-textarea"
-            placeholder="本文を入力してください"
-          ></textarea>
-        </div>
-
-        <button id="send-button" type="button" class="composer-button send-button">送信</button>
+      <div id="composer-info" class="composer-info"></div>
+      <div class="composer-row">
+        <textarea
+          id="message-input"
+          class="composer-textarea"
+          placeholder="本文を入力してください"
+        ></textarea>
+        <button id="send-button" type="button" class="send-button">送信</button>
       </div>
     </div>
   </div>
@@ -431,6 +435,15 @@
         }).format(date);
       }
 
+      function autoResizeTextarea() {
+        messageInput.style.height = "auto";
+        const lineHeight = 16 * 1.7;
+        const maxHeight = Math.ceil(lineHeight * 3 + 24);
+        const nextHeight = Math.min(messageInput.scrollHeight, maxHeight);
+        messageInput.style.height = nextHeight + "px";
+        messageInput.style.overflowY = messageInput.scrollHeight > maxHeight ? "auto" : "hidden";
+      }
+
       function scrollToBottom() {
         requestAnimationFrame(() => {
           chatWrap.scrollTop = chatWrap.scrollHeight;
@@ -445,7 +458,7 @@
 
       function updateComposerState() {
         if (activeInquiry) {
-          composerInfo.textContent = `現在の状態: ${getStatusLabel(activeInquiry.status)} / そのまま追加送信できます。`;
+          composerInfo.textContent = "";
           resolveButton.disabled = false;
         } else {
           composerInfo.textContent = "新しいお問い合わせとして送信されます。";
@@ -465,22 +478,14 @@
           return;
         }
 
-        const inquiryMap = new Map();
-        inquiries.forEach((inquiry) => {
-          inquiryMap.set(inquiry.id, inquiry);
-        });
-
         const timeline = [];
 
         inquiries.forEach((inquiry) => {
-          timeline.push({
-            type: "system",
-            html: `
-              <div class="system-divider">
-                ${escapeHtml(formatDateTime(inquiry.created_at))} / ${escapeHtml(getStatusLabel(inquiry.status))}
-              </div>
-            `
-          });
+          timeline.push(`
+            <div class="system-divider">
+              ${escapeHtml(formatDateTime(inquiry.created_at))} / ${escapeHtml(getStatusLabel(inquiry.status))}
+            </div>
+          `);
 
           messages
             .filter((message) => message.inquiry_id === inquiry.id)
@@ -489,38 +494,31 @@
               const senderName = message.sender_name || (isUser ? currentDisplayName : "運営");
               const senderRole = message.sender_role || (isUser ? "user" : "admin");
 
-              timeline.push({
-                type: "message",
-                isUser,
-                html: `
-                  <div class="message-row ${isUser ? "user" : "admin"}">
-                    <div class="message-bubble">
-                      ${escapeHtml(message.message || "")}
-                      <div class="message-meta">
-                        ${escapeHtml(senderName)}
-                        ${!isUser && senderRole ? ` / ${escapeHtml(senderRole)}` : ""}
-                        <br>
-                        ${escapeHtml(formatDateTime(message.created_at))}
-                      </div>
+              timeline.push(`
+                <div class="message-row ${isUser ? "user" : "admin"}">
+                  <div class="message-bubble">
+                    ${escapeHtml(message.message || "")}
+                    <div class="message-meta">
+                      ${escapeHtml(senderName)}
+                      ${!isUser && senderRole ? ` / ${escapeHtml(senderRole)}` : ""}
+                      <br>
+                      ${escapeHtml(formatDateTime(message.created_at))}
                     </div>
                   </div>
-                `
-              });
+                </div>
+              `);
             });
 
           if (inquiry.status === "resolved" && inquiry.resolved_at) {
-            timeline.push({
-              type: "system",
-              html: `
-                <div class="system-divider">
-                  このお問い合わせは ${escapeHtml(formatDateTime(inquiry.resolved_at))} に解決済みになりました。
-                </div>
-              `
-            });
+            timeline.push(`
+              <div class="system-divider">
+                このお問い合わせは ${escapeHtml(formatDateTime(inquiry.resolved_at))} に解決済みになりました。
+              </div>
+            `);
           }
         });
 
-        chatWrap.innerHTML = timeline.map(item => item.html).join("");
+        chatWrap.innerHTML = timeline.join("");
         updateComposerState();
         scrollToBottom();
       }
@@ -656,7 +654,7 @@
           .single();
 
         if (inquiryInsertError || !insertedInquiry) {
-          throw new Error("新しいお問い合わせの作成に失敗しました。");
+          throw new Error(inquiryInsertError?.message || "新しいお問い合わせの作成に失敗しました。");
         }
 
         const { error: messageInsertError } = await supabase
@@ -673,7 +671,7 @@
           });
 
         if (messageInsertError) {
-          throw new Error("お問い合わせ本文の送信に失敗しました。");
+          throw new Error(messageInsertError.message || "お問い合わせ本文の送信に失敗しました。");
         }
       }
 
@@ -694,20 +692,19 @@
           });
 
         if (messageInsertError) {
-          throw new Error("メッセージの送信に失敗しました。");
+          throw new Error(messageInsertError.message || "メッセージの送信に失敗しました。");
         }
 
         const { error: inquiryUpdateError } = await supabase
           .from("support_inquiries")
           .update({
             last_message_at: nowIso,
-            updated_at: nowIso,
-            status: activeInquiry?.status === "resolved" ? "open" : activeInquiry?.status || "open"
+            updated_at: nowIso
           })
           .eq("id", inquiryId);
 
         if (inquiryUpdateError) {
-          throw new Error("お問い合わせ状態の更新に失敗しました。");
+          throw new Error(inquiryUpdateError.message || "お問い合わせ状態の更新に失敗しました。");
         }
       }
 
@@ -732,6 +729,7 @@
           }
 
           messageInput.value = "";
+          autoResizeTextarea();
           showStatus("送信しました。", "success");
           await loadConversation();
         } catch (error) {
@@ -768,7 +766,7 @@
             .eq("id", activeInquiry.id);
 
           if (error) {
-            throw new Error("解決処理に失敗しました。");
+            throw new Error(error.message || "解決処理に失敗しました。");
           }
 
           showStatus("お問い合わせを解決済みにしました。", "success");
@@ -784,6 +782,8 @@
       }
 
       sendButton.addEventListener("click", handleSend);
+
+      messageInput.addEventListener("input", autoResizeTextarea);
 
       messageInput.addEventListener("keydown", async (event) => {
         if (event.key === "Enter" && !event.shiftKey) {
@@ -805,6 +805,7 @@
         showStatus(error.message || "読み込みに失敗しました。", "error");
       }
 
+      autoResizeTextarea();
       messageInput.focus();
     });
   </script>

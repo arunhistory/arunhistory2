@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>音楽管理メニュー - 管理者パネル</title>
+  <style>
+    /* 全体デザインを共通化 */
+    body {
+      margin: 0;
+      padding: 24px;
+      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #111;
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 0;
+      font-size: 2rem;
+      color: #111;
+    }
+
+    .nav-back {
+      margin-bottom: 20px;
+    }
+
+    .nav-back a {
+      color: #111;
+      text-decoration: none;
+      font-size: 0.9rem;
+    }
+
+    /* 3項目メニューのスタイル */
+    .menu-grid {
+      display: grid;
+      gap: 16px;
+      margin-top: 24px;
+    }
+
+    .menu-item {
+      background: rgba(255, 255, 255, 0.8);
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      padding: 30px 20px;
+      text-align: center;
+      text-decoration: none;
+      color: #111;
+      font-weight: bold;
+      font-size: 1.2rem;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    .menu-item:hover {
+      background: rgba(255, 255, 255, 1);
+      transform: translateY(-2px);
+    }
+
+    .menu-item:active {
+      transform: translateY(0);
+    }
+
+    .menu-desc {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: normal;
+      margin-top: 8px;
+      color: #555;
+    }
+
+    /* デバッグ用 */
+    details {
+      margin-top: 30px;
+      background: rgba(255, 255, 255, 0.5);
+      padding: 10px;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="nav-back">
+      <a href="admin-home.html">← 管理者メニューへ戻る</a>
+    </div>
+
+    <h1>音楽管理</h1>
+
+    <div class="menu-grid">
+      <a href="music-add.html" class="menu-item">
+        新規楽曲の追加
+        <span class="menu-desc">新しい楽曲データとメタ情報の登録</span>
+      </a>
+
+      <a href="music-delete.html" class="menu-item">
+        楽曲の削除
+        <span class="menu-desc">データベースからの楽曲データ抹消</span>
+      </a>
+
+      <a href="music-view.html" class="menu-item">
+        登録情報の確認
+        <span class="menu-desc">現在の公開状態・調性・リンクの閲覧</span>
+      </a>
+    </div>
+
+    <details>
+      <summary>セッション情報</summary>
+      <pre id="session-debug"></pre>
+    </details>
+  </div>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", () => {
+      // 権限チェック（管理者メニューと同様のガード）
+      if (sessionStorage.getItem("admin_logged_in") !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      // デバッグ用表示
+      const debug = document.getElementById("session-debug");
+      debug.textContent = `User: ${sessionStorage.getItem("admin_username")}\nRole: ${sessionStorage.getItem("admin_role")}`;
+    });
+  </script>
+</body>
+</html>

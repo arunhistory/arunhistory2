@@ -889,19 +889,22 @@
         }
 
         renderSummary(detailData);
-        renderMessages(detailData);
-        renderAssignees(detailData?.assignees || []);
+renderMessages(detailData);
 
-       if (isAdmin) {
-  try {
-    const candidatesData = await callFunction(MANAGE_FUNCTION, {
-      mode: "candidates",
-      admin_id: Number(adminId),
-      inquiry_id: Number(inquiryId)
-    });
+if (isAdmin) {
+  const candidatesData = await callFunction(MANAGE_FUNCTION, {
+    mode: "candidates",
+    admin_id: Number(adminId),
+    inquiry_id: Number(inquiryId)
+  });
 
-    renderPrimarySelect(candidatesData?.all_candidates || []);
-    renderAddCandidateSelect(candidatesData?.add_candidates || []);
+  renderAssignees(candidatesData?.assignees || []);
+  renderPrimarySelect(candidatesData?.all_candidates || []);
+  renderAddCandidateSelect(candidatesData?.add_candidates || []);
+} else {
+  renderAssignees(detailData?.assignees || []);
+}
+
   } catch (error) {
     console.error("候補一覧取得エラー:", error);
     renderPrimarySelect([]);

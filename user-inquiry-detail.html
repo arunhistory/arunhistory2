@@ -419,7 +419,7 @@
 <body>
   <div class="container">
     <p class="top-link">
-      <a id="admin-home-link" href="admin-user-detail.html">◀ 管理画面ホーム（ログイン中：管理者さん）</a>
+      <a id="admin-home-link" href="admin-home.html">◀ 管理画面ホーム</a>
     </p>
 
     <h1>お問い合わせ詳細</h1>
@@ -789,27 +789,30 @@
       }
 
       function applyRoleUi() {
-        replyBox.classList.add("hidden");
-        changePrimaryCard.classList.add("hidden");
-        addAssigneeCard.classList.add("hidden");
+  replyBox.classList.add("hidden");
+  changePrimaryCard.classList.add("hidden");
+  addAssigneeCard.classList.add("hidden");
 
-        if (mode === "detail") {
-          if (isAdmin) {
-            changePrimaryCard.classList.remove("hidden");
-            addAssigneeCard.classList.remove("hidden");
-          }
-          return;
-        }
+  if (mode === "detail") {
+    if (isAdmin) {
+      changePrimaryCard.classList.remove("hidden");
+      addAssigneeCard.classList.remove("hidden");
+    }
+    return;
+  }
 
-        if (mode === "attend") {
-          if (isAdmin || isSubAdmin) {
-            replyBox.classList.remove("hidden");
-          }
+  if (mode === "attend") {
+    if (isAdmin || isSubAdmin) {
+      replyBox.classList.remove("hidden");
+    }
 
-          if (isAdmin) {
-            changePrimaryCard.classList.remove("hidden");
-          }
-        }
+    if (isAdmin) {
+      changePrimaryCard.classList.remove("hidden");
+    }
+
+    addAssigneeCard.classList.add("hidden");
+  }
+}
       }
 
       async function sendReply() {
@@ -877,18 +880,6 @@
           mode: mode
         });
 
-        if (mode === "detail" && detailData?.stop_detail_mode === true && detailData?.next_mode === "attend") {
-          const url = new URL(window.location.href);
-          const alreadyReloaded = url.searchParams.get("reloaded_to_attend");
-
-          if (alreadyReloaded !== "1") {
-            url.searchParams.set("mode", "attend");
-            url.searchParams.set("reloaded_to_attend", "1");
-            window.location.replace(url.toString());
-            return;
-          }
-        }
-
         renderSummary(detailData);
         renderMessages(detailData);
         renderAssignees(detailData?.assignees || []);
@@ -903,6 +894,7 @@
           renderPrimarySelect(candidatesData?.all_candidates || []);
           renderAddCandidateSelect(candidatesData?.add_candidates || []);
         }
+        applyRoleUi();
       }
 
       try {

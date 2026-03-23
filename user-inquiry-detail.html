@@ -4,7 +4,6 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>お問い合わせ詳細</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * {
       box-sizing: border-box;
@@ -32,12 +31,12 @@
     }
 
     h1 {
-      font-size: 2.4rem;
+      font-size: 2.3rem;
       margin-bottom: 20px;
     }
 
     h2 {
-      font-size: 1.8rem;
+      font-size: 1.7rem;
       margin-bottom: 18px;
     }
 
@@ -52,29 +51,33 @@
 
     .top-link {
       margin-top: 0;
-      margin-bottom: 18px;
+      margin-bottom: 16px;
     }
 
-    .center-link {
+    .bottom-link {
       text-align: center;
       margin-top: 18px;
       margin-bottom: 18px;
-      font-size: 1.2rem;
+      font-size: 1.15rem;
     }
 
     .box {
-      background: rgba(255,255,255,0.72);
+      background: rgba(255,255,255,0.75);
       border: 1px solid rgba(0,0,0,0.15);
       padding: 24px;
       margin-bottom: 20px;
     }
 
-    .alert-box {
+    .error-box {
       background: rgba(255,255,255,0.88);
       border: 1px solid rgba(0,0,0,0.15);
       padding: 18px;
       margin-bottom: 20px;
       line-height: 1.8;
+    }
+
+    .hidden {
+      display: none !important;
     }
 
     .summary-grid {
@@ -97,37 +100,39 @@
     }
 
     .summary-value {
-      font-size: 1.15rem;
+      font-size: 1.1rem;
       line-height: 1.7;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
     .chat-shell {
-      background: linear-gradient(to bottom, #0e163f 0%, #24305d 100%);
+      background: linear-gradient(to bottom, #101841 0%, #27335f 100%);
       border: 1px solid rgba(255,255,255,0.15);
       padding: 24px;
       color: #fff;
+      margin-bottom: 20px;
     }
 
     .chat-title {
       text-align: center;
-      font-size: 2.2rem;
+      font-size: 2rem;
       font-weight: bold;
-      margin: 0 0 20px 0;
+      margin: 0 0 18px 0;
       color: #fff;
     }
 
     .chat-status {
       margin-bottom: 18px;
       font-size: 1rem;
-      color: rgba(255,255,255,0.9);
+      color: rgba(255,255,255,0.92);
       line-height: 1.8;
+      white-space: pre-wrap;
     }
 
     .chat-log-wrap {
       background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.16);
       border-radius: 24px;
       padding: 20px;
       max-height: 72vh;
@@ -138,7 +143,7 @@
       text-align: center;
       color: rgba(255,255,255,0.9);
       padding: 60px 16px;
-      font-size: 1.1rem;
+      font-size: 1.05rem;
     }
 
     .day-divider {
@@ -146,6 +151,14 @@
       margin: 22px 0 16px;
       color: rgba(255,255,255,0.75);
       font-size: 0.92rem;
+    }
+
+    .history-label {
+      text-align: center;
+      margin: 20px 0 14px;
+      color: rgba(255,255,255,0.82);
+      font-size: 0.95rem;
+      font-weight: bold;
     }
 
     .message-row {
@@ -180,7 +193,7 @@
 
     .message-row.admin .message-bubble,
     .message-row.sub_admin .message-bubble {
-      background: #d9e4ff;
+      background: #dce7ff;
       color: #111;
       border-bottom-right-radius: 6px;
     }
@@ -188,7 +201,7 @@
     .message-meta {
       font-size: 0.82rem;
       margin-bottom: 8px;
-      opacity: 0.85;
+      opacity: 0.88;
     }
 
     .message-text {
@@ -198,14 +211,14 @@
     .reply-box {
       margin-top: 22px;
       background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.16);
       border-radius: 24px;
       padding: 20px;
     }
 
     .reply-box p {
       margin-top: 0;
-      margin-bottom: 14px;
+      margin-bottom: 12px;
       color: #fff;
       line-height: 1.7;
     }
@@ -230,6 +243,7 @@
 
     textarea {
       min-height: 140px;
+      height: 140px;
       max-height: 140px;
       overflow-y: auto;
       resize: none;
@@ -282,7 +296,7 @@
     .manage-card h3 {
       margin-top: 0;
       margin-bottom: 12px;
-      font-size: 1.15rem;
+      font-size: 1.12rem;
     }
 
     .current-assignees {
@@ -290,10 +304,6 @@
       white-space: pre-wrap;
       word-break: break-word;
       min-height: 80px;
-    }
-
-    .hidden {
-      display: none !important;
     }
 
     details {
@@ -316,8 +326,12 @@
     }
 
     @media (max-width: 700px) {
+      body {
+        padding: 18px;
+      }
+
       h1 {
-        font-size: 2rem;
+        font-size: 1.95rem;
       }
 
       .summary-grid,
@@ -326,7 +340,7 @@
       }
 
       .chat-title {
-        font-size: 1.8rem;
+        font-size: 1.7rem;
       }
 
       .message-bubble {
@@ -343,11 +357,7 @@
 
     <h1>お問い合わせ詳細</h1>
 
-    <p class="center-link">
-      <a href="user-inquiries.html">戻る</a>
-    </p>
-
-    <div id="load-error-box" class="alert-box hidden">読み込みに失敗しました。</div>
+    <div id="load-error-box" class="error-box hidden">読み込みに失敗しました。</div>
 
     <div class="box">
       <h2>概要</h2>
@@ -372,7 +382,7 @@
     </div>
 
     <div class="chat-shell">
-      <h2 class="chat-title">お問い合わせ</h2>
+      <div class="chat-title">お問い合わせ</div>
       <div class="chat-status" id="chat-status-text">読み込み中...</div>
 
       <div class="chat-log-wrap" id="chat-log-wrap">
@@ -386,7 +396,7 @@
       </div>
     </div>
 
-    <div id="manage-box" class="box hidden">
+    <div id="manage-box" class="box">
       <h2>担当者管理</h2>
       <div class="manage-grid">
         <div class="manage-card">
@@ -394,7 +404,7 @@
           <div class="current-assignees" id="current-assignees">読み込み中...</div>
         </div>
 
-        <div class="manage-card">
+        <div class="manage-card" id="change-primary-card">
           <h3>主担当変更</h3>
           <select id="primary-select"></select>
           <button type="button" class="secondary-button" id="change-primary-button">主担当を変更</button>
@@ -408,7 +418,7 @@
       </div>
     </div>
 
-    <p class="center-link">
+    <p class="bottom-link">
       <a href="user-inquiries.html">戻る</a>
     </p>
 
@@ -423,9 +433,10 @@
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
 
-      const VIEW_FUNCTION = "admin-get-support-inquiry-detail";
+      const ATTEND_VIEW_FUNCTION = "admin-get-support-inquiry-attend";
+      const DETAIL_VIEW_FUNCTION = "admin-get-support-inquiry-detail-v2";
       const MANAGE_FUNCTION = "admin-manage-support-inquiry-assignees";
-      const REPLY_FUNCTION = "admin-send-support-inquiry-reply-v2";
+      const REPLY_FUNCTION = "admin-reply-support-inquiry";
 
       const adminUserLink = document.getElementById("admin-user-link");
       const debugBox = document.getElementById("debug-box");
@@ -447,6 +458,7 @@
       const currentAssignees = document.getElementById("current-assignees");
       const primarySelect = document.getElementById("primary-select");
       const changePrimaryButton = document.getElementById("change-primary-button");
+      const changePrimaryCard = document.getElementById("change-primary-card");
       const addAssigneeCard = document.getElementById("add-assignee-card");
       const candidateSelect = document.getElementById("candidate-select");
       const addAssigneeButton = document.getElementById("add-assignee-button");
@@ -460,6 +472,9 @@
       const adminId = sessionStorage.getItem("admin_id") || "";
       const adminRole = sessionStorage.getItem("admin_role") || "";
       const adminStatus = sessionStorage.getItem("admin_status") || "";
+
+      const isAdmin = adminRole === "admin";
+      const isSubAdmin = adminRole === "sub_admin";
 
       adminUserLink.textContent = adminUsername + "さん";
 
@@ -502,6 +517,10 @@
         loadErrorBox.classList.remove("hidden");
       }
 
+      function getViewFunctionName() {
+        return mode === "detail" ? DETAIL_VIEW_FUNCTION : ATTEND_VIEW_FUNCTION;
+      }
+
       async function callFunction(functionName, payload) {
         const response = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
           method: "POST",
@@ -536,23 +555,28 @@
         return result;
       }
 
-      function getMessageRowsFromResponse(detailData) {
+      function getMergedMessages(detailData) {
         const currentMessages = Array.isArray(detailData?.messages) ? detailData.messages : [];
-        const historyBlocks = Array.isArray(detailData?.past_inquiries) ? detailData.past_inquiries : [];
-        const historyMessages = [];
+        const pastBlocks = Array.isArray(detailData?.past_inquiries) ? detailData.past_inquiries : [];
+        const merged = [];
 
-        historyBlocks.forEach((item) => {
-          const rows = Array.isArray(item?.messages) ? item.messages : [];
+        pastBlocks.forEach((block) => {
+          const rows = Array.isArray(block?.messages) ? block.messages : [];
           rows.forEach((row) => {
-            historyMessages.push({
+            merged.push({
               ...row,
-              from_past: true,
-              inquiry_id: item?.id || row?.inquiry_id || null
+              _history_flag: true,
+              _history_inquiry_id: block?.id || null
             });
           });
         });
 
-        const merged = [...historyMessages, ...currentMessages];
+        currentMessages.forEach((row) => {
+          merged.push({
+            ...row,
+            _history_flag: false
+          });
+        });
 
         merged.sort((a, b) => {
           const ta = new Date(a?.created_at || 0).getTime();
@@ -564,7 +588,7 @@
       }
 
       function renderMessages(detailData) {
-        const allMessages = getMessageRowsFromResponse(detailData);
+        const allMessages = getMergedMessages(detailData);
 
         if (!allMessages.length) {
           chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
@@ -583,6 +607,10 @@
           if (dayKey !== lastDay) {
             parts.push(`<div class="day-divider">${escapeHtml(dayKey)}</div>`);
             lastDay = dayKey;
+          }
+
+          if (msg?._history_flag === true) {
+            parts.push(`<div class="history-label">過去のお問い合わせ</div>`);
           }
 
           const senderType = msg?.sender_type || "user";
@@ -615,34 +643,28 @@
       }
 
       function renderSummary(detailData) {
-        const inquiry = detailData?.inquiry || detailData || {};
+        const inquiry = detailData?.inquiry || {};
         const primaryName =
-          inquiry?.assigned_admin_username ||
           detailData?.primary_assignee?.username ||
+          inquiry?.assigned_admin_username ||
           "なし";
 
         summaryUsername.textContent =
           inquiry?.user_name ||
-          inquiry?.username ||
-          detailData?.user_name ||
+          detailData?.user?.user_name ||
           "なし";
 
-        summaryStatus.textContent = statusLabel(
-          inquiry?.status || detailData?.status || ""
-        );
-
+        summaryStatus.textContent = statusLabel(inquiry?.status || "");
         summaryPrimary.textContent = primaryName;
-        summaryCreatedAt.textContent = formatDate(
-          inquiry?.created_at || detailData?.created_at || ""
-        );
+        summaryCreatedAt.textContent = formatDate(inquiry?.created_at || "");
 
+        const modeLabel = mode === "detail" ? "詳細表示" : "応対";
         chatStatusText.textContent =
-          `状態: ${statusLabel(inquiry?.status || detailData?.status || "")} / 主担当: ${primaryName}`;
+          `状態: ${statusLabel(inquiry?.status || "")}\n主担当: ${primaryName}\n現在モード: ${modeLabel}`;
       }
 
       function renderAssigneeArea(detailData, candidatesData) {
         const assignees = Array.isArray(detailData?.assignees) ? detailData.assignees : [];
-        const inquiry = detailData?.inquiry || detailData || {};
 
         if (!assignees.length) {
           currentAssignees.textContent = "現在ありません";
@@ -660,52 +682,30 @@
         primarySelect.innerHTML = "";
         assignees.forEach((item) => {
           const option = document.createElement("option");
-          option.value = String(item?.admin_account_id || item?.id || "");
+          option.value = String(item?.admin_account_id || "");
           option.textContent =
             (item?.username || item?.admin_username || "不明") +
             (item?.is_primary ? "（現在の主担当）" : "");
           primarySelect.appendChild(option);
         });
 
-        const candidateRows = Array.isArray(candidatesData?.candidates) ? candidatesData.candidates : [];
         candidateSelect.innerHTML = "";
+        const candidateRows = Array.isArray(candidatesData?.candidates) ? candidatesData.candidates : [];
 
         if (!candidateRows.length) {
           const option = document.createElement("option");
           option.value = "";
           option.textContent = "現在ありません";
           candidateSelect.appendChild(option);
-        } else {
-          candidateRows.forEach((item) => {
-            const option = document.createElement("option");
-            option.value = String(item?.id || "");
-            option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
-            candidateSelect.appendChild(option);
-          });
+          return;
         }
-      }
 
-      async function loadAll() {
-        const detailData = await callFunction(VIEW_FUNCTION, {
-          admin_id: Number(adminId),
-          inquiry_id: inquiryId,
-          mode: mode
+        candidateRows.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = String(item?.id || "");
+          option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
+          candidateSelect.appendChild(option);
         });
-
-        renderSummary(detailData);
-        renderMessages(detailData);
-
-        let candidatesData = { candidates: [] };
-
-        if (mode === "detail") {
-          candidatesData = await callFunction(MANAGE_FUNCTION, {
-            mode: "candidates",
-            admin_id: Number(adminId),
-            inquiry_id: inquiryId
-          });
-        }
-
-        renderAssigneeArea(detailData, candidatesData);
       }
 
       async function sendReply() {
@@ -764,6 +764,43 @@
         alert("主担当を変更しました。");
       }
 
+      async function loadAll() {
+        const viewFunction = getViewFunctionName();
+
+        const detailData = await callFunction(viewFunction, {
+          admin_id: Number(adminId),
+          inquiry_id: inquiryId,
+          mode: mode
+        });
+
+        if (mode === "detail" && detailData?.stop_detail_mode === true && detailData?.next_mode === "attend") {
+          const url = new URL(window.location.href);
+          const alreadyReloaded = url.searchParams.get("reloaded_to_attend");
+
+          if (alreadyReloaded !== "1") {
+            url.searchParams.set("mode", "attend");
+            url.searchParams.set("reloaded_to_attend", "1");
+            window.location.replace(url.toString());
+            return;
+          }
+        }
+
+        renderSummary(detailData);
+        renderMessages(detailData);
+
+        let candidatesData = { candidates: [] };
+
+        if (mode === "detail" && isAdmin) {
+          candidatesData = await callFunction(MANAGE_FUNCTION, {
+            mode: "candidates",
+            admin_id: Number(adminId),
+            inquiry_id: inquiryId
+          });
+        }
+
+        renderAssigneeArea(detailData, candidatesData);
+      }
+
       try {
         if (adminLoggedIn !== "1") {
           window.location.href = "admin-login.html";
@@ -788,13 +825,31 @@
           return;
         }
 
-        // mode別UI
         manageBox.classList.remove("hidden");
+
         if (mode === "detail") {
           replyBox.classList.add("hidden");
-          addAssigneeCard.classList.remove("hidden");
+
+          if (isAdmin) {
+            changePrimaryCard.classList.remove("hidden");
+            addAssigneeCard.classList.remove("hidden");
+          } else {
+            changePrimaryCard.classList.add("hidden");
+            addAssigneeCard.classList.add("hidden");
+          }
         } else {
-          replyBox.classList.remove("hidden");
+          if (isAdmin || isSubAdmin) {
+            replyBox.classList.remove("hidden");
+          } else {
+            replyBox.classList.add("hidden");
+          }
+
+          if (isAdmin) {
+            changePrimaryCard.classList.remove("hidden");
+          } else {
+            changePrimaryCard.classList.add("hidden");
+          }
+
           addAssigneeCard.classList.add("hidden");
         }
 

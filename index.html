@@ -6,178 +6,187 @@
   <title>舞い降りる星</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    html {
-      /* 元の背景色を基調に、min-heightを確保 */
-      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
-      min-height: 100%;
+    :root {
+      --bg-gradient: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      --accent-color: #f2d9e8;
+      --accent-hover: #ffe7f3;
+      --glass-bg: rgba(255, 255, 255, 0.05);
+      --border-color: rgba(255, 255, 255, 0.2);
     }
 
-    body {
+    html, body {
       margin: 0;
       padding: 0;
-      /* bodyの背景はhtmlに任せる */
-      color: #f5f5f5;
-      overflow-x: hidden;
       min-height: 100vh;
-      position: relative;
-      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background: var(--bg-gradient) fixed;
+      color: #f5f5f5;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      overflow-x: hidden;
     }
 
-    /* ▼追加：星の煌めきのためのCSS▼ */
-    /* 星を配置するコンテナ。body全体を覆う */
-    .stars-container {
+    /* --- 星空の再構築 --- */
+    .star-field {
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 0; /* コンテンツの裏に配置 */
-      pointer-events: none; /* クリックなどを透過 */
+      z-index: 0;
+      pointer-events: none;
     }
 
-    /* 星の基本スタイル。疑似要素で2つの星のレイヤーを作る */
-    .stars-container::before,
-    .stars-container::after {
-      content: "";
+    .star {
       position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      /* background-imageの径方向グラデーションで星を表現 */
-      /* 白と透明のグラデーションを小さく配置し、 background-sizeで繰り返す */
-      background-image:
-        radial-gradient(white 1px, transparent 1px),
-        radial-gradient(rgba(255, 255, 255, 0.7) 1px, transparent 1px),
-        radial-gradient(rgba(255, 255, 255, 0.5) 1.5px, transparent 1.5px);
-      background-size: 550px 550px, 350px 350px, 250px 250px;
-      background-position: 0 0, 40px 60px, 130px 270px;
-      opacity: 0; /* 初期状態は透明 */
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      animation: blink var(--duration) infinite ease-in-out;
+      /* ぼかしを加えることで「水滴」ではなく「光」に見せる */
+      box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
     }
 
-    /* レイヤー1：煌めきアニメーション1 */
-    .stars-container::before {
-      animation: twinkling-layer1 10s infinite linear;
+    @keyframes blink {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: var(--max-opacity); transform: scale(1); }
     }
 
-    /* レイヤー2：煌めきアニメーション2（少しずらす） */
-    .stars-container::after {
-      background-size: 600px 600px, 400px 400px, 300px 300px;
-      background-position: 50px 50px, 100px 150px, 200px 350px;
-      animation: twinkling-layer2 15s infinite linear;
-    }
-
-    /* 煌めきのアニメーション定義1（フェードイン・フェードアウト） */
-    @keyframes twinkling-layer1 {
-      0% { opacity: 0; }
-      10% { opacity: 0.3; } /* 文字を邪魔しないよう、不透明度は低めに */
-      50% { opacity: 0.1; }
-      90% { opacity: 0.2; }
-      100% { opacity: 0; }
-    }
-
-    /* 煌めきのアニメーション定義2 */
-    @keyframes twinkling-layer2 {
-      0% { opacity: 0.1; }
-      20% { opacity: 0; }
-      60% { opacity: 0.2; }
-      80% { opacity: 0.1; }
-      100% { opacity: 0.1; }
-    }
-    /* ▲追加ここまで▲ */
-
+    /* --- コンテンツレイアウト --- */
     .container {
       position: relative;
-      z-index: 1; /* 星より上に表示 */
-      max-width: 900px;
+      z-index: 10;
+      max-width: 800px;
       margin: 0 auto;
-      padding: 32px 20px 60px;
+      padding: 40px 24px 80px;
+      line-height: 1.8;
+    }
+
+    /* ログイン周りの整理 */
+    .nav-top {
+      text-align: left;
+      margin-bottom: 40px;
+      font-size: 0.9rem;
+    }
+
+    .nav-top a {
+      margin-right: 15px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: background 0.3s;
+    }
+
+    .nav-top a:hover {
+      background: rgba(255, 255, 255, 0.1);
     }
 
     h1 {
       text-align: center;
-      margin-top: 0;
-      font-size: 3rem;
-      line-height: 1.4;
+      font-size: 2.5rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 2rem;
+      text-shadow: 0 0 15px rgba(242, 217, 232, 0.4);
     }
 
-    p, li, a, h2 {
-      position: relative;
-      z-index: 1;
+    h2 {
+      font-size: 1.4rem;
+      margin-top: 3rem;
+      margin-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: inline-block;
+      padding-bottom: 5px;
     }
 
-    a {
-      color: #f2d9e8;
-      text-decoration: none;
+    .intro-text {
+      background: var(--glass-bg);
+      padding: 25px;
+      border-radius: 12px;
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-color);
+      margin-bottom: 40px;
     }
 
-    a:hover {
-      color: #ffe7f3;
-      text-decoration: none;
+    /* リンクの強調 */
+    .main-link {
+      display: inline-block;
+      font-size: 1.8rem;
+      font-weight: bold;
+      margin: 10px 0;
+      transition: all 0.3s;
+      letter-spacing: 0.05em;
     }
 
+    .main-link:hover {
+      transform: translateY(-2px);
+      text-shadow: 0 0 10px var(--accent-hover);
+    }
+
+    /* お知らせボックスの改善 */
     .news-box {
-      max-height: 8em;
+      max-height: 150px;
       overflow-y: auto;
-      border: 1px solid rgba(255,255,255,0.35);
-      padding: 8px;
-      background: rgba(255,255,255,0.08);
-      backdrop-filter: blur(2px);
+      border: 1px solid var(--border-color);
+      padding: 15px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border-color) transparent;
     }
 
     .news-box ul {
       margin: 0;
-      padding-left: 1.5em;
+      padding-left: 1.2em;
+      list-style-type: '✦ ';
     }
 
     .news-box li {
-      line-height: 1.6;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+      color: #ddd;
     }
 
-    .main-link {
-      font-size: 2rem;
-      line-height: 1.5;
+    a {
+      color: var(--accent-color);
+      transition: color 0.3s;
     }
 
-    .main-link:hover {
-      color: #ffe7f3;
+    a:hover {
+      color: var(--accent-hover);
     }
 
     .secret-link {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    .secret-link:hover {
-      color: inherit;
-      text-decoration: none;
+      border-bottom: 1px dashed var(--accent-color);
     }
   </style>
 </head>
 <body>
-  <div class="stars-container"></div>
+
+  <div class="star-field" id="starField"></div>
+
   <div class="container">
-    <p style="text-align: left; margin-top: 0;">
+    <div class="nav-top">
       <a id="user-link" href="login.html?redirect=index.html">ログイン</a>
-      <a id="mypage-link" href="#" style="display:none; margin-left: 12px;">マイページへ</a>
-      <a id="logout-link" href="#" style="display:none; margin-left: 12px;">ログアウト</a>
-    </p>
+      <a id="mypage-link" href="#" style="display:none;">マイページへ</a>
+      <a id="logout-link" href="#" style="display:none;">ログアウト</a>
+    </div>
 
     <h1>舞い降りる星</h1>
 
-    <p>
+    <div class="intro-text">
       ここは、とある社畜が、やりたいことを諦めないために作った場所です。<br>
       仕事や生活の中で削られる日があっても、それでも残したい物語があり、鳴らしたい音があります。<br>
       簡単ではなくても、遠回りでも、自分の手で少しずつ形にしていきたい。<br>
       <a class="secret-link" href="https://x.com/arun_history_?s=21&t=oe3JylyzOH2-p5yGov2e9g">この場所</a>には、そんな思いと一緒に、小説や音楽を置いていきます。
-    </p>
+    </div>
 
-    <div style="text-align: center;">
-      <h2>小説</h2>
-      <p><a class="main-link" href="novel.html">異物ノヴァ</a></p>
+    <div style="text-align: center; margin-bottom: 40px;">
+      <div style="margin-bottom: 30px;">
+        <h2>小説</h2>
+        <div><a class="main-link" href="novel.html">異物ノヴァ</a></div>
+      </div>
 
-      <h2>音楽</h2>
-      <p><a class="main-link" href="music.html">ぽわんと</a></p>
+      <div>
+        <h2>音楽</h2>
+        <div><a class="main-link" href="music.html">ぽわんと</a></div>
+      </div>
     </div>
 
     <h2>お知らせ</h2>
@@ -189,6 +198,35 @@
   </div>
 
   <script>
+    // 星を動的に生成して、自然な煌めきを作る
+    const starField = document.getElementById('starField');
+    const starCount = 100;
+
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      
+      // ランダムな配置
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      
+      // 個別の星に異なるサイズとアニメーション時間を設定（ホコリ感を防ぐ）
+      const size = Math.random() * 2 + 1; // 1px〜3px
+      const duration = Math.random() * 3 + 2; // 2s〜5s
+      const delay = Math.random() * 5;
+      const maxOpacity = Math.random() * 0.5 + 0.3; // 0.3〜0.8
+
+      star.style.left = `${x}%`;
+      star.style.top = `${y}%`;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.setProperty('--duration', `${duration}s`);
+      star.style.setProperty('--max-opacity', maxOpacity);
+      star.style.animationDelay = `${delay}s`;
+
+      starField.appendChild(star);
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       const redirectPage = "index.html";
       const userLink = document.getElementById("user-link");

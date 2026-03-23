@@ -7,6 +7,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     html {
+      /* 元の背景色を基調に、min-heightを確保 */
       background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
       min-height: 100%;
     }
@@ -14,7 +15,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      /* bodyの背景はhtmlに任せる */
       color: #f5f5f5;
       overflow-x: hidden;
       min-height: 100vh;
@@ -22,9 +23,72 @@
       font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
     }
 
+    /* ▼追加：星の煌めきのためのCSS▼ */
+    /* 星を配置するコンテナ。body全体を覆う */
+    .stars-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0; /* コンテンツの裏に配置 */
+      pointer-events: none; /* クリックなどを透過 */
+    }
+
+    /* 星の基本スタイル。疑似要素で2つの星のレイヤーを作る */
+    .stars-container::before,
+    .stars-container::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      /* background-imageの径方向グラデーションで星を表現 */
+      /* 白と透明のグラデーションを小さく配置し、 background-sizeで繰り返す */
+      background-image:
+        radial-gradient(white 1px, transparent 1px),
+        radial-gradient(rgba(255, 255, 255, 0.7) 1px, transparent 1px),
+        radial-gradient(rgba(255, 255, 255, 0.5) 1.5px, transparent 1.5px);
+      background-size: 550px 550px, 350px 350px, 250px 250px;
+      background-position: 0 0, 40px 60px, 130px 270px;
+      opacity: 0; /* 初期状態は透明 */
+    }
+
+    /* レイヤー1：煌めきアニメーション1 */
+    .stars-container::before {
+      animation: twinkling-layer1 10s infinite linear;
+    }
+
+    /* レイヤー2：煌めきアニメーション2（少しずらす） */
+    .stars-container::after {
+      background-size: 600px 600px, 400px 400px, 300px 300px;
+      background-position: 50px 50px, 100px 150px, 200px 350px;
+      animation: twinkling-layer2 15s infinite linear;
+    }
+
+    /* 煌めきのアニメーション定義1（フェードイン・フェードアウト） */
+    @keyframes twinkling-layer1 {
+      0% { opacity: 0; }
+      10% { opacity: 0.3; } /* 文字を邪魔しないよう、不透明度は低めに */
+      50% { opacity: 0.1; }
+      90% { opacity: 0.2; }
+      100% { opacity: 0; }
+    }
+
+    /* 煌めきのアニメーション定義2 */
+    @keyframes twinkling-layer2 {
+      0% { opacity: 0.1; }
+      20% { opacity: 0; }
+      60% { opacity: 0.2; }
+      80% { opacity: 0.1; }
+      100% { opacity: 0.1; }
+    }
+    /* ▲追加ここまで▲ */
+
     .container {
       position: relative;
-      z-index: 1;
+      z-index: 1; /* 星より上に表示 */
       max-width: 900px;
       margin: 0 auto;
       padding: 32px 20px 60px;
@@ -91,6 +155,7 @@
   </style>
 </head>
 <body>
+  <div class="stars-container"></div>
   <div class="container">
     <p style="text-align: left; margin-top: 0;">
       <a id="user-link" href="login.html?redirect=index.html">ログイン</a>

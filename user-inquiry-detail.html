@@ -11,15 +11,15 @@
 
     body {
       margin: 0;
-      padding: 24px;
-      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
-      color: #111;
+      padding: 32px 20px;
+      background: linear-gradient(135deg, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #222;
       min-height: 100vh;
-      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
     }
 
     .container {
-      max-width: 980px;
+      max-width: 900px;
       margin: 0 auto;
     }
 
@@ -27,53 +27,79 @@
       text-align: center;
       margin-top: 0;
       line-height: 1.4;
-      color: #111;
+      color: #1a2a1a;
     }
 
     h1 {
-      font-size: 2.3rem;
-      margin-bottom: 20px;
+      font-size: 2rem;
+      margin-bottom: 28px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
     }
 
     h2 {
-      font-size: 1.7rem;
-      margin-bottom: 18px;
+      font-size: 1.4rem;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h2::before, h2::after {
+      content: "";
+      height: 1px;
+      width: 40px;
+      background: rgba(0,0,0,0.1);
+      margin: 0 15px;
     }
 
     a {
-      color: #111;
+      color: #3e5a37;
       text-decoration: none;
+      transition: opacity 0.2s;
     }
 
     a:hover {
+      opacity: 0.7;
       text-decoration: underline;
     }
 
     .top-link {
-      margin-top: 0;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      font-weight: bold;
     }
 
     .bottom-link {
       text-align: center;
-      margin-top: 18px;
-      margin-bottom: 18px;
-      font-size: 1.15rem;
+      margin: 40px 0;
+    }
+
+    .back-button {
+      background: #fff;
+      padding: 10px 30px;
+      border-radius: 50px;
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     }
 
     .box {
-      background: rgba(255,255,255,0.75);
-      border: 1px solid rgba(0,0,0,0.15);
-      padding: 24px;
-      margin-bottom: 20px;
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
 
     .error-box {
-      background: rgba(255,255,255,0.88);
-      border: 1px solid rgba(0,0,0,0.15);
+      background: #fff5f5;
+      border: 1px solid #feb2b2;
+      color: #c53030;
       padding: 18px;
       margin-bottom: 20px;
-      line-height: 1.8;
+      border-radius: 8px;
+      font-weight: bold;
     }
 
     .hidden {
@@ -83,255 +109,300 @@
     .summary-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 20px;
     }
 
     .summary-item {
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.15);
-      padding: 16px;
+      background: #ffffff;
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 12px;
+      padding: 16px 20px;
     }
 
     .summary-label {
-      font-size: 0.95rem;
-      color: #444;
-      margin-bottom: 8px;
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 6px;
       font-weight: bold;
     }
 
     .summary-value {
-      font-size: 1.1rem;
-      line-height: 1.7;
+      font-size: 1.05rem;
+      font-weight: 600;
+      line-height: 1.6;
       white-space: pre-wrap;
       word-break: break-word;
     }
 
     .chat-shell {
-      background: linear-gradient(to bottom, #101841 0%, #27335f 100%);
-      border: 1px solid rgba(255,255,255,0.15);
-      padding: 24px;
+      background: linear-gradient(160deg, #162055 0%, #2c3a75 100%);
+      border-radius: 20px;
+      padding: 32px;
       color: #fff;
-      margin-bottom: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 10px 30px rgba(16, 24, 65, 0.2);
     }
 
     .chat-title {
       text-align: center;
-      font-size: 2rem;
+      font-size: 1.8rem;
       font-weight: bold;
-      margin: 0 0 18px 0;
-      color: #fff;
+      margin: 0 0 8px 0;
     }
 
     .chat-status {
-      margin-bottom: 18px;
-      font-size: 1rem;
-      color: rgba(255,255,255,0.92);
-      line-height: 1.8;
+      text-align: center;
+      margin-bottom: 24px;
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.1);
+      display: inline-block;
+      width: 100%;
+      padding: 8px;
+      border-radius: 8px;
       white-space: pre-wrap;
+      line-height: 1.8;
     }
 
     .chat-log-wrap {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: 24px;
-      padding: 20px;
-      max-height: 72vh;
+      background: rgba(0,0,0,0.2);
+      border-radius: 16px;
+      padding: 24px;
+      max-height: 60vh;
       overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.2) transparent;
     }
 
     .chat-empty {
       text-align: center;
-      color: rgba(255,255,255,0.9);
+      color: rgba(255,255,255,0.85);
       padding: 60px 16px;
-      font-size: 1.05rem;
+      font-size: 1rem;
     }
 
     .day-divider {
-      text-align: center;
-      margin: 22px 0 16px;
-      color: rgba(255,255,255,0.75);
-      font-size: 0.92rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 30px 0 20px;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.85rem;
+    }
+
+    .day-divider::before, .day-divider::after {
+      content: "";
+      flex: 1;
+      height: 1px;
+      background: rgba(255,255,255,0.1);
+      margin: 0 15px;
     }
 
     .history-label {
       text-align: center;
-      margin: 20px 0 14px;
-      color: rgba(255,255,255,0.82);
-      font-size: 0.95rem;
-      font-weight: bold;
+      margin: 40px 0 20px;
+      color: #a0aec0;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
     }
 
     .message-row {
       display: flex;
-      margin-bottom: 14px;
+      flex-direction: column;
+      margin-bottom: 20px;
     }
 
     .message-row.user {
-      justify-content: flex-start;
+      align-items: flex-start;
     }
 
     .message-row.admin,
     .message-row.sub_admin {
-      justify-content: flex-end;
+      align-items: flex-end;
+    }
+
+    .message-meta {
+      font-size: 0.75rem;
+      margin-bottom: 6px;
+      font-weight: bold;
+      opacity: 0.7;
     }
 
     .message-bubble {
-      max-width: 82%;
-      padding: 14px 16px;
-      border-radius: 18px;
-      line-height: 1.7;
+      max-width: 85%;
+      padding: 16px 20px;
+      border-radius: 20px;
+      line-height: 1.6;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
       white-space: pre-wrap;
       word-break: break-word;
-      border: 1px solid rgba(255,255,255,0.12);
     }
 
     .message-row.user .message-bubble {
-      background: rgba(255,255,255,0.14);
-      color: #fff;
-      border-bottom-left-radius: 6px;
+      background: #ffffff;
+      color: #111;
+      border-bottom-left-radius: 4px;
     }
 
     .message-row.admin .message-bubble,
     .message-row.sub_admin .message-bubble {
-      background: #dce7ff;
-      color: #111;
-      border-bottom-right-radius: 6px;
+      background: #4a90e2;
+      color: #fff;
+      border-bottom-right-radius: 4px;
     }
 
-    .message-meta {
-      font-size: 0.82rem;
-      margin-bottom: 8px;
-      opacity: 0.88;
-    }
-
-    .message-text {
-      font-size: 1rem;
+    .message-time {
+      font-size: 0.7rem;
+      margin-top: 4px;
+      opacity: 0.6;
     }
 
     .reply-box {
-      margin-top: 22px;
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.16);
-      border-radius: 24px;
+      margin-top: 24px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 16px;
       padding: 20px;
     }
 
     .reply-box p {
       margin-top: 0;
       margin-bottom: 12px;
-      color: #fff;
-      line-height: 1.7;
+      font-weight: bold;
+      font-size: 0.95rem;
+      color: rgba(255,255,255,0.9);
     }
 
     textarea,
-    select,
-    button {
+    select {
       width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      box-sizing: border-box;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.1);
+      padding: 14px;
       font-size: 16px;
+      transition: all 0.2s;
       font-family: inherit;
     }
 
-    textarea,
-    select {
-      border: 1px solid rgba(0,0,0,0.15);
-      background: #fff;
-      color: #111;
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #6b985c;
+      box-shadow: 0 0 0 3px rgba(107, 152, 92, 0.2);
     }
 
     textarea {
-      min-height: 140px;
-      height: 140px;
-      max-height: 140px;
+      min-height: 160px;
+      height: 160px;
+      max-height: 160px;
       overflow-y: auto;
       resize: none;
-      padding: 14px;
+      white-space: pre-wrap;
       line-height: 1.7;
     }
 
-    select {
-      padding: 12px;
-    }
-
     button {
-      padding: 14px;
+      width: 100%;
+      padding: 16px;
       border: none;
+      border-radius: 12px;
       cursor: pointer;
       font-weight: bold;
-      margin-top: 14px;
+      font-size: 1rem;
+      transition: transform 0.1s, opacity 0.2s;
+      margin-top: 12px;
+      font-family: inherit;
+    }
+
+    button:active {
+      transform: scale(0.98);
     }
 
     .primary-button {
-      background-color: #6b985c;
-      color: #111;
-    }
-
-    .primary-button:hover {
-      background-color: #7ead6d;
+      background: #6b985c;
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(107, 152, 92, 0.3);
     }
 
     .secondary-button {
-      background-color: #c7d5f1;
-      color: #111;
-    }
-
-    .secondary-button:hover {
-      background-color: #d7e1f7;
+      background: #e2e8f0;
+      color: #4a5568;
     }
 
     .manage-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 16px;
+      gap: 20px;
     }
 
     .manage-card {
-      background: #fff;
-      border: 1px solid rgba(0,0,0,0.15);
-      padding: 18px;
+      background: #f8fafc;
+      border: 1px solid rgba(0,0,0,0.05);
+      padding: 24px;
+      border-radius: 12px;
     }
 
     .manage-card h3 {
       margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 1.12rem;
+      margin-bottom: 16px;
+      font-size: 1rem;
+      color: #4a5568;
+      border-left: 4px solid #6b985c;
+      padding-left: 10px;
+    }
+
+    .card-note {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 8px;
+      line-height: 1.6;
     }
 
     .current-assignees {
+      background: #fff;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px inset rgba(0,0,0,0.02);
+      min-height: 80px;
+      font-size: 0.95rem;
       line-height: 1.8;
       white-space: pre-wrap;
       word-break: break-word;
-      min-height: 80px;
     }
 
     details {
-      margin-top: 20px;
-      background: rgba(255,255,255,0.72);
-      border: 1px solid rgba(0,0,0,0.15);
+      margin-top: 40px;
+      background: rgba(0,0,0,0.05);
+      border-radius: 8px;
       padding: 12px;
     }
 
     summary {
       cursor: pointer;
       font-weight: bold;
+      color: #666;
+      font-size: 0.9rem;
     }
 
     pre {
+      background: #2d3748;
+      color: #a0aec0;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 10px;
       white-space: pre-wrap;
       word-break: break-word;
-      margin: 12px 0 0 0;
-      font-size: 14px;
     }
 
     @media (max-width: 700px) {
       body {
-        padding: 18px;
+        padding: 16px;
       }
 
-      h1 {
-        font-size: 1.95rem;
+      .box,
+      .chat-shell {
+        padding: 20px;
       }
 
       .summary-grid,
@@ -339,12 +410,8 @@
         grid-template-columns: 1fr;
       }
 
-      .chat-title {
-        font-size: 1.7rem;
-      }
-
       .message-bubble {
-        max-width: 90%;
+        max-width: 95%;
       }
     }
   </style>
@@ -352,12 +419,12 @@
 <body>
   <div class="container">
     <p class="top-link">
-      <a id="admin-user-link" href="#">管理者さん</a>
+      <a id="admin-home-link" href="admin-user-detail.html">◀ 管理画面ホーム（ログイン中：管理者さん）</a>
     </p>
 
     <h1>お問い合わせ詳細</h1>
 
-    <div id="load-error-box" class="error-box hidden">読み込みに失敗しました。</div>
+    <div id="load-error-box" class="error-box hidden">システムエラー：データの読み込みに失敗しました。ページを再読み込みしてください。</div>
 
     <div class="box">
       <h2>概要</h2>
@@ -367,63 +434,65 @@
           <div class="summary-value" id="summary-username">読み込み中...</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">状態</div>
+          <div class="summary-label">お問い合わせ状態</div>
           <div class="summary-value" id="summary-status">読み込み中...</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">主担当</div>
+          <div class="summary-label">現在の主担当者</div>
           <div class="summary-value" id="summary-primary">読み込み中...</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">申請日時</div>
+          <div class="summary-label">申請日時（JST）</div>
           <div class="summary-value" id="summary-created-at">読み込み中...</div>
         </div>
       </div>
     </div>
 
     <div class="chat-shell">
-      <div class="chat-title">お問い合わせ</div>
-      <div class="chat-status" id="chat-status-text">読み込み中...</div>
+      <div class="chat-title">対話ログ</div>
+      <div class="chat-status" id="chat-status">ステータス：読み込み中...</div>
 
       <div class="chat-log-wrap" id="chat-log-wrap">
         <div class="chat-empty">読み込み中...</div>
       </div>
 
       <div id="reply-box" class="reply-box hidden">
-        <p>ここからユーザーへ返信します。</p>
-        <textarea id="reply-text" placeholder="返信内容を入力してください"></textarea>
-        <button type="button" class="primary-button" id="reply-send-button">返信を送信</button>
+        <p>新規メッセージを作成</p>
+        <textarea id="reply-text" placeholder="ユーザーへの返信内容を丁寧に入力してください"></textarea>
+        <button type="button" class="primary-button" id="reply-send-button">メッセージを送信する</button>
       </div>
     </div>
 
-    <div id="manage-box" class="box">
+    <div class="box">
       <h2>担当者管理</h2>
       <div class="manage-grid">
         <div class="manage-card">
-          <h3>現在の担当者</h3>
+          <h3>現在の担当者一覧</h3>
           <div class="current-assignees" id="current-assignees">読み込み中...</div>
         </div>
 
-        <div class="manage-card" id="change-primary-card">
-          <h3>主担当変更</h3>
+        <div class="manage-card hidden" id="change-primary-card">
+          <h3>主担当者の変更</h3>
+          <p class="card-note">案件の責任者を1名選択してください。</p>
           <select id="primary-select"></select>
-          <button type="button" class="secondary-button" id="change-primary-button">主担当を変更</button>
+          <button type="button" class="secondary-button" id="change-primary-button">主担当を更新</button>
         </div>
 
         <div class="manage-card hidden" id="add-assignee-card">
-          <h3>担当追加</h3>
+          <h3>サブ担当の追加</h3>
+          <p class="card-note">閲覧・編集権限を与えるスタッフを追加します。</p>
           <select id="candidate-select"></select>
-          <button type="button" class="primary-button" id="add-assignee-button">担当者を追加</button>
+          <button type="button" class="primary-button" id="add-assignee-button">担当スタッフを追加</button>
         </div>
       </div>
     </div>
 
     <p class="bottom-link">
-      <a href="user-inquiries.html">戻る</a>
+      <a href="user-inquiries.html" class="back-button">一覧画面へ戻る</a>
     </p>
 
     <details>
-      <summary>通信結果</summary>
+      <summary>通信記録</summary>
       <pre id="debug-box">読み込み中...</pre>
     </details>
   </div>
@@ -433,60 +502,68 @@
       const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
       const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
 
-      const ATTEND_VIEW_FUNCTION = "admin-get-support-inquiry-attend";
       const DETAIL_VIEW_FUNCTION = "admin-get-support-inquiry-detail-v2";
-      const MANAGE_FUNCTION = "admin-manage-support-inquiry-assignees";
+      const ATTEND_VIEW_FUNCTION = "admin-get-support-inquiry-attend";
+      const MANAGE_FUNCTION = "admin-manage-support-inquiry-assignees-v2";
       const REPLY_FUNCTION = "admin-reply-support-inquiry";
-
-      const adminUserLink = document.getElementById("admin-user-link");
-      const debugBox = document.getElementById("debug-box");
-      const loadErrorBox = document.getElementById("load-error-box");
-
-      const summaryUsername = document.getElementById("summary-username");
-      const summaryStatus = document.getElementById("summary-status");
-      const summaryPrimary = document.getElementById("summary-primary");
-      const summaryCreatedAt = document.getElementById("summary-created-at");
-
-      const chatStatusText = document.getElementById("chat-status-text");
-      const chatLogWrap = document.getElementById("chat-log-wrap");
-
-      const replyBox = document.getElementById("reply-box");
-      const replyText = document.getElementById("reply-text");
-      const replySendButton = document.getElementById("reply-send-button");
-
-      const manageBox = document.getElementById("manage-box");
-      const currentAssignees = document.getElementById("current-assignees");
-      const primarySelect = document.getElementById("primary-select");
-      const changePrimaryButton = document.getElementById("change-primary-button");
-      const changePrimaryCard = document.getElementById("change-primary-card");
-      const addAssigneeCard = document.getElementById("add-assignee-card");
-      const candidateSelect = document.getElementById("candidate-select");
-      const addAssigneeButton = document.getElementById("add-assignee-button");
 
       const params = new URLSearchParams(window.location.search);
       const inquiryId = Number(params.get("inquiry_id"));
-      const mode = params.get("mode") || "detail";
+      let mode = params.get("mode") || "detail";
 
       const adminLoggedIn = sessionStorage.getItem("admin_logged_in");
-      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
       const adminId = sessionStorage.getItem("admin_id") || "";
+      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
       const adminRole = sessionStorage.getItem("admin_role") || "";
       const adminStatus = sessionStorage.getItem("admin_status") || "";
 
       const isAdmin = adminRole === "admin";
       const isSubAdmin = adminRole === "sub_admin";
 
-      adminUserLink.textContent = adminUsername + "さん";
+      // sub_admin は強制 attend
+      if (isSubAdmin) {
+        mode = "attend";
+      }
+
+      const adminHomeLink = document.getElementById("admin-home-link");
+      const loadErrorBox = document.getElementById("load-error-box");
+      const debugBox = document.getElementById("debug-box");
+
+      const summaryUsername = document.getElementById("summary-username");
+      const summaryStatus = document.getElementById("summary-status");
+      const summaryPrimary = document.getElementById("summary-primary");
+      const summaryCreatedAt = document.getElementById("summary-created-at");
+      const chatStatus = document.getElementById("chat-status");
+      const chatLogWrap = document.getElementById("chat-log-wrap");
+
+      const replyBox = document.getElementById("reply-box");
+      const replyText = document.getElementById("reply-text");
+      const replySendButton = document.getElementById("reply-send-button");
+
+      const currentAssignees = document.getElementById("current-assignees");
+      const changePrimaryCard = document.getElementById("change-primary-card");
+      const addAssigneeCard = document.getElementById("add-assignee-card");
+      const primarySelect = document.getElementById("primary-select");
+      const candidateSelect = document.getElementById("candidate-select");
+      const changePrimaryButton = document.getElementById("change-primary-button");
+      const addAssigneeButton = document.getElementById("add-assignee-button");
+
+      adminHomeLink.textContent = `◀ 管理画面ホーム（ログイン中：${adminUsername}さん）`;
 
       function renderDebug(extra = "") {
         debugBox.textContent =
-          "admin_username: " + adminUsername + "\n" +
           "admin_id: " + adminId + "\n" +
+          "admin_username: " + adminUsername + "\n" +
           "admin_role: " + adminRole + "\n" +
           "admin_status: " + adminStatus + "\n" +
           "inquiry_id: " + inquiryId + "\n" +
           "mode: " + mode +
           (extra ? "\n\n" + extra : "");
+      }
+
+      function setLoadError(message) {
+        loadErrorBox.textContent = message || "システムエラー：データの読み込みに失敗しました。";
+        loadErrorBox.classList.remove("hidden");
       }
 
       function escapeHtml(value) {
@@ -512,11 +589,6 @@
         return status || "不明";
       }
 
-      function setLoadError(message) {
-        loadErrorBox.textContent = message || "読み込みに失敗しました。";
-        loadErrorBox.classList.remove("hidden");
-      }
-
       function getViewFunctionName() {
         return mode === "detail" ? DETAIL_VIEW_FUNCTION : ATTEND_VIEW_FUNCTION;
       }
@@ -533,12 +605,12 @@
         });
 
         const rawText = await response.text();
-        let result = null;
+        let result = {};
 
         try {
           result = rawText ? JSON.parse(rawText) : {};
         } catch {
-          throw new Error(`レスポンス解析失敗: ${functionName}\n${rawText}`);
+          throw new Error(`${functionName} のレスポンス解析に失敗しました\n${rawText}`);
         }
 
         renderDebug(
@@ -549,97 +621,10 @@
         );
 
         if (!response.ok || result?.ok === false) {
-          throw new Error(result?.error || `${functionName} の実行に失敗しました。`);
+          throw new Error(result?.error || `${functionName} の実行に失敗しました`);
         }
 
         return result;
-      }
-
-      function getMergedMessages(detailData) {
-        const currentMessages = Array.isArray(detailData?.messages) ? detailData.messages : [];
-        const pastBlocks = Array.isArray(detailData?.past_inquiries) ? detailData.past_inquiries : [];
-        const merged = [];
-
-        pastBlocks.forEach((block) => {
-          const rows = Array.isArray(block?.messages) ? block.messages : [];
-          rows.forEach((row) => {
-            merged.push({
-              ...row,
-              _history_flag: true,
-              _history_inquiry_id: block?.id || null
-            });
-          });
-        });
-
-        currentMessages.forEach((row) => {
-          merged.push({
-            ...row,
-            _history_flag: false
-          });
-        });
-
-        merged.sort((a, b) => {
-          const ta = new Date(a?.created_at || 0).getTime();
-          const tb = new Date(b?.created_at || 0).getTime();
-          return ta - tb;
-        });
-
-        return merged;
-      }
-
-      function renderMessages(detailData) {
-        const allMessages = getMergedMessages(detailData);
-
-        if (!allMessages.length) {
-          chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
-          return;
-        }
-
-        const parts = [];
-        let lastDay = "";
-
-        allMessages.forEach((msg) => {
-          const created = msg?.created_at ? new Date(msg.created_at) : null;
-          const dayKey = created && !Number.isNaN(created.getTime())
-            ? created.toLocaleDateString("ja-JP")
-            : "日付不明";
-
-          if (dayKey !== lastDay) {
-            parts.push(`<div class="day-divider">${escapeHtml(dayKey)}</div>`);
-            lastDay = dayKey;
-          }
-
-          if (msg?._history_flag === true) {
-            parts.push(`<div class="history-label">過去のお問い合わせ</div>`);
-          }
-
-          const senderType = msg?.sender_type || "user";
-          const rowClass =
-            senderType === "user"
-              ? "user"
-              : (senderType === "admin" || senderType === "sub_admin" ? senderType : "admin");
-
-          const senderName =
-            msg?.sender_name ||
-            msg?.admin_name ||
-            (senderType === "user" ? "ユーザー" : "運営");
-
-          const timeText = created && !Number.isNaN(created.getTime())
-            ? created.toLocaleString("ja-JP")
-            : "";
-
-          parts.push(`
-            <div class="message-row ${escapeHtml(rowClass)}">
-              <div class="message-bubble">
-                <div class="message-meta">${escapeHtml(senderName)} / ${escapeHtml(timeText)}</div>
-                <div class="message-text">${escapeHtml(msg?.message || "")}</div>
-              </div>
-            </div>
-          `);
-        });
-
-        chatLogWrap.innerHTML = parts.join("");
-        chatLogWrap.scrollTop = chatLogWrap.scrollHeight;
       }
 
       function renderSummary(detailData) {
@@ -658,41 +643,136 @@
         summaryPrimary.textContent = primaryName;
         summaryCreatedAt.textContent = formatDate(inquiry?.created_at || "");
 
-        const modeLabel = mode === "detail" ? "詳細表示" : "応対";
-        chatStatusText.textContent =
-          `状態: ${statusLabel(inquiry?.status || "")}\n主担当: ${primaryName}\n現在モード: ${modeLabel}`;
+        chatStatus.textContent =
+          "ステータス：" + statusLabel(inquiry?.status || "") +
+          "\n主担当：" + primaryName +
+          "\n現在モード：" + (mode === "detail" ? "詳細表示" : "応対");
       }
 
-      function renderAssigneeArea(detailData, candidatesData) {
-        const assignees = Array.isArray(detailData?.assignees) ? detailData.assignees : [];
+      function buildMergedMessages(detailData) {
+        const currentMessages = Array.isArray(detailData?.messages) ? detailData.messages : [];
+        const pastInquiryBlocks = Array.isArray(detailData?.past_inquiries) ? detailData.past_inquiries : [];
+        const merged = [];
 
-        if (!assignees.length) {
-          currentAssignees.textContent = "現在ありません";
-        } else {
-          currentAssignees.textContent = assignees
-            .map((item) => {
-              const name = item?.username || item?.admin_username || "不明";
-              const role = item?.role || item?.admin_role || "";
-              const primary = item?.is_primary ? "（主担当）" : "";
-              return `${name}${role ? " / " + role : ""}${primary}`;
-            })
-            .join("\n");
-        }
-
-        primarySelect.innerHTML = "";
-        assignees.forEach((item) => {
-          const option = document.createElement("option");
-          option.value = String(item?.admin_account_id || "");
-          option.textContent =
-            (item?.username || item?.admin_username || "不明") +
-            (item?.is_primary ? "（現在の主担当）" : "");
-          primarySelect.appendChild(option);
+        pastInquiryBlocks.forEach((block) => {
+          const rows = Array.isArray(block?.messages) ? block.messages : [];
+          rows.forEach((row) => {
+            merged.push({
+              ...row,
+              _is_history: true
+            });
+          });
         });
 
-        candidateSelect.innerHTML = "";
-        const candidateRows = Array.isArray(candidatesData?.candidates) ? candidatesData.candidates : [];
+        currentMessages.forEach((row) => {
+          merged.push({
+            ...row,
+            _is_history: false
+          });
+        });
 
-        if (!candidateRows.length) {
+        merged.sort((a, b) => {
+          const ta = new Date(a?.created_at || 0).getTime();
+          const tb = new Date(b?.created_at || 0).getTime();
+          return ta - tb;
+        });
+
+        return merged;
+      }
+
+      function renderMessages(detailData) {
+        const messages = buildMergedMessages(detailData);
+
+        if (!messages.length) {
+          chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
+          return;
+        }
+
+        const parts = [];
+        let lastDay = "";
+
+        messages.forEach((msg) => {
+          const created = msg?.created_at ? new Date(msg.created_at) : null;
+          const dayKey = created && !Number.isNaN(created.getTime())
+            ? created.toLocaleDateString("ja-JP")
+            : "日付不明";
+
+          if (dayKey !== lastDay) {
+            parts.push(`<div class="day-divider">${escapeHtml(dayKey)}</div>`);
+            lastDay = dayKey;
+          }
+
+          if (msg?._is_history) {
+            parts.push(`<div class="history-label">── これより過去の履歴 ──</div>`);
+          }
+
+          const senderType = msg?.sender_type || "user";
+          const rowClass =
+            senderType === "user"
+              ? "user"
+              : (senderType === "admin" || senderType === "sub_admin" ? senderType : "admin");
+
+          const senderName =
+            msg?.sender_name ||
+            msg?.admin_name ||
+            (senderType === "user" ? "ユーザー" : "運営");
+
+          const timeText = created && !Number.isNaN(created.getTime())
+            ? created.toLocaleTimeString("ja-JP")
+            : "";
+
+          parts.push(`
+            <div class="message-row ${escapeHtml(rowClass)}">
+              <div class="message-meta">${escapeHtml(senderName)}</div>
+              <div class="message-bubble">
+                <div class="message-text">${escapeHtml(msg?.message || "")}</div>
+              </div>
+              <div class="message-time">${escapeHtml(timeText)}</div>
+            </div>
+          `);
+        });
+
+        chatLogWrap.innerHTML = parts.join("");
+        chatLogWrap.scrollTop = chatLogWrap.scrollHeight;
+      }
+
+      function renderAssignees(assignees) {
+        if (!Array.isArray(assignees) || !assignees.length) {
+          currentAssignees.textContent = "現在ありません";
+          return;
+        }
+
+        currentAssignees.textContent = assignees.map((item) => {
+          const name = item?.username || "不明";
+          const role = item?.role || "";
+          const primary = item?.is_primary ? "（主担当）" : "";
+          return `${name}${role ? " / " + role : ""}${primary}`;
+        }).join("\n");
+      }
+
+      function renderPrimarySelect(allCandidates) {
+        primarySelect.innerHTML = "";
+
+        if (!Array.isArray(allCandidates) || !allCandidates.length) {
+          const option = document.createElement("option");
+          option.value = "";
+          option.textContent = "現在ありません";
+          primarySelect.appendChild(option);
+          return;
+        }
+
+        allCandidates.forEach((item) => {
+          const option = document.createElement("option");
+          option.value = String(item?.id || "");
+          option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
+          primarySelect.appendChild(option);
+        });
+      }
+
+      function renderAddCandidateSelect(addCandidates) {
+        candidateSelect.innerHTML = "";
+
+        if (!Array.isArray(addCandidates) || !addCandidates.length) {
           const option = document.createElement("option");
           option.value = "";
           option.textContent = "現在ありません";
@@ -700,12 +780,36 @@
           return;
         }
 
-        candidateRows.forEach((item) => {
+        addCandidates.forEach((item) => {
           const option = document.createElement("option");
           option.value = String(item?.id || "");
           option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
           candidateSelect.appendChild(option);
         });
+      }
+
+      function applyRoleUi() {
+        replyBox.classList.add("hidden");
+        changePrimaryCard.classList.add("hidden");
+        addAssigneeCard.classList.add("hidden");
+
+        if (mode === "detail") {
+          if (isAdmin) {
+            changePrimaryCard.classList.remove("hidden");
+            addAssigneeCard.classList.remove("hidden");
+          }
+          return;
+        }
+
+        if (mode === "attend") {
+          if (isAdmin || isSubAdmin) {
+            replyBox.classList.remove("hidden");
+          }
+
+          if (isAdmin) {
+            changePrimaryCard.classList.remove("hidden");
+          }
+        }
       }
 
       async function sendReply() {
@@ -723,7 +827,7 @@
 
         replyText.value = "";
         await loadAll();
-        alert("返信を送信しました。");
+        alert("メッセージを送信しました。");
       }
 
       async function addAssignee() {
@@ -742,13 +846,13 @@
         });
 
         await loadAll();
-        alert("担当者を追加しました。");
+        alert("担当スタッフを追加しました。");
       }
 
       async function changePrimary() {
         const targetId = Number(primarySelect.value);
         if (!targetId) {
-          alert("主担当にする担当者を選択してください。");
+          alert("主担当者を選択してください。");
           return;
         }
 
@@ -761,7 +865,7 @@
         });
 
         await loadAll();
-        alert("主担当を変更しました。");
+        alert("主担当を更新しました。");
       }
 
       async function loadAll() {
@@ -787,18 +891,18 @@
 
         renderSummary(detailData);
         renderMessages(detailData);
+        renderAssignees(detailData?.assignees || []);
 
-        let candidatesData = { candidates: [] };
-
-        if (mode === "detail" && isAdmin) {
-          candidatesData = await callFunction(MANAGE_FUNCTION, {
+        if (isAdmin) {
+          const candidatesData = await callFunction(MANAGE_FUNCTION, {
             mode: "candidates",
             admin_id: Number(adminId),
             inquiry_id: inquiryId
           });
-        }
 
-        renderAssigneeArea(detailData, candidatesData);
+          renderPrimarySelect(candidatesData?.all_candidates || []);
+          renderAddCandidateSelect(candidatesData?.add_candidates || []);
+        }
       }
 
       try {
@@ -825,33 +929,7 @@
           return;
         }
 
-        manageBox.classList.remove("hidden");
-
-        if (mode === "detail") {
-          replyBox.classList.add("hidden");
-
-          if (isAdmin) {
-            changePrimaryCard.classList.remove("hidden");
-            addAssigneeCard.classList.remove("hidden");
-          } else {
-            changePrimaryCard.classList.add("hidden");
-            addAssigneeCard.classList.add("hidden");
-          }
-        } else {
-          if (isAdmin || isSubAdmin) {
-            replyBox.classList.remove("hidden");
-          } else {
-            replyBox.classList.add("hidden");
-          }
-
-          if (isAdmin) {
-            changePrimaryCard.classList.remove("hidden");
-          } else {
-            changePrimaryCard.classList.add("hidden");
-          }
-
-          addAssigneeCard.classList.add("hidden");
-        }
+        applyRoleUi();
 
         replySendButton.addEventListener("click", sendReply);
         addAssigneeButton.addEventListener("click", addAssignee);
@@ -860,8 +938,8 @@
         await loadAll();
       } catch (error) {
         console.error(error);
-        setLoadError("読み込みに失敗しました。");
-        chatStatusText.textContent = "読み込みに失敗しました。";
+        setLoadError("システムエラー：データの読み込みに失敗しました。ページを再読み込みしてください。");
+        chatStatus.textContent = "ステータス：読み込みに失敗しました。";
         chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
         currentAssignees.textContent = "現在ありません";
         renderDebug(String(error));

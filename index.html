@@ -24,7 +24,6 @@
       overflow-x: hidden;
     }
 
-    /* --- 星空の再構築 --- */
     .star-field {
       position: fixed;
       top: 0;
@@ -41,7 +40,6 @@
       border-radius: 50%;
       opacity: 0;
       animation: blink var(--duration) infinite ease-in-out;
-      /* ぼかしを加えることで「水滴」ではなく「光」に見せる */
       box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
     }
 
@@ -50,7 +48,6 @@
       50% { opacity: var(--max-opacity); transform: scale(1); }
     }
 
-    /* --- コンテンツレイアウト --- */
     .container {
       position: relative;
       z-index: 10;
@@ -60,7 +57,6 @@
       line-height: 1.8;
     }
 
-    /* ログイン周りの整理 */
     .nav-top {
       text-align: left;
       margin-bottom: 40px;
@@ -71,11 +67,14 @@
       margin-right: 15px;
       padding: 4px 8px;
       border-radius: 4px;
+      text-decoration: none;
+      color: var(--accent-color);
       transition: background 0.3s;
     }
 
     .nav-top a:hover {
       background: rgba(255, 255, 255, 0.1);
+      color: var(--accent-hover);
     }
 
     h1 {
@@ -104,11 +103,12 @@
       margin-bottom: 40px;
     }
 
-    /* リンクの強調 */
     .main-link {
       display: inline-block;
       font-size: 1.8rem;
       font-weight: bold;
+      color: var(--accent-color);
+      text-decoration: none;
       margin: 10px 0;
       transition: all 0.3s;
       letter-spacing: 0.05em;
@@ -116,10 +116,23 @@
 
     .main-link:hover {
       transform: translateY(-2px);
+      color: var(--accent-hover);
       text-shadow: 0 0 10px var(--accent-hover);
     }
 
-    /* お知らせボックスの改善 */
+    /* --- 隠しリンクの設定 --- */
+    .secret-link {
+      color: inherit;
+      text-decoration: none;
+      cursor: text;
+      transition: opacity 0.5s;
+    }
+
+    .secret-link:hover {
+      opacity: 0.7;
+      cursor: pointer;
+    }
+
     .news-box {
       max-height: 150px;
       overflow-y: auto;
@@ -127,8 +140,6 @@
       padding: 15px;
       background: rgba(0, 0, 0, 0.2);
       border-radius: 8px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border-color) transparent;
     }
 
     .news-box ul {
@@ -141,19 +152,6 @@
       margin-bottom: 8px;
       font-size: 0.95rem;
       color: #ddd;
-    }
-
-    a {
-      color: var(--accent-color);
-      transition: color 0.3s;
-    }
-
-    a:hover {
-      color: var(--accent-hover);
-    }
-
-    .secret-link {
-      border-bottom: 1px dashed var(--accent-color);
     }
   </style>
 </head>
@@ -198,24 +196,17 @@
   </div>
 
   <script>
-    // 星を動的に生成して、自然な煌めきを作る
     const starField = document.getElementById('starField');
     const starCount = 100;
-
     for (let i = 0; i < starCount; i++) {
       const star = document.createElement('div');
       star.className = 'star';
-      
-      // ランダムな配置
       const x = Math.random() * 100;
       const y = Math.random() * 100;
-      
-      // 個別の星に異なるサイズとアニメーション時間を設定（ホコリ感を防ぐ）
-      const size = Math.random() * 2 + 1; // 1px〜3px
-      const duration = Math.random() * 3 + 2; // 2s〜5s
+      const size = Math.random() * 2 + 1;
+      const duration = Math.random() * 3 + 2;
       const delay = Math.random() * 5;
-      const maxOpacity = Math.random() * 0.5 + 0.3; // 0.3〜0.8
-
+      const maxOpacity = Math.random() * 0.5 + 0.3;
       star.style.left = `${x}%`;
       star.style.top = `${y}%`;
       star.style.width = `${size}px`;
@@ -223,7 +214,6 @@
       star.style.setProperty('--duration', `${duration}s`);
       star.style.setProperty('--max-opacity', maxOpacity);
       star.style.animationDelay = `${delay}s`;
-
       starField.appendChild(star);
     }
 

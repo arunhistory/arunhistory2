@@ -45,7 +45,8 @@
       justify-content: center;
     }
 
-    h2::before, h2::after {
+    h2::before,
+    h2::after {
       content: "";
       height: 1px;
       width: 40px;
@@ -190,7 +191,8 @@
       font-size: 0.85rem;
     }
 
-    .day-divider::before, .day-divider::after {
+    .day-divider::before,
+    .day-divider::after {
       content: "";
       flex: 1;
       height: 1px;
@@ -419,7 +421,7 @@
 <body>
   <div class="container">
     <p class="top-link">
-      <a id="admin-home-link" href="admin-home.html">◀ 管理画面ホーム</a>
+      <a id="admin-home-link" href="admin-management.html">◀ 管理画面ホーム（ログイン中：管理者さん）</a>
     </p>
 
     <h1>お問い合わせ詳細</h1>
@@ -509,7 +511,7 @@
 
       const params = new URLSearchParams(window.location.search);
       const inquiryId = Number(params.get("inquiry_id"));
-      let mode = params.get("mode") || "detail";
+      const mode = params.get("mode") || "detail";
 
       const adminLoggedIn = sessionStorage.getItem("admin_logged_in");
       const adminId = sessionStorage.getItem("admin_id") || "";
@@ -519,11 +521,6 @@
 
       const isAdmin = adminRole === "admin";
       const isSubAdmin = adminRole === "sub_admin";
-
-      // sub_admin は強制 attend
-      if (isSubAdmin) {
-        mode = "attend";
-      }
 
       const adminHomeLink = document.getElementById("admin-home-link");
       const loadErrorBox = document.getElementById("load-error-box");
@@ -562,7 +559,7 @@
       }
 
       function setLoadError(message) {
-        loadErrorBox.textContent = message || "システムエラー：データの読み込みに失敗しました。";
+        loadErrorBox.textContent = message || "システムエラー：データの読み込みに失敗しました。ページを再読み込みしてください。";
         loadErrorBox.classList.remove("hidden");
       }
 
@@ -789,30 +786,29 @@
       }
 
       function applyRoleUi() {
-  replyBox.classList.add("hidden");
-  changePrimaryCard.classList.add("hidden");
-  addAssigneeCard.classList.add("hidden");
+        replyBox.classList.add("hidden");
+        changePrimaryCard.classList.add("hidden");
+        addAssigneeCard.classList.add("hidden");
 
-  if (mode === "detail") {
-    if (isAdmin) {
-      changePrimaryCard.classList.remove("hidden");
-      addAssigneeCard.classList.remove("hidden");
-    }
-    return;
-  }
+        if (mode === "detail") {
+          if (isAdmin) {
+            changePrimaryCard.classList.remove("hidden");
+            addAssigneeCard.classList.remove("hidden");
+          }
+          return;
+        }
 
-  if (mode === "attend") {
-    if (isAdmin || isSubAdmin) {
-      replyBox.classList.remove("hidden");
-    }
+        if (mode === "attend") {
+          if (isAdmin || isSubAdmin) {
+            replyBox.classList.remove("hidden");
+          }
 
-    if (isAdmin) {
-      changePrimaryCard.classList.remove("hidden");
-    }
+          if (isAdmin) {
+            changePrimaryCard.classList.remove("hidden");
+          }
 
-    addAssigneeCard.classList.add("hidden");
-  }
-}
+          addAssigneeCard.classList.add("hidden");
+        }
       }
 
       async function sendReply() {
@@ -824,7 +820,7 @@
 
         await callFunction(REPLY_FUNCTION, {
           admin_id: Number(adminId),
-          inquiry_id: inquiryId,
+          inquiry_id: Number(inquiryId),
           message: message
         });
 
@@ -843,7 +839,7 @@
         await callFunction(MANAGE_FUNCTION, {
           mode: "add",
           admin_id: Number(adminId),
-          inquiry_id: inquiryId,
+          inquiry_id: Number(inquiryId),
           target_admin_account_id: targetId,
           make_primary: false
         });
@@ -862,7 +858,7 @@
         await callFunction(MANAGE_FUNCTION, {
           mode: "add",
           admin_id: Number(adminId),
-          inquiry_id: inquiryId,
+          inquiry_id: Number(inquiryId),
           target_admin_account_id: targetId,
           make_primary: true
         });
@@ -876,9 +872,21 @@
 
         const detailData = await callFunction(viewFunction, {
           admin_id: Number(adminId),
-          inquiry_id: inquiryId,
+          inquiry_id: Number(inquiryId),
           mode: mode
         });
+
+        if (mode === "detail" && detailData?.stop_detail_mode === true && detailData?.next_mode === "attend") {
+          const url = new URL(window.location.href);
+          const alreadyReloaded = url.searchParams.get("reloaded_to_attend");
+
+          if (alreadyReloaded !== "1") {
+            url.searchParams.set("mode", "attend");
+            url.searchParams.set("reloaded_to_attend", "1");
+            window.location.replace(url.toString());
+            return;
+          }
+        }
 
         renderSummary(detailData);
         renderMessages(detailData);
@@ -888,18 +896,36 @@
           const candidatesData = await callFunction(MANAGE_FUNCTION, {
             mode: "candidates",
             admin_id: Number(adminId),
-            inquiry_id: inquiryId
+            inquiry_id: Number(inquiryId)
           });
 
           renderPrimarySelect(candidatesData?.all_candidates || []);
           renderAddCandidateSelect(candidatesData?.add_candidates || []);
         }
+
         applyRoleUi();
       }
 
       try {
         if (adminLoggedIn !== "1") {
           window.location.href = "admin-login.html";
+          return;
+        }
+
+        // 1段階目：mode確認
+        if (mode !== "detail" && mode !== "attend") {
+          window.location.href = "user-inquiries.html";
+          return;
+        }
+
+        // 2段階目：role確認
+        if (mode === "detail" && adminRole !== "admin") {
+          window.location.href = "user-inquiries.html";
+          return;
+        }
+
+        if (mode === "attend" && adminRole !== "admin" && adminRole !== "sub_admin") {
+          window.location.href = "user-inquiries.html";
           return;
         }
 
@@ -912,12 +938,6 @@
         if (!inquiryId || Number.isNaN(inquiryId)) {
           setLoadError("対象のお問い合わせがありません。");
           renderDebug("inquiry_id が不正");
-          return;
-        }
-
-        if (mode !== "detail" && mode !== "attend") {
-          setLoadError("mode が不正です。");
-          renderDebug("mode が不正");
           return;
         }
 

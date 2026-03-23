@@ -892,17 +892,22 @@
         renderMessages(detailData);
         renderAssignees(detailData?.assignees || []);
 
-        if (isAdmin) {
-          const candidatesData = await callFunction(MANAGE_FUNCTION, {
-            mode: "candidates",
-            admin_id: Number(adminId),
-            inquiry_id: Number(inquiryId)
-          });
+       if (isAdmin) {
+  try {
+    const candidatesData = await callFunction(MANAGE_FUNCTION, {
+      mode: "candidates",
+      admin_id: Number(adminId),
+      inquiry_id: Number(inquiryId)
+    });
 
-          renderPrimarySelect(candidatesData?.all_candidates || []);
-          renderAddCandidateSelect(candidatesData?.add_candidates || []);
-        }
-
+    renderPrimarySelect(candidatesData?.all_candidates || []);
+    renderAddCandidateSelect(candidatesData?.add_candidates || []);
+  } catch (error) {
+    console.error("候補一覧取得エラー:", error);
+    renderPrimarySelect([]);
+    renderAddCandidateSelect([]);
+  }
+}
         applyRoleUi();
       }
 

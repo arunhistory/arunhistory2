@@ -64,6 +64,8 @@
       letter-spacing: 0.15em;
       margin-bottom: 2rem;
       text-shadow: 0 0 15px rgba(242, 217, 232, 0.3);
+      cursor: pointer;
+      user-select: none;
     }
 
     .form-box {
@@ -155,7 +157,7 @@
   <div class="star-field" id="starField"></div>
 
   <div class="container">
-    <h1>ログイン</h1>
+    <h1 id="login-title">ログイン</h1>
 
     <div class="form-box">
       <form id="login-form">
@@ -175,7 +177,7 @@
         </p>
 
         <p>
-          <button type="submit">ログイン</button>
+          <button type="submit" id="login-button">ログイン</button>
         </p>
       </form>
 
@@ -188,28 +190,30 @@
   </div>
 
   <script>
-    const starField = document.getElementById('starField');
+    const starField = document.getElementById("starField");
     const starCount = 80;
+
     for (let i = 0; i < starCount; i++) {
-      const star = document.createElement('div');
-      star.className = 'star';
+      const star = document.createElement("div");
+      star.className = "star";
+
       const x = Math.random() * 100;
       const y = Math.random() * 100;
       const size = Math.random() * 2 + 1;
       const duration = Math.random() * 3 + 2;
       const delay = Math.random() * 5;
       const maxOpacity = Math.random() * 0.4 + 0.2;
+
       star.style.left = `${x}%`;
       star.style.top = `${y}%`;
       star.style.width = `${size}px`;
       star.style.height = `${size}px`;
-      star.style.setProperty('--duration', `${duration}s`);
-      star.style.setProperty('--max-opacity', maxOpacity);
+      star.style.setProperty("--duration", `${duration}s`);
+      star.style.setProperty("--max-opacity", maxOpacity);
       star.style.animationDelay = `${delay}s`;
+
       starField.appendChild(star);
     }
-  
-  ここまでGemini
 
     document.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(window.location.search);
@@ -219,10 +223,14 @@
       const signupLink = document.getElementById("signup-link");
       const forgotLink = document.getElementById("forgot-link");
       const form = document.getElementById("login-form");
-      const submitButton = form.querySelector('button[type="submit"]');
-      const title = document.querySelector("h1");
+      const submitButton = document.getElementById("login-button");
+      const title = document.getElementById("login-title");
       const secretWrap = document.getElementById("secret-wrap");
       const secretWord = document.getElementById("secret-word");
+
+      const ADMIN_TAP_COUNT_KEY = "hidden_admin_title_tap_count";
+      const ADMIN_UNLOCK_KEY = "hidden_admin_title_unlocked";
+      const ADMIN_SECRET_WORD = "ここに合言葉";
 
       backLink.href = redirect;
       signupLink.href = "signup.html?redirect=" + encodeURIComponent(redirect);
@@ -250,14 +258,22 @@
         }
       }
 
-      let titleTapCount = 0;
-      let secretUnlocked = false;
+      const adminUnlocked = localStorage.getItem(ADMIN_UNLOCK_KEY) === "1";
+      if (adminUnlocked) {
+        secretWrap.style.display = "block";
+      }
+
+      let titleTapCount = Number(localStorage.getItem(ADMIN_TAP_COUNT_KEY) || "0");
 
       title.addEventListener("click", () => {
+        if (localStorage.getItem(ADMIN_UNLOCK_KEY) === "1") return;
+
         titleTapCount += 1;
-        if (titleTapCount >= 20 && !secretUnlocked) {
-          secretUnlocked = true;
-          secretWrap.style.display = "block";
+        localStorage.setItem(ADMIN_TAP_COUNT_KEY, String(titleTapCount));
+
+        if (titleTapCount >= 20) {
+          localStorage.setItem(ADMIN_UNLOCK_KEY, "1");
+          // 更新後に表示させる仕様なので、この場では表示しない
         }
       });
 
@@ -268,113 +284,111 @@
         const password = document.getElementById("password").value;
         const secret = secretWord ? secretWord.value.trim() : "";
 
-        if (email !== "" || password !== "") {
-          if (email === "" || password === "") {
+        if (localStorage.getItem(ADMIN_UNLOCK_KEY) === "1" && secret === ADMIN_SECRET_WORD) {
+          localStorage.removeItem(ADMIN_TAP_COUNT_KEY);
+          localStorage.removeItem(ADMIN_UNLOCK_KEY);
+          window.location.href = "admin-login.html";
+          return;
+        }
+
+        if (email === "" || password === "") {
+          alert("メールアドレスorパスワードが間違ってます");
+          return;
+        }
+
+        submitButton.disabled = true;
+        submitButton.textContent = "ログイン中...";
+
+        try {
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (error) {
             alert("メールアドレスorパスワードが間違ってます");
             return;
           }
 
-          submitButton.disabled = true;
-          submitButton.textContent = "ログイン中...";
-
-          try {
-            const { error } = await supabase.auth.signInWithPassword({
-              email,
-              password
-            });
-
-            if (error) {
-              alert("メールアドレスorパスワードが間違ってます");
-              return;
-            }
-
-            const { data: userData, error: userError } = await supabase.auth.getUser();
-            if (userError || !userData?.user) {
-              alert("ログインしましたが、ユーザー情報の取得に失敗しました。");
-              return;
-            }
-
-            const user = userData.user;
-            const meta = user.user_metadata || {};
-
-            const { data: activeWithdraw } = await supabase
-              .from("withdraw_requests")
-              .select("id")
-              .eq("user_id", user.id)
-              .eq("status", "申請中")
-              .maybeSingle();
-
-            if (activeWithdraw) {
-              await supabase
-                .from("withdraw_requests")
-                .update({
-                  status: "取り消し",
-                  updated_at: new Date().toISOString()
-                })
-                .eq("id", activeWithdraw.id);
-            }
-
-            const { data: existingAccount, error: checkError } = await supabase
-              .from("accounts")
-              .select("id")
-              .eq("user_id", user.id)
-              .maybeSingle();
-
-            if (checkError) {
-              alert("ログインは成功しましたが、accounts確認に失敗しました: " + checkError.message);
-              return;
-            }
-
-            if (!existingAccount) {
-              const { error: insertError } = await supabase.from("accounts").insert([
-                {
-                  user_id: user.id,
-                  display_name: meta.display_name || "",
-                  email: user.email || "",
-                  birthdate: meta.birthdate || null,
-                  gender: meta.gender || null,
-                  country: meta.country || null,
-                  role: "user",
-                  status: "active",
-                  license_status: "無し",
-                  novel_support_status: "なし",
-                  created_at: new Date().toISOString()
-                }
-              ]);
-
-              if (insertError) {
-                alert("ログインは成功しましたが、accounts保存に失敗しました: " + insertError.message);
-                return;
-              }
-            }
-
-            const { error: loginUpdateError } = await supabase
-              .from("accounts")
-              .update({
-                last_login_at: new Date().toISOString()
-              })
-              .eq("user_id", user.id);
-
-            if (loginUpdateError) {
-              alert("ログインは成功しましたが、最終ログイン日時の更新に失敗しました: " + loginUpdateError.message);
-              return;
-            }
-
-            alert("ログインしました");
-            window.location.href = redirect;
-          } catch (err) {
-            alert("予期しないエラーが発生しました。");
-          } finally {
-            submitButton.disabled = false;
-            submitButton.textContent = "ログイン";
+          const { data: userData, error: userError } = await supabase.auth.getUser();
+          if (userError || !userData?.user) {
+            alert("ログインしましたが、ユーザー情報の取得に失敗しました。");
+            return;
           }
 
-          return;
-        }
+          const user = userData.user;
+          const meta = user.user_metadata || {};
 
-        if (secret === "ここに合言葉") {
-          window.location.href = "admin-login.html";
-          return;
+          const { data: activeWithdraw } = await supabase
+            .from("withdraw_requests")
+            .select("id")
+            .eq("user_id", user.id)
+            .eq("status", "申請中")
+            .maybeSingle();
+
+          if (activeWithdraw) {
+            await supabase
+              .from("withdraw_requests")
+              .update({
+                status: "取り消し",
+                updated_at: new Date().toISOString()
+              })
+              .eq("id", activeWithdraw.id);
+          }
+
+          const { data: existingAccount, error: checkError } = await supabase
+            .from("accounts")
+            .select("id")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (checkError) {
+            alert("ログインは成功しましたが、accounts確認に失敗しました: " + checkError.message);
+            return;
+          }
+
+          if (!existingAccount) {
+            const { error: insertError } = await supabase.from("accounts").insert([
+              {
+                user_id: user.id,
+                display_name: meta.display_name || "",
+                email: user.email || "",
+                birthdate: meta.birthdate || null,
+                gender: meta.gender || null,
+                country: meta.country || null,
+                role: "user",
+                status: "active",
+                license_status: "無し",
+                novel_support_status: "なし",
+                created_at: new Date().toISOString()
+              }
+            ]);
+
+            if (insertError) {
+              alert("ログインは成功しましたが、accounts保存に失敗しました: " + insertError.message);
+              return;
+            }
+          }
+
+          const { error: loginUpdateError } = await supabase
+            .from("accounts")
+            .update({
+              last_login_at: new Date().toISOString()
+            })
+            .eq("user_id", user.id);
+
+          if (loginUpdateError) {
+            alert("ログインは成功しましたが、最終ログイン日時の更新に失敗しました: " + loginUpdateError.message);
+            return;
+          }
+
+          alert("ログインしました");
+          window.location.href = redirect;
+        } catch (err) {
+          alert("予期しないエラーが発生しました。");
+        } finally {
+          submitButton.disabled = false;
+          submitButton.textContent = "ログイン";
         }
       });
     });

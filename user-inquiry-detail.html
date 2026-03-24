@@ -499,473 +499,408 @@
     </details>
   </div>
 
-  <script>
-    document.addEventListener("DOMContentLoaded", async () => {
-      const supabaseUrl = "https://ndtxjdhvdedflyqgpizr.supabase.co";
-      const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5kdHhqZGh2ZGVkZmx5cWdwaXpyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM2NjM0MjIsImV4cCI6MjA4OTIzOTQyMn0.IVDQg_I0VeBzE2z7gXiS5p1Ci4k620qYgZSXjyenyb4";
+  
+        <script>
+  document.addEventListener("DOMContentLoaded", async () => {
+    const DEBUG = true;
 
-      const DETAIL_VIEW_FUNCTION = "admin-get-support-inquiry-detail-v2";
-      const ATTEND_VIEW_FUNCTION = "admin-get-support-inquiry-attend";
-      const MANAGE_FUNCTION = "admin-manage-support-inquiry-assignees-v2";
-      const REPLY_FUNCTION = "admin-reply-support-inquiry";
+    const VIEW_FUNCTION_DETAIL = "admin-get-support-inquiry-detail-v2";
+    const VIEW_FUNCTION_ATTEND = "admin-get-support-inquiry-attend-v2";
+    const REPLY_FUNCTION = "admin-reply-support-inquiry-v2";
+    const MANAGE_FUNCTION = "admin-manage-support-inquiry-assignees-v2";
 
-      const params = new URLSearchParams(window.location.search);
-      const inquiryId = Number(params.get("inquiry_id"));
-      const mode = params.get("mode") || "detail";
+    const adminLoggedIn = sessionStorage.getItem("admin_logged_in");
+    const adminId = sessionStorage.getItem("admin_id");
+    const adminUsername = sessionStorage.getItem("admin_username");
+    const adminRole = sessionStorage.getItem("admin_role");
+    const adminStatus = sessionStorage.getItem("admin_status");
 
-      const adminLoggedIn = sessionStorage.getItem("admin_logged_in");
-      const adminId = sessionStorage.getItem("admin_id") || "";
-      const adminUsername = sessionStorage.getItem("admin_username") || "管理者";
-      const adminRole = sessionStorage.getItem("admin_role") || "";
-      const adminStatus = sessionStorage.getItem("admin_status") || "";
+    const params = new URLSearchParams(window.location.search);
+    const inquiryId = Number(params.get("id"));
+    const mode = (params.get("mode") || "").trim();
 
-      const isAdmin = adminRole === "admin";
-      const isSubAdmin = adminRole === "sub_admin";
+    const isAdmin = adminRole === "admin";
+    const isSubAdmin = adminRole === "sub_admin";
 
-      const adminHomeLink = document.getElementById("admin-home-link");
-      const loadErrorBox = document.getElementById("load-error-box");
-      const debugBox = document.getElementById("debug-box");
+    const inquiryTitle = document.getElementById("inquiryTitle");
+    const inquiryMeta = document.getElementById("inquiryMeta");
+    const inquiryStatus = document.getElementById("inquiryStatus");
+    const inquiryCategory = document.getElementById("inquiryCategory");
+    const inquiryUser = document.getElementById("inquiryUser");
+    const inquiryCreatedAt = document.getElementById("inquiryCreatedAt");
+    const inquiryUpdatedAt = document.getElementById("inquiryUpdatedAt");
+    const inquiryAssigned = document.getElementById("inquiryAssigned");
+    const inquiryBody = document.getElementById("inquiryBody");
 
-      const summaryUsername = document.getElementById("summary-username");
-      const summaryStatus = document.getElementById("summary-status");
-      const summaryPrimary = document.getElementById("summary-primary");
-      const summaryCreatedAt = document.getElementById("summary-created-at");
-      const chatStatus = document.getElementById("chat-status");
-      const chatLogWrap = document.getElementById("chat-log-wrap");
+    const loadError = document.getElementById("loadError");
+    const debugArea = document.getElementById("debugArea");
+    const chatStatus = document.getElementById("chatStatus");
+    const chatLogWrap = document.getElementById("chatLogWrap");
+    const currentAssignees = document.getElementById("currentAssignees");
 
-      const replyBox = document.getElementById("reply-box");
-      const replyText = document.getElementById("reply-text");
-      const replySendButton = document.getElementById("reply-send-button");
+    const replyBox = document.getElementById("replyBox");
+    const replyText = document.getElementById("replyText");
+    const replySendButton = document.getElementById("replySendButton");
 
-      const currentAssignees = document.getElementById("current-assignees");
-      const changePrimaryCard = document.getElementById("change-primary-card");
-      const addAssigneeCard = document.getElementById("add-assignee-card");
-      const primarySelect = document.getElementById("primary-select");
-      const candidateSelect = document.getElementById("candidate-select");
-      const changePrimaryButton = document.getElementById("change-primary-button");
-      const addAssigneeButton = document.getElementById("add-assignee-button");
+    const changePrimaryCard = document.getElementById("changePrimaryCard");
+    const primarySelect = document.getElementById("primarySelect");
+    const changePrimaryButton = document.getElementById("changePrimaryButton");
 
-      adminHomeLink.textContent = `◀ 管理画面ホーム（ログイン中：${adminUsername}さん）`;
+    const addAssigneeCard = document.getElementById("addAssigneeCard");
+    const candidateSelect = document.getElementById("candidateSelect");
+    const addAssigneeButton = document.getElementById("addAssigneeButton");
 
-      function renderDebug(extra = "") {
-        debugBox.textContent =
-          "admin_id: " + adminId + "\n" +
-          "admin_username: " + adminUsername + "\n" +
-          "admin_role: " + adminRole + "\n" +
-          "admin_status: " + adminStatus + "\n" +
-          "inquiry_id: " + inquiryId + "\n" +
-          "mode: " + mode +
-          (extra ? "\n\n" + extra : "");
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function renderDebug(message) {
+      if (!DEBUG || !debugArea) return;
+      debugArea.textContent = String(message ?? "");
+    }
+
+    function setLoadError(message) {
+      if (!loadError) return;
+      loadError.textContent = message || "";
+      loadError.classList.toggle("hidden", !message);
+    }
+
+    function formatDateTime(value) {
+      if (!value) return "—";
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString("ja-JP");
+    }
+
+    function getViewFunctionName() {
+      return mode === "attend" ? VIEW_FUNCTION_ATTEND : VIEW_FUNCTION_DETAIL;
+    }
+
+    async function callFunction(functionName, payload) {
+      const endpoint = `https://ndtxjdhvdedflyqgpizr.supabase.co/functions/v1/${functionName}`;
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": "<YOUR_ANON_KEY>",
+          "Authorization": "Bearer <YOUR_ANON_KEY>"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      let result = null;
+      try {
+        result = await response.json();
+      } catch {
+        throw new Error(`function: ${functionName}\nstatus: ${response.status}\nresponse: JSON解析失敗`);
       }
 
-      function setLoadError(message) {
-        loadErrorBox.textContent = message || "システムエラー：データの読み込みに失敗しました。ページを再読み込みしてください。";
-        loadErrorBox.classList.remove("hidden");
-      }
-
-      function escapeHtml(value) {
-        return String(value ?? "")
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#039;");
-      }
-
-      function formatDate(value) {
-        if (!value) return "なし";
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) return String(value);
-        return date.toLocaleString("ja-JP");
-      }
-
-      function statusLabel(status) {
-        if (status === "open") return "未対応";
-        if (status === "in_progress") return "対応中";
-        if (status === "resolved") return "解決済み";
-        return status || "不明";
-      }
-
-      function getViewFunctionName() {
-        return mode === "detail" ? DETAIL_VIEW_FUNCTION : ATTEND_VIEW_FUNCTION;
-      }
-
-      async function callFunction(functionName, payload) {
-        const response = await fetch(`${supabaseUrl}/functions/v1/${functionName}`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "apikey": supabaseKey,
-            "Authorization": `Bearer ${supabaseKey}`
-          },
-          body: JSON.stringify(payload || {})
-        });
-
-        const rawText = await response.text();
-        let result = {};
-
-        try {
-          result = rawText ? JSON.parse(rawText) : {};
-        } catch {
-          throw new Error(`${functionName} のレスポンス解析に失敗しました\n${rawText}`);
-        }
-
-        renderDebug(
-          "function: " + functionName +
-          "\nstatus: " + response.status +
-          "\npayload:\n" + JSON.stringify(payload, null, 2) +
-          "\nresponse:\n" + JSON.stringify(result, null, 2)
+      if (!response.ok || result?.ok === false) {
+        throw new Error(
+          `function: ${functionName}\nstatus: ${response.status}\npayload:\n${JSON.stringify(payload, null, 2)}\nresponse:\n${JSON.stringify(result, null, 2)}`
         );
-
-        if (!response.ok || result?.ok === false) {
-          throw new Error(result?.error || `${functionName} の実行に失敗しました`);
-        }
-
-        return result;
       }
 
-      function renderSummary(detailData) {
-        const inquiry = detailData?.inquiry || {};
-        const primaryName =
-          detailData?.primary_assignee?.username ||
-          inquiry?.assigned_admin_username ||
-          "なし";
+      return result;
+    }
 
-        summaryUsername.textContent =
-          inquiry?.user_name ||
-          detailData?.user?.user_name ||
-          "なし";
+    function renderSummary(detailData) {
+      inquiryTitle.textContent = detailData?.subject || "お問い合わせ詳細";
+      inquiryMeta.textContent = `問い合わせID: ${detailData?.id ?? "—"}`;
+      inquiryStatus.textContent = detailData?.status || "—";
+      inquiryCategory.textContent = detailData?.category || "—";
+      inquiryUser.textContent = detailData?.user_name || detailData?.user_email || "—";
+      inquiryCreatedAt.textContent = formatDateTime(detailData?.created_at);
+      inquiryUpdatedAt.textContent = formatDateTime(detailData?.updated_at);
+      inquiryAssigned.textContent = detailData?.assigned_admin_username || "—";
+      inquiryBody.textContent = detailData?.message || "";
+      chatStatus.textContent = `ステータス：${detailData?.status || "—"}`;
+      setLoadError("");
+    }
 
-        summaryStatus.textContent = statusLabel(inquiry?.status || "");
-        summaryPrimary.textContent = primaryName;
-        summaryCreatedAt.textContent = formatDate(inquiry?.created_at || "");
+    function renderMessages(detailData) {
+      const messages = Array.isArray(detailData?.messages) ? detailData.messages : [];
 
-        chatStatus.textContent =
-          "ステータス：" + statusLabel(inquiry?.status || "") +
-          "\n主担当：" + primaryName +
-          "\n現在モード：" + (mode === "detail" ? "詳細表示" : "応対");
+      if (!messages.length) {
+        chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
+        return;
       }
 
-      function buildMergedMessages(detailData) {
-        const currentMessages = Array.isArray(detailData?.messages) ? detailData.messages : [];
-        const pastInquiryBlocks = Array.isArray(detailData?.past_inquiries) ? detailData.past_inquiries : [];
-        const merged = [];
+      const parts = [];
+      let lastDay = "";
 
-        pastInquiryBlocks.forEach((block) => {
-          const rows = Array.isArray(block?.messages) ? block.messages : [];
-          rows.forEach((row) => {
-            merged.push({
-              ...row,
-              _is_history: true
-            });
-          });
-        });
-
-        currentMessages.forEach((row) => {
-          merged.push({
-            ...row,
-            _is_history: false
-          });
-        });
-
-        merged.sort((a, b) => {
-          const ta = new Date(a?.created_at || 0).getTime();
-          const tb = new Date(b?.created_at || 0).getTime();
-          return ta - tb;
-        });
-
-        return merged;
-      }
-
-      function renderMessages(detailData) {
-        const messages = buildMergedMessages(detailData);
-
-        if (!messages.length) {
-          chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
-          return;
-        }
-
-        const parts = [];
-        let lastDay = "";
-
-        messages.forEach((msg) => {
-          const created = msg?.created_at ? new Date(msg.created_at) : null;
-          const dayKey = created && !Number.isNaN(created.getTime())
+      messages.forEach((msg) => {
+        const created = msg?.created_at ? new Date(msg.created_at) : null;
+        const dayKey =
+          created && !Number.isNaN(created.getTime())
             ? created.toLocaleDateString("ja-JP")
             : "日付不明";
 
-          if (dayKey !== lastDay) {
-            parts.push(`<div class="day-divider">${escapeHtml(dayKey)}</div>`);
-            lastDay = dayKey;
-          }
+        if (dayKey !== lastDay) {
+          parts.push(`<div class="day-divider">${escapeHtml(dayKey)}</div>`);
+          lastDay = dayKey;
+        }
 
-          if (msg?._is_history) {
-            parts.push(`<div class="history-label">── これより過去の履歴 ──</div>`);
-          }
+        if (msg?._is_history) {
+          parts.push(`<div class="history-label">── これより過去の履歴 ──</div>`);
+        }
 
-          const senderType = msg?.sender_type || "user";
-          const rowClass =
-            senderType === "user"
-              ? "user"
-              : (senderType === "admin" || senderType === "sub_admin" ? senderType : "admin");
+        const senderType = msg?.sender_type || "user";
+        const rowClass =
+          senderType === "user"
+            ? "user"
+            : (senderType === "admin" || senderType === "sub_admin" ? senderType : "admin");
 
-          const senderName =
-            msg?.sender_name ||
-            msg?.admin_name ||
-            (senderType === "user" ? "ユーザー" : "運営");
+        const senderName =
+          msg?.sender_name ||
+          msg?.admin_name ||
+          (senderType === "user" ? "ユーザー" : "運営");
 
-          const timeText = created && !Number.isNaN(created.getTime())
+        const timeText =
+          created && !Number.isNaN(created.getTime())
             ? created.toLocaleTimeString("ja-JP")
             : "";
 
-          parts.push(`
-            <div class="message-row ${escapeHtml(rowClass)}">
-              <div class="message-meta">${escapeHtml(senderName)}</div>
-              <div class="message-bubble">
-                <div class="message-text">${escapeHtml(msg?.message || "")}</div>
-              </div>
-              <div class="message-time">${escapeHtml(timeText)}</div>
+        parts.push(`
+          <div class="message-row ${escapeHtml(rowClass)}">
+            <div class="message-meta">${escapeHtml(senderName)}</div>
+            <div class="message-bubble">
+              <div class="message-text">${escapeHtml(msg?.message || "")}</div>
             </div>
-          `);
-        });
+            <div class="message-time">${escapeHtml(timeText)}</div>
+          </div>
+        `);
+      });
 
-        chatLogWrap.innerHTML = parts.join("");
-        chatLogWrap.scrollTop = chatLogWrap.scrollHeight;
-      }
+      chatLogWrap.innerHTML = parts.join("");
+      chatLogWrap.scrollTop = chatLogWrap.scrollHeight;
+    }
 
-      function renderAssignees(assignees) {
-        if (!Array.isArray(assignees) || !assignees.length) {
-          currentAssignees.textContent = "現在ありません";
-          return;
-        }
-
-        currentAssignees.textContent = assignees.map((item) => {
-          const name = item?.username || "不明";
-          const role = item?.role || "";
-          const primary = item?.is_primary ? "（主担当）" : "";
-          return `${name}${role ? " / " + role : ""}${primary}`;
-        }).join("\n");
-      }
-
-      function renderPrimarySelect(allCandidates) {
-        primarySelect.innerHTML = "";
-
-        if (!Array.isArray(allCandidates) || !allCandidates.length) {
-          const option = document.createElement("option");
-          option.value = "";
-          option.textContent = "現在ありません";
-          primarySelect.appendChild(option);
-          return;
-        }
-
-        allCandidates.forEach((item) => {
-          const option = document.createElement("option");
-          option.value = String(item?.id || "");
-          option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
-          primarySelect.appendChild(option);
-        });
-      }
-
-      function renderAddCandidateSelect(addCandidates) {
-        candidateSelect.innerHTML = "";
-
-        if (!Array.isArray(addCandidates) || !addCandidates.length) {
-          const option = document.createElement("option");
-          option.value = "";
-          option.textContent = "現在ありません";
-          candidateSelect.appendChild(option);
-          return;
-        }
-
-        addCandidates.forEach((item) => {
-          const option = document.createElement("option");
-          option.value = String(item?.id || "");
-          option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
-          candidateSelect.appendChild(option);
-        });
-      }
-
-      function applyRoleUi() {
-        replyBox.classList.add("hidden");
-        changePrimaryCard.classList.add("hidden");
-        addAssigneeCard.classList.add("hidden");
-
-        if (mode === "detail") {
-          if (isAdmin) {
-            changePrimaryCard.classList.remove("hidden");
-            addAssigneeCard.classList.remove("hidden");
-          }
-          return;
-        }
-
-        if (mode === "attend") {
-          if (isAdmin || isSubAdmin) {
-            replyBox.classList.remove("hidden");
-          }
-
-          if (isAdmin) {
-            changePrimaryCard.classList.remove("hidden");
-          }
-
-          addAssigneeCard.classList.add("hidden");
-        }
-      }
-
-      async function sendReply() {
-        const message = replyText.value.trim();
-        if (!message) {
-          alert("返信内容を入力してください。");
-          return;
-        }
-
-        await callFunction(REPLY_FUNCTION, {
-          admin_id: Number(adminId),
-          inquiry_id: Number(inquiryId),
-          message: message
-        });
-
-        replyText.value = "";
-        await loadAll();
-        alert("メッセージを送信しました。");
-      }
-
-      async function addAssignee() {
-        const targetId = Number(candidateSelect.value);
-        if (!targetId) {
-          alert("追加する担当者を選択してください。");
-          return;
-        }
-
-        await callFunction(MANAGE_FUNCTION, {
-          mode: "add",
-          admin_id: Number(adminId),
-          inquiry_id: Number(inquiryId),
-          target_admin_account_id: targetId,
-          make_primary: false
-        });
-
-        await loadAll();
-        alert("担当スタッフを追加しました。");
-      }
-
-      async function changePrimary() {
-        const targetId = Number(primarySelect.value);
-        if (!targetId) {
-          alert("主担当者を選択してください。");
-          return;
-        }
-
-        await callFunction(MANAGE_FUNCTION, {
-          mode: "add",
-          admin_id: Number(adminId),
-          inquiry_id: Number(inquiryId),
-          target_admin_account_id: targetId,
-          make_primary: true
-        });
-
-        await loadAll();
-        alert("主担当を更新しました。");
-      }
-
-      async function loadAll() {
-        const viewFunction = getViewFunctionName();
-
-        const detailData = await callFunction(viewFunction, {
-          admin_id: Number(adminId),
-          inquiry_id: Number(inquiryId),
-          mode: mode
-        });
-
-        if (mode === "detail" && detailData?.stop_detail_mode === true && detailData?.next_mode === "attend") {
-          const url = new URL(window.location.href);
-          const alreadyReloaded = url.searchParams.get("reloaded_to_attend");
-
-          if (alreadyReloaded !== "1") {
-            url.searchParams.set("mode", "attend");
-            url.searchParams.set("reloaded_to_attend", "1");
-            window.location.replace(url.toString());
-            return;
-          }
-        }
-
-        renderSummary(detailData);
-renderMessages(detailData);
-
-if (isAdmin) {
-  const candidatesData = await callFunction(MANAGE_FUNCTION, {
-    mode: "candidates",
-    admin_id: Number(adminId),
-    inquiry_id: Number(inquiryId)
-  });
-
-  renderAssignees(candidatesData?.assignees || []);
-  renderPrimarySelect(candidatesData?.all_candidates || []);
-  renderAddCandidateSelect(candidatesData?.add_candidates || []);
-} else {
-  renderAssignees(detailData?.assignees || []);
-}
-}
-
-  } catch (error) {
-    console.error("候補一覧取得エラー:", error);
-    renderPrimarySelect([]);
-    renderAddCandidateSelect([]);
-  }
-}
-        applyRoleUi();
-      }
-
-      try {
-        if (adminLoggedIn !== "1") {
-          window.location.href = "admin-login.html";
-          return;
-        }
-
-        // 1段階目：mode確認
-        if (mode !== "detail" && mode !== "attend") {
-          window.location.href = "user-inquiries.html";
-          return;
-        }
-
-        // 2段階目：role確認
-        if (mode === "detail" && adminRole !== "admin") {
-          window.location.href = "user-inquiries.html";
-          return;
-        }
-
-        if (mode === "attend" && adminRole !== "admin" && adminRole !== "sub_admin") {
-          window.location.href = "user-inquiries.html";
-          return;
-        }
-
-        if (adminStatus !== "active") {
-          alert("この管理者アカウントは停止中です。");
-          window.location.href = "admin-login.html";
-          return;
-        }
-
-        if (!inquiryId || Number.isNaN(inquiryId)) {
-          setLoadError("対象のお問い合わせがありません。");
-          renderDebug("inquiry_id が不正");
-          return;
-        }
-
-        applyRoleUi();
-
-        replySendButton.addEventListener("click", sendReply);
-        addAssigneeButton.addEventListener("click", addAssignee);
-        changePrimaryButton.addEventListener("click", changePrimary);
-
-        await loadAll();
-      } catch (error) {
-        console.error(error);
-        setLoadError("システムエラー：データの読み込みに失敗しました。ページを再読み込みしてください。");
-        chatStatus.textContent = "ステータス：読み込みに失敗しました。";
-        chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
+    function renderAssignees(assignees) {
+      if (!Array.isArray(assignees) || !assignees.length) {
         currentAssignees.textContent = "現在ありません";
-        renderDebug(String(error));
+        return;
       }
-    });
-  </script>
+
+      currentAssignees.textContent = assignees.map((item) => {
+        const name = item?.username || "不明";
+        const role = item?.role || "";
+        const primary = item?.is_primary ? "（主担当）" : "";
+        return `${name}${role ? " / " + role : ""}${primary}`;
+      }).join("\n");
+    }
+
+    function renderPrimarySelect(allCandidates) {
+      primarySelect.innerHTML = "";
+
+      if (!Array.isArray(allCandidates) || !allCandidates.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "現在ありません";
+        primarySelect.appendChild(option);
+        return;
+      }
+
+      allCandidates.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = String(item?.id || "");
+        option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
+        primarySelect.appendChild(option);
+      });
+    }
+
+    function renderAddCandidateSelect(addCandidates) {
+      candidateSelect.innerHTML = "";
+
+      if (!Array.isArray(addCandidates) || !addCandidates.length) {
+        const option = document.createElement("option");
+        option.value = "";
+        option.textContent = "現在ありません";
+        candidateSelect.appendChild(option);
+        return;
+      }
+
+      addCandidates.forEach((item) => {
+        const option = document.createElement("option");
+        option.value = String(item?.id || "");
+        option.textContent = `${item?.username || "不明"} / ${item?.role || ""}`;
+        candidateSelect.appendChild(option);
+      });
+    }
+
+    function applyRoleUi() {
+      replyBox.classList.add("hidden");
+      changePrimaryCard.classList.add("hidden");
+      addAssigneeCard.classList.add("hidden");
+
+      if (mode === "detail") {
+        if (isAdmin) {
+          changePrimaryCard.classList.remove("hidden");
+          addAssigneeCard.classList.remove("hidden");
+        }
+        return;
+      }
+
+      if (mode === "attend") {
+        replyBox.classList.remove("hidden");
+        if (isAdmin) {
+          changePrimaryCard.classList.remove("hidden");
+          addAssigneeCard.classList.remove("hidden");
+        }
+      }
+    }
+
+    async function sendReply() {
+      const message = replyText.value.trim();
+      if (!message) {
+        alert("返信内容を入力してください。");
+        return;
+      }
+
+      await callFunction(REPLY_FUNCTION, {
+        admin_id: Number(adminId),
+        inquiry_id: Number(inquiryId),
+        message
+      });
+
+      replyText.value = "";
+      await loadAll();
+      alert("メッセージを送信しました。");
+    }
+
+    async function addAssignee() {
+      const targetId = Number(candidateSelect.value);
+      if (!targetId) {
+        alert("追加する担当者を選択してください。");
+        return;
+      }
+
+      await callFunction(MANAGE_FUNCTION, {
+        mode: "add",
+        admin_id: Number(adminId),
+        inquiry_id: Number(inquiryId),
+        target_admin_account_id: targetId,
+        make_primary: false
+      });
+
+      await loadAll();
+      alert("担当スタッフを追加しました。");
+    }
+
+    async function changePrimary() {
+      const targetId = Number(primarySelect.value);
+      if (!targetId) {
+        alert("主担当者を選択してください。");
+        return;
+      }
+
+      await callFunction(MANAGE_FUNCTION, {
+        mode: "add",
+        admin_id: Number(adminId),
+        inquiry_id: Number(inquiryId),
+        target_admin_account_id: targetId,
+        make_primary: true
+      });
+
+      await loadAll();
+      alert("主担当を更新しました。");
+    }
+
+    async function loadAll() {
+      const viewFunction = getViewFunctionName();
+
+      const detailData = await callFunction(viewFunction, {
+        admin_id: Number(adminId),
+        inquiry_id: Number(inquiryId),
+        mode: mode
+      });
+
+      if (mode === "detail" && detailData?.stop_detail_mode === true && detailData?.next_mode === "attend") {
+        const url = new URL(window.location.href);
+        const alreadyReloaded = url.searchParams.get("reloaded_to_attend");
+
+        if (alreadyReloaded !== "1") {
+          url.searchParams.set("mode", "attend");
+          url.searchParams.set("reloaded_to_attend", "1");
+          window.location.replace(url.toString());
+          return;
+        }
+      }
+
+      renderSummary(detailData);
+      renderMessages(detailData);
+      renderAssignees(detailData?.assignees || []);
+
+      if (isAdmin) {
+        const candidatesData = await callFunction(MANAGE_FUNCTION, {
+          mode: "candidates",
+          admin_id: Number(adminId),
+          inquiry_id: Number(inquiryId)
+        });
+
+        renderPrimarySelect(candidatesData?.all_candidates || []);
+        renderAddCandidateSelect(candidatesData?.add_candidates || []);
+      }
+
+      applyRoleUi();
+    }
+
+    try {
+      if (adminLoggedIn !== "1") {
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      if (mode !== "detail" && mode !== "attend") {
+        window.location.href = "user-inquiries.html";
+        return;
+      }
+
+      if (mode === "detail" && adminRole !== "admin") {
+        window.location.href = "user-inquiries.html";
+        return;
+      }
+
+      if (mode === "attend" && adminRole !== "admin" && adminRole !== "sub_admin") {
+        window.location.href = "user-inquiries.html";
+        return;
+      }
+
+      if (adminStatus !== "active") {
+        alert("この管理者アカウントは停止中です。");
+        window.location.href = "admin-login.html";
+        return;
+      }
+
+      if (!inquiryId || Number.isNaN(inquiryId)) {
+        setLoadError("対象のお問い合わせがありません。");
+        renderDebug("inquiry_id が不正");
+        return;
+      }
+
+      applyRoleUi();
+
+      replySendButton.addEventListener("click", sendReply);
+      addAssigneeButton.addEventListener("click", addAssignee);
+      changePrimaryButton.addEventListener("click", changePrimary);
+
+      await loadAll();
+    } catch (error) {
+      console.error(error);
+      setLoadError("システムエラー：データの読み込みに失敗しました。ページを再読み込みしてください。");
+      chatStatus.textContent = "ステータス：読み込みに失敗しました。";
+      chatLogWrap.innerHTML = `<div class="chat-empty">現在ありません</div>`;
+      currentAssignees.textContent = "現在ありません";
+      renderDebug(String(error));
+    }
+  });
+</script>
+
 </body>
 </html>

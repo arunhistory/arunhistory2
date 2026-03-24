@@ -738,55 +738,64 @@
       }
 
       function openInquiryAttend(inquiryId, attendMode) {
-        const safeMode = attendMode === "attend-sub" ? "attend-sub" : "attend";
-        window.location.href =
-          "user-inquiry-detail.html?inquiry_id=" +
-          encodeURIComponent(inquiryId) +
-          "&mode=" +
-          encodeURIComponent(safeMode);
-      }
+  const safeMode = attendMode === "attend-sub" ? "attend-sub" : "attend";
+  window.location.href =
+    "user-inquiry-detail.html?inquiry_id=" +
+    encodeURIComponent(inquiryId) +
+    "&mode=" +
+    encodeURIComponent(safeMode);
+}
 
       function getMyAttendMode(inquiry) {
-        const info = getSessionInfo();
-        const myUsername = info.adminUsername || "";
-        const myId = String(info.adminId || "");
+  const info = getSessionInfo();
+  const myUsername = String(info.adminUsername || "").trim();
+  const myId = String(info.adminId || "").trim();
 
-        const primaryUsername = String(inquiry?.assigned_admin_username || "");
-        const primaryId = String(
-          inquiry?.assigned_admin_id ??
-          inquiry?.primary_admin_id ??
-          ""
-        );
+  const primaryUsername = String(inquiry?.assigned_admin_username || "").trim();
+  const primaryId = String(
+    inquiry?.assigned_admin_id ??
+    inquiry?.primary_admin_id ??
+    ""
+  ).trim();
 
-        if (
-          (primaryUsername && primaryUsername === myUsername) ||
-          (primaryId && primaryId === myId)
-        ) {
-          return "attend";
-        }
+  if (
+    (myUsername && primaryUsername && primaryUsername === myUsername) ||
+    (myId && primaryId && primaryId === myId)
+  ) {
+    return "attend";
+  }
 
-        const assignees = Array.isArray(inquiry?.assignees) ? inquiry.assignees : [];
-        const isSub = assignees.some((assignee) => {
-          const assigneeUsername = String(
-            assignee?.admin_display_name ||
-            assignee?.admin_username ||
-            assignee?.username ||
-            ""
-          );
-          const assigneeId = String(
-            assignee?.admin_account_id ??
-            assignee?.admin_id ??
-            assignee?.id ??
-            ""
-          );
+  const assignees = Array.isArray(inquiry?.assignees) ? inquiry.assignees : [];
 
-          if (assignee?.is_primary === true) return false;
+  const isSub = assignees.some((assignee) => {
+    const assigneeUsername = String(
+      assignee?.admin_display_name ||
+      assignee?.admin_username ||
+      assignee?.username ||
+      ""
+    ).trim();
 
-          return (
-            (assigneeUsername && assigneeUsername === myUsername) ||
-            (assigneeId && assigneeId === myId)
-          );
-        });
+    const assigneeId = String(
+      assignee?.admin_account_id ??
+      assignee?.admin_id ??
+      assignee?.id ??
+      ""
+    ).trim();
+
+    if (assignee?.is_primary === true) return false;
+
+    return (
+      (myUsername && assigneeUsername && assigneeUsername === myUsername) ||
+      (myId && assigneeId && assigneeId === myId)
+    );
+  });
+
+  if (isSub) {
+    return "attend-sub";
+  }
+
+  return "";
+});
 
         if (isSub) {
           return "attend-sub";
@@ -849,13 +858,13 @@
                   `).join("")
                 : "";
 
-              const showDetailButton = currentAdminRole === "admin";
-              const showStartButton = inquiry.inquiry_status === "open";
-              const myAttendMode =
-                inquiry.inquiry_status === "in_progress"
-                  ? getMyAttendMode(inquiry)
-                  : "";
-              const showAttendButton = Boolean(myAttendMode);
+             const showDetailButton = currentAdminRole === "admin";
+const showStartButton = inquiry.inquiry_status === "open";
+const myAttendMode =
+  inquiry.inquiry_status === "in_progress"
+    ? getMyAttendMode(inquiry)
+    : "";
+const showAttendButton = Boolean(myAttendMode);
 
               let actionButtonsHtml = "";
 

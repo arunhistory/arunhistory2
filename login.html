@@ -26,7 +26,6 @@
       overflow-x: hidden;
     }
 
-    /* 星空の背景（JSで生成） */
     .star-field {
       position: fixed;
       top: 0;
@@ -54,7 +53,7 @@
     .container {
       position: relative;
       z-index: 10;
-      max-width: 450px; /* ログイン画面として最適な幅に調整 */
+      max-width: 450px;
       margin: 0 auto;
       padding: 60px 20px;
     }
@@ -107,7 +106,6 @@
       outline: none;
       background: #fff;
       box-shadow: 0 0 8px var(--accent-color);
-      transform: translateY(-1px);
     }
 
     button {
@@ -128,7 +126,6 @@
     button:hover {
       background-color: var(--button-hover);
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
     .sub-links {
@@ -164,12 +161,12 @@
       <form id="login-form">
         <p>
           <label for="email">メールアドレス</label>
-          <input type="email" id="email" name="email" required>
+          <input type="email" id="email" name="email">
         </p>
 
         <p>
           <label for="password">パスワード</label>
-          <input type="password" id="password" name="password" required>
+          <input type="password" id="password" name="password">
         </p>
 
         <p id="secret-wrap" style="display: none;">
@@ -192,7 +189,7 @@
 
   <script>
     const starField = document.getElementById('starField');
-    const starCount = 80; // ログイン画面は少し控えめに
+    const starCount = 80;
     for (let i = 0; i < starCount; i++) {
       const star = document.createElement('div');
       star.className = 'star';
@@ -211,6 +208,8 @@
       star.style.animationDelay = `${delay}s`;
       starField.appendChild(star);
     }
+  
+  ここまでGemini
 
     document.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(window.location.search);

@@ -11,11 +11,11 @@
 
     body {
       margin: 0;
-      padding: 24px;
-      background: linear-gradient(to bottom, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
-      color: #111;
+      padding: 32px 20px;
+      background: linear-gradient(135deg, #dff5e3 0%, #c7ebcf 45%, #aedfb9 100%);
+      color: #222;
       min-height: 100vh;
-      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
     }
 
     .container {
@@ -23,62 +23,81 @@
       margin: 0 auto;
     }
 
-    h1 {
+    h1, h2 {
       text-align: center;
       margin-top: 0;
-      font-size: 2.2rem;
       line-height: 1.4;
-      color: #111;
+      color: #1a2a1a;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 28px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
     }
 
     a {
-      color: #111;
+      color: #3e5a37;
       text-decoration: none;
+      transition: opacity 0.2s;
     }
 
     a:hover {
-      color: #111;
+      opacity: 0.7;
       text-decoration: underline;
     }
 
     .top-link {
-      margin-top: 0;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
+      font-weight: bold;
     }
 
     .center-link {
       text-align: center;
-      margin-top: 16px;
-      margin-bottom: 16px;
+      margin: 24px 0;
     }
 
-    .panel,
+    .back-button {
+      background: #fff;
+      padding: 10px 30px;
+      border-radius: 50px;
+      border: 1px solid rgba(0,0,0,0.1);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+      display: inline-block;
+    }
+
+    .box,
     .summary-card,
     .meta-item,
     .preview-box,
     .empty-box,
     .inquiry-card,
     details {
-      background: rgba(255,255,255,0.75);
-      border: 1px solid rgba(0,0,0,0.15);
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.4);
+      border-radius: 16px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     }
 
-    .panel {
-      padding: 20px;
-      margin-bottom: 16px;
+    .box {
+      padding: 24px;
+      margin-bottom: 24px;
       line-height: 1.8;
     }
 
     .status-box {
       display: none;
-      margin-bottom: 16px;
-      padding: 12px 14px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
       border-radius: 12px;
       font-size: 14px;
-      line-height: 1.6;
-      border: 1px solid rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.75);
-      color: #111;
+      line-height: 1.7;
+      border: 1px solid #feb2b2;
+      background: #fff5f5;
+      color: #c53030;
+      font-weight: bold;
     }
 
     .status-box.show {
@@ -88,24 +107,26 @@
     .summary-row {
       display: grid;
       grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 12px;
-      margin-bottom: 18px;
+      gap: 16px;
+      margin-bottom: 24px;
     }
 
     .summary-card {
-      padding: 16px;
+      padding: 18px 20px;
     }
 
     .summary-label {
       font-size: 12px;
-      color: #555;
+      color: #666;
       margin-bottom: 6px;
+      font-weight: bold;
     }
 
     .summary-value {
-      font-size: 24px;
-      font-weight: bold;
-      color: #111;
+      font-size: 26px;
+      font-weight: 800;
+      color: #1a2a1a;
+      line-height: 1.4;
     }
 
     .toolbar {
@@ -113,7 +134,7 @@
       grid-template-columns: 1fr 1fr auto;
       gap: 12px;
       align-items: end;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .toolbar-group label {
@@ -121,7 +142,7 @@
       margin-bottom: 6px;
       font-size: 14px;
       font-weight: bold;
-      color: #111;
+      color: #1a2a1a;
     }
 
     .filter-select,
@@ -132,29 +153,35 @@
       box-sizing: border-box;
       font-size: 16px;
       font-family: inherit;
+      border-radius: 12px;
     }
 
     .filter-select {
       display: block;
-      padding: 10px;
-      border: 1px solid rgba(0,0,0,0.2);
+      padding: 12px 14px;
+      border: 1px solid rgba(0,0,0,0.12);
       background: #fff;
       color: #111;
     }
 
+    .filter-select:focus {
+      outline: none;
+      border-color: #6b985c;
+      box-shadow: 0 0 0 3px rgba(107, 152, 92, 0.2);
+    }
+
     .reload-button {
-      padding: 12px;
+      padding: 14px 18px;
       border: none;
-      background-color: #4f8f5b;
-      color: #111;
+      background: #6b985c;
+      color: #fff;
       cursor: pointer;
       font-weight: bold;
-      margin-top: 0;
-      min-width: 150px;
+      box-shadow: 0 4px 12px rgba(107, 152, 92, 0.3);
     }
 
     .reload-button:hover {
-      background-color: #6aa676;
+      opacity: 0.9;
     }
 
     .reload-button:disabled,
@@ -165,20 +192,20 @@
     }
 
     .empty-box {
-      padding: 28px 16px;
+      padding: 32px 18px;
       text-align: center;
-      color: #111;
+      color: #333;
       line-height: 1.8;
     }
 
     .card-list {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 14px;
+      gap: 16px;
     }
 
     .inquiry-card {
-      padding: 18px;
+      padding: 22px;
     }
 
     .card-top {
@@ -187,14 +214,14 @@
       align-items: flex-start;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
     }
 
     .card-title {
       margin: 0;
-      font-size: 18px;
+      font-size: 1.2rem;
       line-height: 1.4;
-      color: #111;
+      color: #1a2a1a;
     }
 
     .badge-row {
@@ -202,6 +229,7 @@
       gap: 8px;
       flex-wrap: wrap;
       align-items: center;
+      margin-top: 8px;
     }
 
     .badge {
@@ -233,6 +261,11 @@
       color: #6d28d9;
     }
 
+    .badge-sub {
+      background: #e0f2fe;
+      color: #0369a1;
+    }
+
     .meta-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -241,32 +274,34 @@
     }
 
     .meta-item {
-      padding: 12px;
+      padding: 14px;
     }
 
     .meta-label {
       font-size: 12px;
-      color: #555;
+      color: #666;
       margin-bottom: 6px;
+      font-weight: bold;
     }
 
     .meta-value {
       font-size: 14px;
-      font-weight: bold;
-      color: #111;
-      line-height: 1.6;
+      font-weight: 700;
+      color: #222;
+      line-height: 1.7;
       word-break: break-word;
     }
 
     .preview-box {
-      padding: 12px;
+      padding: 14px;
       margin-bottom: 14px;
     }
 
     .preview-label {
       font-size: 12px;
-      color: #555;
+      color: #666;
       margin-bottom: 6px;
+      font-weight: bold;
     }
 
     .preview-text {
@@ -305,11 +340,12 @@
 
     .action-button {
       border: none;
-      padding: 11px 16px;
+      padding: 12px 16px;
       font-size: 14px;
       font-weight: bold;
       cursor: pointer;
       font-family: inherit;
+      border-radius: 12px;
     }
 
     .detail-button {
@@ -318,29 +354,35 @@
     }
 
     .start-button {
-      background: #4f8f5b;
-      color: #111;
+      background: #6b985c;
+      color: #fff;
     }
 
-    .start-button:hover {
-      background: #6aa676;
+    .start-button:hover,
+    .detail-button:hover {
+      opacity: 0.92;
     }
 
     details {
-      margin-top: 20px;
-      padding: 12px;
+      margin-top: 28px;
+      padding: 14px;
     }
 
     summary {
       cursor: pointer;
       font-weight: bold;
+      color: #4a5568;
     }
 
     pre {
+      background: #2d3748;
+      color: #a0aec0;
+      padding: 15px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-top: 10px;
       white-space: pre-wrap;
       word-break: break-word;
-      margin: 12px 0 0 0;
-      font-size: 14px;
     }
 
     .hidden {
@@ -348,6 +390,10 @@
     }
 
     @media (max-width: 700px) {
+      body {
+        padding: 16px;
+      }
+
       h1 {
         font-size: 1.8rem;
       }
@@ -362,6 +408,13 @@
       .action-button {
         width: 100%;
       }
+
+      .box,
+      .summary-card,
+      .inquiry-card {
+        padding-left: 16px;
+        padding-right: 16px;
+      }
     }
   </style>
 </head>
@@ -374,10 +427,10 @@
     <h1>ユーザーお問い合わせ</h1>
 
     <p class="center-link">
-      <a href="account-management.html">戻る</a>
+      <a href="account-management.html" class="back-button">戻る</a>
     </p>
 
-    <div class="panel">
+    <div class="box">
       ユーザーから送られたお問い合わせを確認します。
     </div>
 
@@ -402,34 +455,36 @@
       </div>
     </div>
 
-    <div class="toolbar">
-      <div class="toolbar-group">
-        <label for="primaryFilter">絞込み</label>
-        <select id="primaryFilter" class="filter-select">
-          <option value="all">絞込みなし</option>
-          <option value="mine">自分の対応</option>
-          <option value="open">未対応</option>
-        </select>
+    <div class="box">
+      <div class="toolbar">
+        <div class="toolbar-group">
+          <label for="primaryFilter">絞込み</label>
+          <select id="primaryFilter" class="filter-select">
+            <option value="all">絞込みなし</option>
+            <option value="mine">自分の対応</option>
+            <option value="open">未対応</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group hidden" id="assigneeFilterWrap">
+          <label for="assigneeFilter">担当者</label>
+          <select id="assigneeFilter" class="filter-select">
+            <option value="">絞込みなし</option>
+          </select>
+        </div>
+
+        <div class="toolbar-group">
+          <button id="reloadButton" class="reload-button" type="button">絞込み</button>
+        </div>
       </div>
 
-      <div class="toolbar-group hidden" id="assigneeFilterWrap">
-        <label for="assigneeFilter">担当者</label>
-        <select id="assigneeFilter" class="filter-select">
-          <option value="">絞込みなし</option>
-        </select>
+      <div id="contentArea">
+        <div class="empty-box">読み込み中...</div>
       </div>
-
-      <div class="toolbar-group">
-        <button id="reloadButton" class="reload-button" type="button">絞込み</button>
-      </div>
-    </div>
-
-    <div id="contentArea">
-      <div class="empty-box">読み込み中...</div>
     </div>
 
     <p class="center-link">
-      <a href="account-management.html">戻る</a>
+      <a href="account-management.html" class="back-button">戻る</a>
     </p>
 
     <details>
@@ -666,7 +721,7 @@
 
           if (Array.isArray(item.assignees)) {
             return item.assignees.some((assignee) => {
-              const name = assignee?.admin_display_name || assignee?.admin_username || "";
+              const name = assignee?.admin_display_name || assignee?.admin_username || assignee?.username || "";
               return name === assigneeValue;
             });
           }
@@ -682,11 +737,62 @@
           "&mode=detail";
       }
 
-      function openInquiryAttend(inquiryId) {
+      function openInquiryAttend(inquiryId, attendMode) {
+        const safeMode = attendMode === "attend-sub" ? "attend-sub" : "attend";
         window.location.href =
           "user-inquiry-detail.html?inquiry_id=" +
           encodeURIComponent(inquiryId) +
-          "&mode=attend";
+          "&mode=" +
+          encodeURIComponent(safeMode);
+      }
+
+      function getMyAttendMode(inquiry) {
+        const info = getSessionInfo();
+        const myUsername = info.adminUsername || "";
+        const myId = String(info.adminId || "");
+
+        const primaryUsername = String(inquiry?.assigned_admin_username || "");
+        const primaryId = String(
+          inquiry?.assigned_admin_id ??
+          inquiry?.primary_admin_id ??
+          ""
+        );
+
+        if (
+          (primaryUsername && primaryUsername === myUsername) ||
+          (primaryId && primaryId === myId)
+        ) {
+          return "attend";
+        }
+
+        const assignees = Array.isArray(inquiry?.assignees) ? inquiry.assignees : [];
+        const isSub = assignees.some((assignee) => {
+          const assigneeUsername = String(
+            assignee?.admin_display_name ||
+            assignee?.admin_username ||
+            assignee?.username ||
+            ""
+          );
+          const assigneeId = String(
+            assignee?.admin_account_id ??
+            assignee?.admin_id ??
+            assignee?.id ??
+            ""
+          );
+
+          if (assignee?.is_primary === true) return false;
+
+          return (
+            (assigneeUsername && assigneeUsername === myUsername) ||
+            (assigneeId && assigneeId === myId)
+          );
+        });
+
+        if (isSub) {
+          return "attend-sub";
+        }
+
+        return "";
       }
 
       async function startSupportInquiry(inquiryId) {
@@ -702,9 +808,9 @@
           const info = getSessionInfo();
 
           const result = await invokeFunction("admin-start-support-inquiry-v2", {
-  admin_username: info.adminUsername,
-  inquiry_id: inquiryId
-});
+            admin_username: info.adminUsername,
+            inquiry_id: inquiryId
+          });
 
           showStatus(result?.message || "対応を開始しました。");
           await fetchInquiries();
@@ -737,7 +843,7 @@
               const assigneeChips = Array.isArray(inquiry.assignees)
                 ? inquiry.assignees.map((assignee) => `
                     <span class="assignee-chip">
-                      ${escapeHtml(assignee.admin_display_name || assignee.admin_username || "不明")}
+                      ${escapeHtml(assignee.admin_display_name || assignee.admin_username || assignee.username || "不明")}
                       ${assignee.is_primary ? "（主担当）" : ""}
                     </span>
                   `).join("")
@@ -745,9 +851,11 @@
 
               const showDetailButton = currentAdminRole === "admin";
               const showStartButton = inquiry.inquiry_status === "open";
-              const showAttendButton =
-                inquiry.inquiry_status === "in_progress" &&
-                inquiry.is_mine === true;
+              const myAttendMode =
+                inquiry.inquiry_status === "in_progress"
+                  ? getMyAttendMode(inquiry)
+                  : "";
+              const showAttendButton = Boolean(myAttendMode);
 
               let actionButtonsHtml = "";
 
@@ -780,7 +888,7 @@
                   <button
                     type="button"
                     class="action-button start-button"
-                    onclick="openInquiryAttend(${Number(inquiry.inquiry_id)})"
+                    onclick="openInquiryAttend(${Number(inquiry.inquiry_id)}, '${escapeHtml(myAttendMode)}')"
                   >
                     応対する
                   </button>
@@ -798,6 +906,7 @@
                         ${getStatusBadge(inquiry.inquiry_status)}
                         ${inquiry.is_mine ? `<span class="badge badge-mine">自分が担当中</span>` : ""}
                         ${inquiry.assigned_admin_username ? `<span class="badge badge-assigned">担当: ${escapeHtml(inquiry.assigned_admin_username)}</span>` : ""}
+                        ${myAttendMode === "attend-sub" ? `<span class="badge badge-sub">サブ担当</span>` : ""}
                       </div>
                     </div>
                   </div>

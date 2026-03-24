@@ -6,92 +6,157 @@
   <title>ログイン</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    body {
+    :root {
+      --bg-gradient: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
+      --accent-color: #f2d9e8;
+      --accent-hover: #ffe7f3;
+      --glass-bg: rgba(255, 255, 255, 0.07);
+      --border-color: rgba(255, 255, 255, 0.2);
+      --button-bg: #7a5c61;
+      --button-hover: #9a747b;
+    }
+
+    html, body {
       margin: 0;
-      padding: 24px;
-      background: linear-gradient(to bottom, #0b1026 0%, #1a2342 45%, #2f3d68 100%);
-      color: #f5f5f5;
+      padding: 0;
       min-height: 100vh;
-      font-family: "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      background: var(--bg-gradient) fixed;
+      color: #f5f5f5;
+      font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* 星空の背景（JSで生成） */
+    .star-field {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .star {
+      position: absolute;
+      background: white;
+      border-radius: 50%;
+      opacity: 0;
+      animation: blink var(--duration) infinite ease-in-out;
+      box-shadow: 0 0 4px 1px rgba(255, 255, 255, 0.3);
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: var(--max-opacity); transform: scale(1); }
     }
 
     .container {
-      max-width: 700px;
+      position: relative;
+      z-index: 10;
+      max-width: 450px; /* ログイン画面として最適な幅に調整 */
       margin: 0 auto;
+      padding: 60px 20px;
     }
 
     h1 {
       text-align: center;
-      margin-top: 0;
-      font-size: 2.5rem;
-      line-height: 1.4;
-    }
-
-    a {
-      color: #f2d9e8;
-      text-decoration: none;
-    }
-
-    a:hover {
-      color: #ffe7f3;
-      text-decoration: none;
+      font-size: 2.2rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 2rem;
+      text-shadow: 0 0 15px rgba(242, 217, 232, 0.3);
     }
 
     .form-box {
-      background: rgba(255,255,255,0.08);
-      border: 1px solid rgba(255,255,255,0.25);
-      padding: 24px;
+      background: var(--glass-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
     .form-box p {
-      margin: 0 0 16px 0;
+      margin: 0 0 20px 0;
     }
 
     label {
       display: block;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
       font-weight: bold;
+      color: var(--accent-color);
+      letter-spacing: 0.05em;
     }
 
     input {
       width: 100%;
-      max-width: 100%;
-      min-width: 0;
-      display: block;
       box-sizing: border-box;
-      padding: 10px;
+      padding: 12px;
       font-size: 16px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.95);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.9);
       color: #222;
+      transition: all 0.3s;
       font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      background: #fff;
+      box-shadow: 0 0 8px var(--accent-color);
+      transform: translateY(-1px);
     }
 
     button {
       width: 100%;
-      padding: 12px;
-      font-size: 16px;
+      padding: 14px;
+      font-size: 1rem;
+      font-weight: bold;
       border: none;
-      background-color: #7a5c61;
+      border-radius: 8px;
+      background-color: var(--button-bg);
       color: #fff;
       cursor: pointer;
+      transition: all 0.3s;
+      letter-spacing: 0.1em;
+      margin-top: 10px;
     }
 
     button:hover {
-      background-color: #9a747b;
+      background-color: var(--button-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
 
     .sub-links {
       text-align: center;
-      margin-top: 20px;
+      margin-top: 24px;
+      font-size: 0.85rem;
     }
 
     .sub-links p {
-      margin: 8px 0;
+      margin: 10px 0;
+    }
+
+    a {
+      color: var(--accent-color);
+      text-decoration: none;
+      transition: color 0.3s;
+    }
+
+    a:hover {
+      color: var(--accent-hover);
+      text-decoration: underline;
     }
   </style>
 </head>
 <body>
+
+  <div class="star-field" id="starField"></div>
+
   <div class="container">
     <h1>ログイン</h1>
 
@@ -99,12 +164,12 @@
       <form id="login-form">
         <p>
           <label for="email">メールアドレス</label>
-          <input type="email" id="email" name="email">
+          <input type="email" id="email" name="email" required>
         </p>
 
         <p>
           <label for="password">パスワード</label>
-          <input type="password" id="password" name="password">
+          <input type="password" id="password" name="password" required>
         </p>
 
         <p id="secret-wrap" style="display: none;">
@@ -119,13 +184,34 @@
 
       <div class="sub-links">
         <p><a id="signup-link" href="signup.html">新規登録はこちら</a></p>
-        <p><a id="forgot-link" href="forgot-password.html">パスワード忘れた方はこちら</a></p>
+        <p><a id="forgot-link" href="forgot-password.html">パスワードを忘れた方はこちら</a></p>
         <p><a id="back-link" href="index.html">戻る</a></p>
       </div>
     </div>
   </div>
 
   <script>
+    const starField = document.getElementById('starField');
+    const starCount = 80; // ログイン画面は少し控えめに
+    for (let i = 0; i < starCount; i++) {
+      const star = document.createElement('div');
+      star.className = 'star';
+      const x = Math.random() * 100;
+      const y = Math.random() * 100;
+      const size = Math.random() * 2 + 1;
+      const duration = Math.random() * 3 + 2;
+      const delay = Math.random() * 5;
+      const maxOpacity = Math.random() * 0.4 + 0.2;
+      star.style.left = `${x}%`;
+      star.style.top = `${y}%`;
+      star.style.width = `${size}px`;
+      star.style.height = `${size}px`;
+      star.style.setProperty('--duration', `${duration}s`);
+      star.style.setProperty('--max-opacity', maxOpacity);
+      star.style.animationDelay = `${delay}s`;
+      starField.appendChild(star);
+    }
+
     document.addEventListener("DOMContentLoaded", async () => {
       const params = new URLSearchParams(window.location.search);
       const redirect = params.get("redirect") || "index.html";
